@@ -1,2 +1,6 @@
+*.suo
 Bonsai/Packages
 Bonsai/Bonsai.exe.*
+SurprisingMinds/SurprisingMinds/bin
+SurprisingMinds/SurprisingMinds/obj
+SurprisingMinds/packages
