@@ -9,7 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 
-namespace SurprisingMinds
+namespace Bonsai.SurprisingMinds
 {
     /// <summary>
     /// Represents a combinator that sorts the elements of the input enumerable
