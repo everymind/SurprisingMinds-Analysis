@@ -53,7 +53,7 @@
             <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
               <MemberName>Path</MemberName>
               <Name>path2</Name>
-              <Value>_*_</Value>
+              <Value>_stimuli*_</Value>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="CombineLatest" />
@@ -462,12 +462,12 @@ it as Time)</q5:Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
               <MemberName>Path</MemberName>
               <Name>path1</Name>
-              <Value>_*_</Value>
+              <Value>_stimuli*_</Value>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
               <MemberName>Path</MemberName>
               <Name>path3</Name>
-              <Value>_*_</Value>
+              <Value>_stimuli*_</Value>
             </Expression>
           </Nodes>
           <Edges>
