@@ -543,8 +543,18 @@ it as Time)</q4:Expression>
               <MemberName>Path</MemberName>
               <Name>rawPath</Name>
             </Expression>
+            <Expression xsi:type="q4:ExpressionTransform">
+              <q4:Expression>it.String.Split( '\' )[-1]</q4:Expression>
+            </Expression>
             <Expression xsi:type="SubscribeSubject">
               <Name>dayDirectory</Name>
+            </Expression>
+            <Expression xsi:type="Add">
+              <Operand xsi:type="StringProperty" />
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringAddBuilder">
+              <MemberName>Value</MemberName>
+              <Name>syncVidName</Name>
             </Expression>
           </Nodes>
           <Edges>
@@ -570,7 +580,7 @@ it as Time)</q4:Expression>
             </Edge>
             <Edge>
               <From>6</From>
-              <To>3</To>
+              <To>46</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -783,6 +793,26 @@ it as Time)</q4:Expression>
               <To>43</To>
               <Label>Source1</Label>
             </Edge>
+            <Edge>
+              <From>46</From>
+              <To>49</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>47</From>
+              <To>48</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>48</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>49</From>
+              <To>48</To>
+              <Label>Source2</Label>
+            </Edge>
           </Edges>
         </Workflow>
       </Expression>
@@ -865,8 +895,10 @@ it as Time)</q4:Expression>
     <Type>Bonsai.Reactive.ToList, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.IO.GetDirectories, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.GetDirectories, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>
