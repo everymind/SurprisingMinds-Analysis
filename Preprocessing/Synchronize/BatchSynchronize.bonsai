@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WorkflowBuilder Version="2.3.0">
-  <Workflow xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.SurprisingMinds;assembly=Bonsai.SurprisingMinds" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
+  <Workflow xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q4="clr-namespace:Bonsai.SurprisingMinds;assembly=Bonsai.SurprisingMinds" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
     <Nodes>
       <Expression xsi:type="WindowWorkflow">
         <Name>Synchronize</Name>
@@ -9,7 +9,7 @@
           <Nodes>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:VideoWriter">
-                <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_synchronized.avi</q1:FileName>
+                <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10\2017-07-10_09-25-09synchronized.avi</q1:FileName>
                 <q1:Suffix>None</q1:Suffix>
                 <q1:Buffered>false</q1:Buffered>
                 <q1:Overwrite>true</q1:Overwrite>
@@ -37,8 +37,9 @@
               <Value>synchronized.avi</Value>
             </Expression>
             <Expression xsi:type="Combinator">
-              <Combinator xsi:type="Take">
-                <Count>1</Count>
+              <Combinator xsi:type="q3:GetFiles">
+                <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10\2017-07-10_09-25-09</q3:Path>
+                <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
               </Combinator>
             </Expression>
             <Expression xsi:type="Combinator">
@@ -49,10 +50,10 @@
                 <Value>synchronized.avi</Value>
               </Operand>
             </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="StringProperty">
-                <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_</Value>
-              </Combinator>
+            <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+              <MemberName>Path</MemberName>
+              <Name>path2</Name>
+              <Value>_*_</Value>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="CombineLatest" />
@@ -60,10 +61,10 @@
             <Expression xsi:type="SubscribeSubject">
               <Name>Prefix</Name>
             </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringStringProperty">
-              <MemberName>Value</MemberName>
-              <Name>Prefix</Name>
-              <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_</Value>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q3:GetFiles">
+                <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+              </Combinator>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:Flip">
@@ -90,7 +91,7 @@
                 <Nodes>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:FileCapture">
-                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_lefteye.avi</q1:FileName>
+                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10\2017-07-10_09-25-09lefteye.avi</q1:FileName>
                       <q1:PlaybackRate>0</q1:PlaybackRate>
                       <q1:StartPosition>0</q1:StartPosition>
                       <q1:PositionUnits>Frames</q1:PositionUnits>
@@ -151,7 +152,7 @@
                 <Nodes>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:FileCapture">
-                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_world.avi</q1:FileName>
+                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10\2017-07-10_09-25-09world.avi</q1:FileName>
                       <q1:PlaybackRate>0</q1:PlaybackRate>
                       <q1:StartPosition>0</q1:StartPosition>
                       <q1:PositionUnits>Frames</q1:PositionUnits>
@@ -212,7 +213,7 @@
                 <Nodes>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:FileCapture">
-                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_righteye.avi</q1:FileName>
+                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10\2017-07-10_09-25-09righteye.avi</q1:FileName>
                       <q1:PlaybackRate>0</q1:PlaybackRate>
                       <q1:StartPosition>0</q1:StartPosition>
                       <q1:PositionUnits>Frames</q1:PositionUnits>
@@ -378,8 +379,8 @@
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="Concat" />
             </Expression>
-            <Expression xsi:type="q3:SortByBuilder">
-              <q3:KeySelector>Source.Time</q3:KeySelector>
+            <Expression xsi:type="q4:SortByBuilder">
+              <q4:KeySelector>Source.Time</q4:KeySelector>
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="ToList" />
@@ -387,40 +388,35 @@
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="Concat" />
             </Expression>
-            <Expression xsi:type="q4:ExpressionTransform">
-              <q4:Expression>new(
+            <Expression xsi:type="q5:ExpressionTransform">
+              <q5:Expression>new(
 0 as Index,
-it as Time)</q4:Expression>
+it as Time)</q5:Expression>
             </Expression>
-            <Expression xsi:type="q4:ExpressionTransform">
-              <q4:Expression>new(
+            <Expression xsi:type="q5:ExpressionTransform">
+              <q5:Expression>new(
 1 as Index,
-it as Time)</q4:Expression>
+it as Time)</q5:Expression>
             </Expression>
-            <Expression xsi:type="q4:ExpressionTransform">
-              <q4:Expression>new(
+            <Expression xsi:type="q5:ExpressionTransform">
+              <q5:Expression>new(
 2 as Index,
-it as Time)</q4:Expression>
+it as Time)</q5:Expression>
             </Expression>
-            <Expression xsi:type="q5:CsvReader">
-              <q5:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_lefteye.csv</q5:FileName>
-              <q5:ScanPattern>%t</q5:ScanPattern>
-              <q5:SkipRows>0</q5:SkipRows>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10\2017-07-10_09-25-09lefteye.csv</q3:FileName>
+              <q3:ScanPattern>%t</q3:ScanPattern>
+              <q3:SkipRows>0</q3:SkipRows>
             </Expression>
-            <Expression xsi:type="q5:CsvReader">
-              <q5:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_righteye.csv</q5:FileName>
-              <q5:ScanPattern>%t</q5:ScanPattern>
-              <q5:SkipRows>0</q5:SkipRows>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_righteye.csv</q3:FileName>
+              <q3:ScanPattern>%t</q3:ScanPattern>
+              <q3:SkipRows>0</q3:SkipRows>
             </Expression>
-            <Expression xsi:type="q5:CsvReader">
-              <q5:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_world.csv</q5:FileName>
-              <q5:ScanPattern>%t</q5:ScanPattern>
-              <q5:SkipRows>0</q5:SkipRows>
-            </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name />
-              <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.csv</Value>
+            <Expression xsi:type="q3:CsvReader">
+              <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-17-07\2017-08-13_16-17-07_stimuli025--moving_world.csv</q3:FileName>
+              <q3:ScanPattern>%t</q3:ScanPattern>
+              <q3:SkipRows>0</q3:SkipRows>
             </Expression>
             <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
               <MemberName>FileName</MemberName>
@@ -432,29 +428,46 @@ it as Time)</q4:Expression>
               <Name />
               <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.csv</Value>
             </Expression>
-            <Expression xsi:type="Add">
-              <Operand xsi:type="StringProperty">
-                <Value>lefteye.csv</Value>
-              </Operand>
+            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+              <MemberName>FileName</MemberName>
+              <Name />
+              <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.csv</Value>
             </Expression>
-            <Expression xsi:type="Add">
-              <Operand xsi:type="StringProperty">
-                <Value>righteye.csv</Value>
-              </Operand>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Concat" />
             </Expression>
-            <Expression xsi:type="Add">
-              <Operand xsi:type="StringProperty">
-                <Value>world.csv</Value>
-              </Operand>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Concat" />
             </Expression>
-            <Expression xsi:type="SubscribeSubject">
-              <Name>Prefix</Name>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Concat" />
             </Expression>
             <Expression xsi:type="SubscribeSubject">
               <Name>Prefix</Name>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
               <Name>Prefix</Name>
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+              <Name>Prefix</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q3:GetFiles">
+                <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+              <MemberName>Path</MemberName>
+              <Name>path1</Name>
+              <Value>_*_</Value>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+              <MemberName>Path</MemberName>
+              <Name>path3</Name>
+              <Value>_*_</Value>
             </Expression>
           </Nodes>
           <Edges>
@@ -470,7 +483,7 @@ it as Time)</q4:Expression>
             </Edge>
             <Edge>
               <From>4</From>
-              <To>1</To>
+              <To>34</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -485,7 +498,7 @@ it as Time)</q4:Expression>
             </Edge>
             <Edge>
               <From>7</From>
-              <To>4</To>
+              <To>10</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -500,7 +513,7 @@ it as Time)</q4:Expression>
             </Edge>
             <Edge>
               <From>10</From>
-              <To>7</To>
+              <To>35</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -630,32 +643,52 @@ it as Time)</q4:Expression>
             </Edge>
             <Edge>
               <From>33</From>
-              <To>30</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>34</From>
-              <To>31</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>35</From>
               <To>32</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
+              <From>34</From>
+              <To>30</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>35</From>
+              <To>31</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
               <From>36</From>
-              <To>33</To>
+              <To>7</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
               <From>37</From>
-              <To>34</To>
+              <To>41</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
               <From>38</From>
-              <To>35</To>
+              <To>42</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>39</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>40</From>
+              <To>33</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>41</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>42</From>
+              <To>40</To>
               <Label>Source1</Label>
             </Edge>
           </Edges>
@@ -665,12 +698,27 @@ it as Time)</q4:Expression>
         <Combinator xsi:type="Concat" />
       </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q5:GetDirectories">
-          <q5:SearchOption>TopDirectoryOnly</q5:SearchOption>
+        <Combinator xsi:type="q3:GetDirectories">
+          <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-10</q3:Path>
+          <q3:SearchPattern>2017-07-10_*</q3:SearchPattern>
+          <q3:SearchOption>AllDirectories</q3:SearchOption>
         </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Concat" />
       </Expression>
     </Nodes>
     <Edges>
+      <Edge>
+        <From>0</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>1</From>
+        <To>0</To>
+        <Label>Source1</Label>
+      </Edge>
       <Edge>
         <From>2</From>
         <To>1</To>
@@ -682,12 +730,12 @@ it as Time)</q4:Expression>
     <Type>Bonsai.Vision.VideoWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Dsp.Concat, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.VideoWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.Sample, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.AddBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.Flip, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.Resize, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
