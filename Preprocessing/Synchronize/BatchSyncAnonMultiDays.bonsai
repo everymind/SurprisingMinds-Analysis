@@ -1,0 +1,976 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.3.0">
+  <Workflow xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q5="clr-namespace:Bonsai.SurprisingMinds;assembly=Bonsai.SurprisingMinds" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
+    <Nodes>
+      <Expression xsi:type="WindowWorkflow">
+        <Name>DaySynchronize</Name>
+        <Description>syncs all sessions from one day</Description>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Concat" />
+            </Expression>
+            <Expression xsi:type="WindowWorkflow">
+              <Name>Synchronize</Name>
+              <Description>synchronize both eye cameras and world camera from Surprising Minds exhibit data collection</Description>
+              <Workflow>
+                <Nodes>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:VideoWriter">
+                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19-sync-anon\2017-08-19_15-07-22_stimuli028--moving_sync-anonymized.avi</q1:FileName>
+                      <q1:Suffix>None</q1:Suffix>
+                      <q1:Buffered>false</q1:Buffered>
+                      <q1:Overwrite>true</q1:Overwrite>
+                      <q1:FourCC>FMP4</q1:FourCC>
+                      <q1:FrameRate>30</q1:FrameRate>
+                      <q1:FrameSize>
+                        <q1:Width>0</q1:Width>
+                        <q1:Height>0</q1:Height>
+                      </q1:FrameSize>
+                      <q1:ResizeInterpolation>NearestNeighbor</q1:ResizeInterpolation>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="ReplaySubject">
+                    <Name>Prefix</Name>
+                    <BufferSize xsi:nil="true" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q2:Concat">
+                      <q2:Axis>1</q2:Axis>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringVideoWriter">
+                    <MemberName>FileName</MemberName>
+                    <Name />
+                    <Value>synchronized.avi</Value>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q3:GetFiles">
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                      <q3:SearchPattern>*lefteye.csv</q3:SearchPattern>
+                      <q3:SearchOption>AllDirectories</q3:SearchOption>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Sample" />
+                  </Expression>
+                  <Expression xsi:type="q4:ExpressionTransform">
+                    <q4:Expression>it.Replace("world.avi","sync-anonymized.avi")</q4:Expression>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                    <MemberName>Path</MemberName>
+                    <Name>path2</Name>
+                    <Value />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="CombineLatest" />
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>Prefix</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q3:GetFiles">
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                      <q3:SearchPattern>*righteye.csv</q3:SearchPattern>
+                      <q3:SearchOption>AllDirectories</q3:SearchOption>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:Flip">
+                      <q1:Mode>Horizontal</q1:Mode>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:Resize">
+                      <q1:Size>
+                        <q1:Width>800</q1:Width>
+                        <q1:Height>600</q1:Height>
+                      </q1:Size>
+                      <q1:Interpolation>Linear</q1:Interpolation>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q1:Flip">
+                      <q1:Mode>Vertical</q1:Mode>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="NestedWorkflow">
+                    <Name>LeftMovie</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="q1:FileCapture">
+                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22\2017-08-19_15-07-22_stimuli028--moving_lefteye.avi</q1:FileName>
+                            <q1:PlaybackRate>0</q1:PlaybackRate>
+                            <q1:StartPosition>0</q1:StartPosition>
+                            <q1:PositionUnits>Frames</q1:PositionUnits>
+                            <q1:Loop>false</q1:Loop>
+                            <q1:Playing>true</q1:Playing>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
+                          <MemberName>FileName</MemberName>
+                          <Name />
+                          <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.avi</Value>
+                        </Expression>
+                        <Expression xsi:type="SubscribeSubject">
+                          <Name>Prefix</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowInput">
+                          <Name>Source1</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="q3:GetFiles">
+                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                            <q3:SearchPattern>*lefteye.avi</q3:SearchPattern>
+                            <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="Concat" />
+                        </Expression>
+                        <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                          <MemberName>Path</MemberName>
+                          <Name>Path</Name>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge>
+                          <From>0</From>
+                          <To>4</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>1</From>
+                          <To>0</To>
+                          <Label>Source2</Label>
+                        </Edge>
+                        <Edge>
+                          <From>2</From>
+                          <To>7</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>3</From>
+                          <To>0</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>5</From>
+                          <To>6</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>6</From>
+                          <To>1</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>7</From>
+                          <To>5</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                      </Edges>
+                    </Workflow>
+                  </Expression>
+                  <Expression xsi:type="NestedWorkflow">
+                    <Name>WorldMovie</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="q1:FileCapture">
+                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22\2017-08-19_15-07-22_stimuli028--moving_world.avi</q1:FileName>
+                            <q1:PlaybackRate>0</q1:PlaybackRate>
+                            <q1:StartPosition>0</q1:StartPosition>
+                            <q1:PositionUnits>Frames</q1:PositionUnits>
+                            <q1:Loop>false</q1:Loop>
+                            <q1:Playing>true</q1:Playing>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
+                          <MemberName>FileName</MemberName>
+                          <Name />
+                          <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_world.avi</Value>
+                        </Expression>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="Concat" />
+                        </Expression>
+                        <Expression xsi:type="SubscribeSubject">
+                          <Name>Prefix</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowInput">
+                          <Name>Source1</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="q3:GetFiles">
+                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                            <q3:SearchPattern>*world.avi</q3:SearchPattern>
+                            <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                          <MemberName>Path</MemberName>
+                          <Name>Path</Name>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge>
+                          <From>0</From>
+                          <To>5</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>1</From>
+                          <To>0</To>
+                          <Label>Source2</Label>
+                        </Edge>
+                        <Edge>
+                          <From>2</From>
+                          <To>1</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>3</From>
+                          <To>7</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>4</From>
+                          <To>0</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>6</From>
+                          <To>2</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>7</From>
+                          <To>6</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                      </Edges>
+                    </Workflow>
+                  </Expression>
+                  <Expression xsi:type="NestedWorkflow">
+                    <Name>RightMovie</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="q1:FileCapture">
+                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22\2017-08-19_15-07-22_stimuli028--moving_righteye.avi</q1:FileName>
+                            <q1:PlaybackRate>0</q1:PlaybackRate>
+                            <q1:StartPosition>0</q1:StartPosition>
+                            <q1:PositionUnits>Frames</q1:PositionUnits>
+                            <q1:Loop>false</q1:Loop>
+                            <q1:Playing>true</q1:Playing>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
+                          <MemberName>FileName</MemberName>
+                          <Name />
+                          <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_righteye.avi</Value>
+                        </Expression>
+                        <Expression xsi:type="SubscribeSubject">
+                          <Name>Prefix</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowInput">
+                          <Name>Source1</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="q3:GetFiles">
+                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                            <q3:SearchPattern>*righteye.avi</q3:SearchPattern>
+                            <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+                          </Combinator>
+                        </Expression>
+                        <Expression xsi:type="Combinator">
+                          <Combinator xsi:type="Concat" />
+                        </Expression>
+                        <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                          <MemberName>Path</MemberName>
+                          <Name>Path</Name>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge>
+                          <From>0</From>
+                          <To>4</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>1</From>
+                          <To>0</To>
+                          <Label>Source2</Label>
+                        </Edge>
+                        <Edge>
+                          <From>2</From>
+                          <To>7</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>3</From>
+                          <To>0</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>5</From>
+                          <To>6</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>6</From>
+                          <To>1</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>7</From>
+                          <To>5</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                      </Edges>
+                    </Workflow>
+                  </Expression>
+                  <Expression xsi:type="Condition">
+                    <Name>Left</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="WorkflowInput">
+                          <Name>Source1</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="Equal">
+                          <Operand xsi:type="IntProperty">
+                            <Value>0</Value>
+                          </Operand>
+                        </Expression>
+                        <Expression xsi:type="MemberSelector">
+                          <Selector>Source.Index</Selector>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge>
+                          <From>0</From>
+                          <To>3</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>2</From>
+                          <To>1</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>3</From>
+                          <To>2</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                      </Edges>
+                    </Workflow>
+                  </Expression>
+                  <Expression xsi:type="Condition">
+                    <Name>World</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="WorkflowInput">
+                          <Name>Source1</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="Equal">
+                          <Operand xsi:type="IntProperty">
+                            <Value>2</Value>
+                          </Operand>
+                        </Expression>
+                        <Expression xsi:type="MemberSelector">
+                          <Selector>Source.Index</Selector>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge>
+                          <From>0</From>
+                          <To>3</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>2</From>
+                          <To>1</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>3</From>
+                          <To>2</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                      </Edges>
+                    </Workflow>
+                  </Expression>
+                  <Expression xsi:type="Condition">
+                    <Name>Right</Name>
+                    <Workflow>
+                      <Nodes>
+                        <Expression xsi:type="WorkflowInput">
+                          <Name>Source1</Name>
+                        </Expression>
+                        <Expression xsi:type="WorkflowOutput" />
+                        <Expression xsi:type="Equal">
+                          <Operand xsi:type="IntProperty">
+                            <Value>1</Value>
+                          </Operand>
+                        </Expression>
+                        <Expression xsi:type="MemberSelector">
+                          <Selector>Source.Index</Selector>
+                        </Expression>
+                      </Nodes>
+                      <Edges>
+                        <Edge>
+                          <From>0</From>
+                          <To>3</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>2</From>
+                          <To>1</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                        <Edge>
+                          <From>3</From>
+                          <To>2</To>
+                          <Label>Source1</Label>
+                        </Edge>
+                      </Edges>
+                    </Workflow>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Concat" />
+                  </Expression>
+                  <Expression xsi:type="q5:SortByBuilder">
+                    <q5:KeySelector>Source.Time</q5:KeySelector>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="ToList" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Concat" />
+                  </Expression>
+                  <Expression xsi:type="q4:ExpressionTransform">
+                    <q4:Expression>new(
+0 as Index,
+it as Time)</q4:Expression>
+                  </Expression>
+                  <Expression xsi:type="q4:ExpressionTransform">
+                    <q4:Expression>new(
+1 as Index,
+it as Time)</q4:Expression>
+                  </Expression>
+                  <Expression xsi:type="q4:ExpressionTransform">
+                    <q4:Expression>new(
+2 as Index,
+it as Time)</q4:Expression>
+                  </Expression>
+                  <Expression xsi:type="q3:CsvReader">
+                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22\2017-08-19_15-07-22_stimuli028--moving_lefteye.csv</q3:FileName>
+                    <q3:ScanPattern>%t</q3:ScanPattern>
+                    <q3:SkipRows>0</q3:SkipRows>
+                  </Expression>
+                  <Expression xsi:type="q3:CsvReader">
+                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22\2017-08-19_15-07-22_stimuli028--moving_righteye.csv</q3:FileName>
+                    <q3:ScanPattern>%t</q3:ScanPattern>
+                    <q3:SkipRows>0</q3:SkipRows>
+                  </Expression>
+                  <Expression xsi:type="q3:CsvReader">
+                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22\2017-08-19_15-07-22_stimuli028--moving_world.csv</q3:FileName>
+                    <q3:ScanPattern>%t</q3:ScanPattern>
+                    <q3:SkipRows>0</q3:SkipRows>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+                    <MemberName>FileName</MemberName>
+                    <Name />
+                    <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.csv</Value>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+                    <MemberName>FileName</MemberName>
+                    <Name />
+                    <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.csv</Value>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
+                    <MemberName>FileName</MemberName>
+                    <Name />
+                    <Value>2017-07-11_12-19-41\2017-07-11_12-19-41_stimuli017_lefteye.csv</Value>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Concat" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Concat" />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Concat" />
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>Prefix</Name>
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>Prefix</Name>
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>Prefix</Name>
+                  </Expression>
+                  <Expression xsi:type="WorkflowInput">
+                    <Name>Source1</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q3:GetFiles">
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                      <q3:SearchPattern>*world.csv</q3:SearchPattern>
+                      <q3:SearchOption>AllDirectories</q3:SearchOption>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                    <MemberName>Path</MemberName>
+                    <Name>path1</Name>
+                    <Value />
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                    <MemberName>Path</MemberName>
+                    <Name>path3</Name>
+                    <Value />
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="q3:GetFiles">
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19\2017-08-19_15-07-22</q3:Path>
+                      <q3:SearchPattern>*world.avi</q3:SearchPattern>
+                      <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Concat" />
+                  </Expression>
+                  <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+                    <MemberName>Path</MemberName>
+                    <Name>rawPath</Name>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Zip" />
+                  </Expression>
+                  <Expression xsi:type="SubscribeSubject">
+                    <Name>dayDirectory</Name>
+                  </Expression>
+                  <Expression xsi:type="q4:PythonTransform">
+                    <q4:Script>from System.IO import Path
+
+@returns(str)
+def process(value):
+  return Path.Combine(value.Item1,value.Item2.partition('_')[0]+"-sync-anon",value.Item2)</q4:Script>
+                  </Expression>
+                  <Expression xsi:type="q4:PythonTransform">
+                    <q4:Script>from System.IO import Path
+
+@returns(str)
+def process(value):
+  return Path.GetFileName(value)</q4:Script>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="Skip">
+                      <Count>71</Count>
+                    </Combinator>
+                  </Expression>
+                  <Expression xsi:type="Combinator">
+                    <Combinator xsi:type="SkipLast">
+                      <Count>76</Count>
+                    </Combinator>
+                  </Expression>
+                </Nodes>
+                <Edges>
+                  <Edge>
+                    <From>2</From>
+                    <To>50</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>3</From>
+                    <To>0</To>
+                    <Label>Source2</Label>
+                  </Edge>
+                  <Edge>
+                    <From>4</From>
+                    <To>34</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>5</From>
+                    <To>2</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>6</From>
+                    <To>49</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>7</From>
+                    <To>10</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>8</From>
+                    <To>5</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>9</From>
+                    <To>45</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>10</From>
+                    <To>35</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>11</From>
+                    <To>8</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>12</From>
+                    <To>8</To>
+                    <Label>Source2</Label>
+                  </Edge>
+                  <Edge>
+                    <From>12</From>
+                    <To>5</To>
+                    <Label>Source2</Label>
+                  </Edge>
+                  <Edge>
+                    <From>13</From>
+                    <To>8</To>
+                    <Label>Source3</Label>
+                  </Edge>
+                  <Edge>
+                    <From>14</From>
+                    <To>11</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>15</From>
+                    <To>12</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>16</From>
+                    <To>13</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>17</From>
+                    <To>14</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>18</From>
+                    <To>15</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>19</From>
+                    <To>16</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>20</From>
+                    <To>17</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>20</From>
+                    <To>19</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>20</From>
+                    <To>18</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>21</From>
+                    <To>20</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>22</From>
+                    <To>21</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>23</From>
+                    <To>22</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>24</From>
+                    <To>23</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>25</From>
+                    <To>23</To>
+                    <Label>Source2</Label>
+                  </Edge>
+                  <Edge>
+                    <From>26</From>
+                    <To>23</To>
+                    <Label>Source3</Label>
+                  </Edge>
+                  <Edge>
+                    <From>27</From>
+                    <To>24</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>28</From>
+                    <To>25</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>29</From>
+                    <To>26</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>30</From>
+                    <To>27</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>31</From>
+                    <To>28</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>32</From>
+                    <To>29</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>33</From>
+                    <To>32</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>34</From>
+                    <To>30</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>35</From>
+                    <To>31</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>36</From>
+                    <To>7</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>37</From>
+                    <To>41</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>38</From>
+                    <To>42</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>39</From>
+                    <To>1</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>40</From>
+                    <To>33</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>41</From>
+                    <To>4</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>42</From>
+                    <To>40</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>43</From>
+                    <To>44</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>44</From>
+                    <To>6</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>45</From>
+                    <To>43</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>46</From>
+                    <To>48</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>47</From>
+                    <To>46</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>48</From>
+                    <To>3</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>49</From>
+                    <To>46</To>
+                    <Label>Source2</Label>
+                  </Edge>
+                  <Edge>
+                    <From>50</From>
+                    <To>51</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                  <Edge>
+                    <From>51</From>
+                    <To>0</To>
+                    <Label>Source1</Label>
+                  </Edge>
+                </Edges>
+              </Workflow>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Concat" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q3:GetDirectories">
+                <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017\SurpriseIntelligence_2017-08-19</q3:Path>
+                <q3:SearchPattern>*_*</q3:SearchPattern>
+                <q3:SearchOption>AllDirectories</q3:SearchOption>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringGetDirectories">
+              <MemberName>Path</MemberName>
+              <Name>Path</Name>
+              <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-03</Value>
+            </Expression>
+            <Expression xsi:type="ReplaySubject">
+              <Name>dayDirectory</Name>
+              <BufferSize xsi:nil="true" />
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>0</From>
+              <To>6</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Concat" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:GetDirectories">
+          <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017</q3:Path>
+          <q3:SearchPattern>SurpriseIntelligence_*</q3:SearchPattern>
+          <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Concat" />
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge>
+        <From>0</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>1</From>
+        <To>0</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>2</From>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+    </Edges>
+  </Workflow>
+  <ExtensionTypes>
+    <Type>Bonsai.Reactive.Concat, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.VideoWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Concat, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.VideoWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Sample, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.ExpressionTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.CombineLatest, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Flip, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Resize, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.EqualBuilder, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.IntProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.SurprisingMinds.SortByBuilder, Bonsai.SurprisingMinds, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.ToList, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Skip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.SkipLast, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.GetDirectories, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.GetDirectories, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+  </ExtensionTypes>
+</WorkflowBuilder>

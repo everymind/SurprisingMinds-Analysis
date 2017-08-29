@@ -1,0 +1,170 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.3.0">
+  <Workflow xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q2="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q3="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns="https://horizongir.org/bonsai">
+    <Nodes>
+      <Expression xsi:type="WindowWorkflow">
+        <Name>CropToAnonymize</Name>
+        <Description>crops raw synchronized videos. clips beginning and end to reduce potential for sharing videos of people's faces, instead of just eyes. </Description>
+        <Workflow>
+          <Nodes>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:VideoWriter">
+                <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-21\2017-07-21-synchronized\2017-07-21_16-47-00_stimuli024--moving_sync-anonymized.avi</q1:FileName>
+                <q1:Suffix>None</q1:Suffix>
+                <q1:Buffered>true</q1:Buffered>
+                <q1:Overwrite>true</q1:Overwrite>
+                <q1:FourCC>FMP4</q1:FourCC>
+                <q1:FrameRate>30</q1:FrameRate>
+                <q1:FrameSize>
+                  <q1:Width>0</q1:Width>
+                  <q1:Height>0</q1:Height>
+                </q1:FrameSize>
+                <q1:ResizeInterpolation>NearestNeighbor</q1:ResizeInterpolation>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="SkipLast">
+                <Count>76</Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringVideoWriter">
+              <MemberName>FileName</MemberName>
+              <Name>anonFileName</Name>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Skip">
+                <Count>71</Count>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="q2:ExpressionTransform">
+              <q2:Expression>it.Replace("synchronized.avi","sync-anonymized.avi")</q2:Expression>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="q1:FileCapture">
+                <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-21\2017-07-21-synchronized\2017-07-21_16-47-00_stimuli024--moving_synchronized.avi</q1:FileName>
+                <q1:PlaybackRate>0</q1:PlaybackRate>
+                <q1:StartPosition>0</q1:StartPosition>
+                <q1:PositionUnits>Frames</q1:PositionUnits>
+                <q1:Loop>false</q1:Loop>
+                <q1:Playing>true</q1:Playing>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
+              <Name>rawName</Name>
+            </Expression>
+            <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
+              <MemberName>FileName</MemberName>
+              <Name>rawFileName</Name>
+              <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13-synchronized\2017-08-13_11-55-43_stimuli027-static_synchronized.avi</Value>
+            </Expression>
+            <Expression xsi:type="PublishSubject">
+              <Name>rawName</Name>
+            </Expression>
+            <Expression xsi:type="WorkflowInput">
+              <Name>Source1</Name>
+            </Expression>
+          </Nodes>
+          <Edges>
+            <Edge>
+              <From>1</From>
+              <To>0</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>0</To>
+              <Label>Source2</Label>
+            </Edge>
+            <Edge>
+              <From>3</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>4</From>
+              <To>2</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>5</From>
+              <To>3</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>6</From>
+              <To>4</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>7</From>
+              <To>5</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>8</From>
+              <To>7</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>9</From>
+              <To>8</To>
+              <Label>Source1</Label>
+            </Edge>
+          </Edges>
+        </Workflow>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q3:GetFiles">
+          <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-21\2017-07-21-synchronized</q3:Path>
+          <q3:SearchPattern>*_synchronized.avi</q3:SearchPattern>
+          <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Concat" />
+      </Expression>
+      <Expression xsi:type="ExternalizedPropertyOfStringGetFiles">
+        <MemberName>Path</MemberName>
+        <Name>Path</Name>
+        <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-21\2017-07-21-synchronized</Value>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Concat" />
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge>
+        <From>0</From>
+        <To>4</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>1</From>
+        <To>2</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>2</From>
+        <To>0</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>3</From>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+    </Edges>
+  </Workflow>
+  <ExtensionTypes>
+    <Type>Bonsai.Vision.VideoWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.SkipLast, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.VideoWriter, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Skip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.ExpressionTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Concat, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+  </ExtensionTypes>
+</WorkflowBuilder>
