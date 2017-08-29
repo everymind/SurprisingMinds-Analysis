@@ -17,7 +17,7 @@
                 <Nodes>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q1:VideoWriter">
-                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\synchronized\2017-08-07_09-05-40_stimuli026--static_synchronized.avi</q1:FileName>
+                      <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\synchronized\2017-08-13_16-25-46_stimuli027-static_synchronized.avi</q1:FileName>
                       <q1:Suffix>None</q1:Suffix>
                       <q1:Buffered>false</q1:Buffered>
                       <q1:Overwrite>true</q1:Overwrite>
@@ -46,7 +46,7 @@
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q3:GetFiles">
-                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                       <q3:SearchPattern>*lefteye.csv</q3:SearchPattern>
                       <q3:SearchOption>AllDirectories</q3:SearchOption>
                     </Combinator>
@@ -70,7 +70,7 @@
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q3:GetFiles">
-                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                       <q3:SearchPattern>*righteye.csv</q3:SearchPattern>
                       <q3:SearchOption>AllDirectories</q3:SearchOption>
                     </Combinator>
@@ -100,7 +100,7 @@
                       <Nodes>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="q1:FileCapture">
-                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40\2017-08-07_09-05-40_stimuli026--static_lefteye.avi</q1:FileName>
+                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46\2017-08-13_16-25-46_stimuli027-static_lefteye.avi</q1:FileName>
                             <q1:PlaybackRate>0</q1:PlaybackRate>
                             <q1:StartPosition>0</q1:StartPosition>
                             <q1:PositionUnits>Frames</q1:PositionUnits>
@@ -122,7 +122,7 @@
                         <Expression xsi:type="WorkflowOutput" />
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="q3:GetFiles">
-                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                             <q3:SearchPattern>*lefteye.avi</q3:SearchPattern>
                             <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
                           </Combinator>
@@ -180,7 +180,7 @@
                       <Nodes>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="q1:FileCapture">
-                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40\2017-08-07_09-05-40_stimuli026--static_world.avi</q1:FileName>
+                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46\2017-08-13_16-25-46_stimuli027-static_world.avi</q1:FileName>
                             <q1:PlaybackRate>0</q1:PlaybackRate>
                             <q1:StartPosition>0</q1:StartPosition>
                             <q1:PositionUnits>Frames</q1:PositionUnits>
@@ -205,7 +205,7 @@
                         <Expression xsi:type="WorkflowOutput" />
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="q3:GetFiles">
-                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                             <q3:SearchPattern>*world.avi</q3:SearchPattern>
                             <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
                           </Combinator>
@@ -260,7 +260,7 @@
                       <Nodes>
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="q1:FileCapture">
-                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40\2017-08-07_09-05-40_stimuli026--static_righteye.avi</q1:FileName>
+                            <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46\2017-08-13_16-25-46_stimuli027-static_righteye.avi</q1:FileName>
                             <q1:PlaybackRate>0</q1:PlaybackRate>
                             <q1:StartPosition>0</q1:StartPosition>
                             <q1:PositionUnits>Frames</q1:PositionUnits>
@@ -282,7 +282,7 @@
                         <Expression xsi:type="WorkflowOutput" />
                         <Expression xsi:type="Combinator">
                           <Combinator xsi:type="q3:GetFiles">
-                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                            <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                             <q3:SearchPattern>*righteye.avi</q3:SearchPattern>
                             <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
                           </Combinator>
@@ -470,17 +470,17 @@ it as Time)</q4:Expression>
 it as Time)</q4:Expression>
                   </Expression>
                   <Expression xsi:type="q3:CsvReader">
-                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40\2017-08-07_09-05-40_stimuli026--static_lefteye.csv</q3:FileName>
+                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46\2017-08-13_16-25-46_stimuli027-static_lefteye.csv</q3:FileName>
                     <q3:ScanPattern>%t</q3:ScanPattern>
                     <q3:SkipRows>0</q3:SkipRows>
                   </Expression>
                   <Expression xsi:type="q3:CsvReader">
-                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40\2017-08-07_09-05-40_stimuli026--static_righteye.csv</q3:FileName>
+                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46\2017-08-13_16-25-46_stimuli027-static_righteye.csv</q3:FileName>
                     <q3:ScanPattern>%t</q3:ScanPattern>
                     <q3:SkipRows>0</q3:SkipRows>
                   </Expression>
                   <Expression xsi:type="q3:CsvReader">
-                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40\2017-08-07_09-05-40_stimuli026--static_world.csv</q3:FileName>
+                    <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46\2017-08-13_16-25-46_stimuli027-static_world.csv</q3:FileName>
                     <q3:ScanPattern>%t</q3:ScanPattern>
                     <q3:SkipRows>0</q3:SkipRows>
                   </Expression>
@@ -522,7 +522,7 @@ it as Time)</q4:Expression>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q3:GetFiles">
-                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                       <q3:SearchPattern>*world.csv</q3:SearchPattern>
                       <q3:SearchOption>AllDirectories</q3:SearchOption>
                     </Combinator>
@@ -539,7 +539,7 @@ it as Time)</q4:Expression>
                   </Expression>
                   <Expression xsi:type="Combinator">
                     <Combinator xsi:type="q3:GetFiles">
-                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07\2017-08-07_09-05-40</q3:Path>
+                      <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-13\2017-08-13_16-25-46</q3:Path>
                       <q3:SearchPattern>*world.avi</q3:SearchPattern>
                       <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
                     </Combinator>
@@ -562,7 +562,7 @@ it as Time)</q4:Expression>
 
 @returns(str)
 def process(value):
-  return Path.Combine(value.Item1,value.Item2.partition('_')[0]+"synchronized",value.Item2)</q4:Script>
+  return Path.Combine(value.Item1,value.Item2.partition('_')[0]+"-synchronized",value.Item2)</q4:Script>
                   </Expression>
                   <Expression xsi:type="q4:PythonTransform">
                     <q4:Script>from System.IO import Path
@@ -836,7 +836,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q3:GetDirectories">
-                <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-07</q3:Path>
+                <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-08-19</q3:Path>
                 <q3:SearchPattern>*_*</q3:SearchPattern>
                 <q3:SearchOption>AllDirectories</q3:SearchOption>
               </Combinator>
