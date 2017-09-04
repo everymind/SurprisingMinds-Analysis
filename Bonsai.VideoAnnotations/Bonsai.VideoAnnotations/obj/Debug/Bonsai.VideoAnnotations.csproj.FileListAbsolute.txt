@@ -1,0 +1,16 @@
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\Bonsai.VideoAnnotations.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\Bonsai.VideoAnnotations.pdb
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\Bonsai.Core.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\OpenCV.Net.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\System.Reactive.Core.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\System.Reactive.Interfaces.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\System.Reactive.Linq.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\Bonsai.Core.xml
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\OpenCV.Net.xml
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\System.Reactive.Core.xml
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\System.Reactive.Interfaces.xml
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\bin\Debug\System.Reactive.Linq.xml
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\obj\Debug\Bonsai.VideoAnnotations.csprojResolveAssemblyReference.cache
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\obj\Debug\Bonsai.VideoAnnotations.csproj.CoreCompileInputs.cache
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\obj\Debug\Bonsai.VideoAnnotations.dll
+C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\CuttleShuttle-Analysis\Bonsai.VideoAnnotations\Bonsai.VideoAnnotations\obj\Debug\Bonsai.VideoAnnotations.pdb

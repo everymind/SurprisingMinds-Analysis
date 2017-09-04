@@ -919,7 +919,7 @@ def process(value):
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q3:GetDirectories">
-          <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_17-08-2017--01-10-2017</q3:Path>
+          <q3:Path>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017</q3:Path>
           <q3:SearchPattern>SurpriseIntelligence_*</q3:SearchPattern>
           <q3:SearchOption>TopDirectoryOnly</q3:SearchOption>
         </Combinator>
