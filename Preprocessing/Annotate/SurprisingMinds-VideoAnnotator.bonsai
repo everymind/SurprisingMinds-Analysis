@@ -13,7 +13,7 @@
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q2:VideoNavigator">
-          <q2:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-28\2017-07-28-sync-anon\2017-07-28_10-31-37_stimuli026--moving_sync-anonymized.avi</q2:FileName>
+          <q2:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-28\2017-07-28-sync-anon\2017-07-28_10-33-22_stimuli027-static_sync-anonymized.avi</q2:FileName>
           <q2:PlaybackRate>20</q2:PlaybackRate>
           <q2:StartPosition>4142</q2:StartPosition>
           <q2:PositionUnits>Frames</q2:PositionUnits>
@@ -760,7 +760,7 @@
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
             <Expression xsi:type="q4:CsvWriter">
-              <q4:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\Preprocessing\Annotate\annotations\SurprisingMinds_2017-07-28_annotations\2017-07-28_10-31-37_stimuli026--moving_sync-anonymized.csv</q4:FileName>
+              <q4:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\Preprocessing\Annotate\annotations\SurprisingMinds_2017-07-28_annotations\2017-07-28_10-33-22_stimuli027-static_sync-anonymized.csv</q4:FileName>
               <q4:Append>false</q4:Append>
               <q4:Overwrite>true</q4:Overwrite>
               <q4:Suffix>None</q4:Suffix>
@@ -949,7 +949,7 @@ def process(value):
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="StringProperty">
-          <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-28\2017-07-28-sync-anon\2017-07-28_10-31-37_stimuli026--moving_sync-anonymized.avi</Value>
+          <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\dataset_10-07-2017--13-08-2017\SurpriseIntelligence_2017-07-28\2017-07-28-sync-anon\2017-07-28_10-33-22_stimuli027-static_sync-anonymized.avi</Value>
         </Combinator>
       </Expression>
       <Expression xsi:type="SubscribeSubject">
@@ -961,7 +961,7 @@ def process(value):
         <Value />
       </Expression>
       <Expression xsi:type="q4:CsvReader">
-        <q4:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\Preprocessing\Annotate\annotations\SurprisingMinds_2017-07-28_annotations\2017-07-28_10-31-37_stimuli026--moving_sync-anonymized.csv</q4:FileName>
+        <q4:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\Preprocessing\Annotate\annotations\SurprisingMinds_2017-07-28_annotations\2017-07-28_10-33-22_stimuli027-static_sync-anonymized.csv</q4:FileName>
         <q4:ScanPattern>%s %i %f %f </q4:ScanPattern>
         <q4:SkipRows>0</q4:SkipRows>
       </Expression>
@@ -980,8 +980,8 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q1:CreateVector2">
-                <q1:X>-0.7175</q1:X>
-                <q1:Y>0.2066667</q1:Y>
+                <q1:X>0.625</q1:X>
+                <q1:Y>0.6733333</q1:Y>
               </Combinator>
             </Expression>
             <Expression xsi:type="InputMapping">
