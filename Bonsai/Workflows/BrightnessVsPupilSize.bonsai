@@ -1,0 +1,472 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<WorkflowBuilder Version="2.3.0">
+  <Workflow xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q4="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q1="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
+    <Nodes>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:FileCapture">
+          <q1:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\PilotDataset-Sync-Anon\2017-08-10-sync-anon\2017-08-10_12-26-23_stimuli025--static_sync-anonymized.avi</q1:FileName>
+          <q1:PlaybackRate>0</q1:PlaybackRate>
+          <q1:StartPosition>0</q1:StartPosition>
+          <q1:PositionUnits>Frames</q1:PositionUnits>
+          <q1:Loop>true</q1:Loop>
+          <q1:Playing>true</q1:Playing>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:Crop">
+          <q1:RegionOfInterest>
+            <q1:X>805</q1:X>
+            <q1:Y>60</q1:Y>
+            <q1:Width>790</q1:Width>
+            <q1:Height>427</q1:Height>
+          </q1:RegionOfInterest>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:FindContours">
+          <q1:Mode>External</q1:Mode>
+          <q1:Method>ChainApproxNone</q1:Method>
+          <q1:Offset>
+            <q1:X>0</q1:X>
+            <q1:Y>0</q1:Y>
+          </q1:Offset>
+          <q1:MinArea>1500</q1:MinArea>
+          <q1:MaxArea>25000</q1:MaxArea>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:Crop">
+          <q1:RegionOfInterest>
+            <q1:X>1598</q1:X>
+            <q1:Y>0</q1:Y>
+            <q1:Width>544</q1:Width>
+            <q1:Height>508</q1:Height>
+          </q1:RegionOfInterest>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:Crop">
+          <q1:RegionOfInterest>
+            <q1:X>268</q1:X>
+            <q1:Y>2</q1:Y>
+            <q1:Width>527</q1:Width>
+            <q1:Height>439</q1:Height>
+          </q1:RegionOfInterest>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:HsvThreshold">
+          <q1:Lower>
+            <q1:Val0>0</q1:Val0>
+            <q1:Val1>0</q1:Val1>
+            <q1:Val2>0</q1:Val2>
+            <q1:Val3>0</q1:Val3>
+          </q1:Lower>
+          <q1:Upper>
+            <q1:Val0>179</q1:Val0>
+            <q1:Val1>255</q1:Val1>
+            <q1:Val2>55</q1:Val2>
+            <q1:Val3>255</q1:Val3>
+          </q1:Upper>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:ConvertColor">
+          <q1:Conversion>Bgr2Hsv</q1:Conversion>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:BinaryRegionAnalysis" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:LargestBinaryRegion" />
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Area</Selector>
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Area</Selector>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:LargestBinaryRegion" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:BinaryRegionAnalysis" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:FindContours">
+          <q1:Mode>External</q1:Mode>
+          <q1:Method>ChainApproxNone</q1:Method>
+          <q1:Offset>
+            <q1:X>0</q1:X>
+            <q1:Y>0</q1:Y>
+          </q1:Offset>
+          <q1:MinArea>1500</q1:MinArea>
+          <q1:MaxArea>35000</q1:MaxArea>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:HsvThreshold">
+          <q1:Lower>
+            <q1:Val0>0</q1:Val0>
+            <q1:Val1>0</q1:Val1>
+            <q1:Val2>0</q1:Val2>
+            <q1:Val3>0</q1:Val3>
+          </q1:Lower>
+          <q1:Upper>
+            <q1:Val0>179</q1:Val0>
+            <q1:Val1>255</q1:Val1>
+            <q1:Val2>64</q1:Val2>
+            <q1:Val3>255</q1:Val3>
+          </q1:Upper>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:ConvertColor">
+          <q1:Conversion>Bgr2Hsv</q1:Conversion>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Sum" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q1:Grayscale" />
+      </Expression>
+      <Expression xsi:type="MemberSelector">
+        <Selector>Source.Val0</Selector>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Zip" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Buffer">
+          <q2:Count>1</q2:Count>
+          <q2:Skip xsi:nil="true" />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Buffer">
+          <q2:Count>1</q2:Count>
+          <q2:Skip xsi:nil="true" />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Buffer">
+          <q2:Count>1</q2:Count>
+          <q2:Skip xsi:nil="true" />
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Concat">
+          <q2:Axis>0</q2:Axis>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Rescale">
+          <q2:Min>0</q2:Min>
+          <q2:Max>18000</q2:Max>
+          <q2:RangeMin>0</q2:RangeMin>
+          <q2:RangeMax>1</q2:RangeMax>
+          <q2:RescaleType>Linear</q2:RescaleType>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Rescale">
+          <q2:Min>0</q2:Min>
+          <q2:Max>18000</q2:Max>
+          <q2:RangeMin>0</q2:RangeMin>
+          <q2:RangeMax>1</q2:RangeMax>
+          <q2:RescaleType>Linear</q2:RescaleType>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="q2:Rescale">
+          <q2:Min>0</q2:Min>
+          <q2:Max>60000000</q2:Max>
+          <q2:RangeMin>0</q2:RangeMin>
+          <q2:RangeMax>1</q2:RangeMax>
+          <q2:RescaleType>Linear</q2:RescaleType>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="q3:CsvWriter">
+        <q3:FileName>C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\Bonsai\Workflows\BrightnessProfile\2017-08-10\2017-08-10_12-26-23_stimuli025--static_sync-anonymized.csv</q3:FileName>
+        <q3:Append>false</q3:Append>
+        <q3:Overwrite>true</q3:Overwrite>
+        <q3:Suffix>None</q3:Suffix>
+        <q3:IncludeHeader>false</q3:IncludeHeader>
+        <q3:Selector />
+      </Expression>
+      <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
+        <MemberName>FileName</MemberName>
+        <Name>FileName</Name>
+        <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\PilotDataset-Sync-Anon\2017-07-10-sync-anon\2017-07-10_10-12-42_stimuli020_sync-anonymized.avi</Value>
+      </Expression>
+      <Expression xsi:type="ReplaySubject">
+        <Name>VideoName</Name>
+        <BufferSize xsi:nil="true" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="StringProperty">
+          <Value>C:\Users\KAMPFF-LAB-VIDEO\Documents\thesis\BrightonSeaLifeCenter\SurprisingMinds\Summer2017Prototype\PilotDataset-Sync-Anon\2017-08-10-sync-anon\2017-08-10_12-26-23_stimuli025--static_sync-anonymized.avi</Value>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="ExternalizedPropertyOfStringCsvWriter">
+        <MemberName>FileName</MemberName>
+        <Name>CsvName</Name>
+        <Value />
+      </Expression>
+      <Expression xsi:type="SubscribeSubject">
+        <Name>VideoName</Name>
+      </Expression>
+      <Expression xsi:type="q4:PythonTransform">
+        <q4:Script>from System.IO import Path, File, Directory
+from System import Array
+
+@returns(str)
+def process(value):
+  vidName = Path.GetFileName(value)
+  vidPath = Directory.GetParent(value)
+  vidNameChunks = vidName.split('_')
+  vidDate = vidNameChunks[0]
+  vidTime = vidNameChunks[1]
+  brightDir = Path.Combine(Directory.GetCurrentDirectory(), "BrightnessProfile", vidDate)
+  if not Directory.Exists(brightDir): 
+    Directory.CreateDirectory(brightDir)
+  brightName = Path.ChangeExtension(vidName, ".csv")
+  bright = Path.Combine(brightDir, brightName)
+  if not File.Exists(bright):
+    File.WriteAllLines(bright, Array.CreateInstance(str,0))
+  return bright</q4:Script>
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Zip" />
+      </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="Take">
+          <Count>1</Count>
+        </Combinator>
+      </Expression>
+      <Expression xsi:type="SubscribeSubject">
+        <Name>VideoName</Name>
+      </Expression>
+    </Nodes>
+    <Edges>
+      <Edge>
+        <From>0</From>
+        <To>1</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>0</From>
+        <To>3</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>0</From>
+        <To>4</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>1</From>
+        <To>17</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>2</From>
+        <To>7</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>3</From>
+        <To>6</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>4</From>
+        <To>15</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>5</From>
+        <To>2</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>6</From>
+        <To>5</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>7</From>
+        <To>8</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>8</From>
+        <To>9</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>9</From>
+        <To>21</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>9</From>
+        <To>34</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>10</From>
+        <To>22</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>10</From>
+        <To>34</To>
+        <Label>Source3</Label>
+      </Edge>
+      <Edge>
+        <From>11</From>
+        <To>10</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>12</From>
+        <To>11</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>13</From>
+        <To>12</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>14</From>
+        <To>13</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>15</From>
+        <To>14</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>16</From>
+        <To>18</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>17</From>
+        <To>16</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>18</From>
+        <To>20</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>18</From>
+        <To>34</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>19</From>
+        <To>23</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>20</From>
+        <To>26</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>21</From>
+        <To>25</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>22</From>
+        <To>24</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>24</From>
+        <To>19</To>
+        <Label>Source3</Label>
+      </Edge>
+      <Edge>
+        <From>25</From>
+        <To>19</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>26</From>
+        <To>19</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>28</From>
+        <To>0</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>30</From>
+        <To>35</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>31</From>
+        <To>27</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>32</From>
+        <To>33</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>33</From>
+        <To>31</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>34</From>
+        <To>27</To>
+        <Label>Source2</Label>
+      </Edge>
+      <Edge>
+        <From>35</From>
+        <To>29</To>
+        <Label>Source1</Label>
+      </Edge>
+      <Edge>
+        <From>36</From>
+        <To>28</To>
+        <Label>Source1</Label>
+      </Edge>
+    </Edges>
+  </Workflow>
+  <ExtensionTypes>
+    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Crop, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.FindContours, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.HsvThreshold, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.ConvertColor, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.BinaryRegionAnalysis, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.LargestBinaryRegion, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Sum, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Buffer, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Concat, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Dsp.Rescale, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.IO.CsvWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.StringProperty, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+  </ExtensionTypes>
+</WorkflowBuilder>
