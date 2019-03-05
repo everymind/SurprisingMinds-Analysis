@@ -36,10 +36,10 @@ for trial_folder in trial_folders:
     # Load world CSV
     world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
 
-    # Get world movie timestamp csv path
+    # Get eye (right) timestamp csv path
     right_eye_csv_path = glob.glob(trial_folder + '/*righteye.csv')[0]
 
-    # Load world CSV
+    # Load eye (right) CSV
     right_eye_timestamps = np.genfromtxt(right_eye_csv_path, dtype=np.str, delimiter=' ')
 
     # -----
