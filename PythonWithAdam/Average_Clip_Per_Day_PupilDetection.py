@@ -8,19 +8,33 @@ import matplotlib.pyplot as plt
 # List relevant data locations
 root_folder = "/home/kampff/DK"
 day_folder = root_folder + "/SurpriseIntelligence_2017-07-25"
-save_folder = root_folder + "/Clip"
-csv_folder = root_folder + "/csv"
+
+# Build relative analysis paths
+analysis_folder = day_folder + "/Analysis"
+clip_folder = analysis_folder + "/clip"
+csv_folder = analysis_folder + "/csv"
+
+# Create analysis folder (and sub-folders) if it (they) does (do) not exist
+if not os.path.exists(analysis_folder):
+    print("Creating analysis folder.")
+    os.makedirs(analysis_folder)
+if not os.path.exists(clip_folder):
+    os.makedirs(clip_folder)
+if not os.path.exists(csv_folder):
+    os.makedirs(csv_folder)
 
 # List all trial folders
 trial_folders = []
 for folder in os.listdir(day_folder):
     if(os.path.isdir(day_folder + '/' + folder)):
+        if(folder == "Analysis"):
+            continue
         trial_folders.append(day_folder + '/' + folder)
 num_trials = len(trial_folders)
 
 # Set averaging parameters
 align_time = 18.3 # w.r.t. end of world movie
-clip_length = 360
+clip_length = 5
 clip_offset = -120
 
 # Allocate empty space for average frame and movie clip
@@ -148,7 +162,7 @@ for trial_folder in trial_folders:
     cv2.namedWindow("Eye")
 
     # Create empty data array
-    pupil_areas = np.zeros(clip_length)
+    pupil = np.zeros((clip_length, 3))
 
     # Loop through frames for clip extraction
     for f in range(0, clip_length, 1):
@@ -207,10 +221,6 @@ for trial_folder in trial_folders:
 
                     if(len(largest_contour) > 7):
 
-                        # Save Data
-                        print("Pupil Size: {area}".format(area=cv2.contourArea(largest_contour)))
-                        pupil_areas[f] = cv2.contourArea(largest_contour)
-
                         # Fit ellipse to largest contour
                         ellipse = cv2.fitEllipse(largest_contour)
                     
@@ -233,21 +243,27 @@ for trial_folder in trial_folders:
                         angle = np.int(ellipse[2])
                         frame = cv2.ellipse(frame, shifted_center, axes, angle, 0, 360, (0, 255, 0), 5, cv2.LINE_AA, 0)
 
+                        # Save Data
+                        print("Pupil Size: {area}".format(area=cv2.contourArea(largest_contour)))
+                        pupil[f, 0] = shifted_center[0]
+                        pupil[f, 1] = shifted_center[1]
+                        pupil[f, 2] = cv2.contourArea(largest_contour)
+
                         # Fill debug display and show
                         cv2.imshow("Eye", frame)
                         ret = cv2.waitKey(1)
                     else:
                         print("Pupil Size: n/a (too small)")
-                        pupil_areas[f] = -1
+                        pupil[f,2] = -1
                 else:
                     print("Pupil Size: n/a (pupil off screen)")
-                    pupil_areas[f] = -2
+                    pupil[f,2] = -2
             else:
                 print("Pupil Size: n/a (no contour)")
-                pupil_areas[f] = -3
+                pupil[f,2] = -3
         else:
             print("Pupil Size: n/a (no circles)")
-            pupil_areas[f] = -4
+            pupil[f,2] = -4
 
         # Add current frame to average clip at correct slot
         average_grayscale_clip[:,:,f] = average_grayscale_clip[:,:,f] + gray
@@ -255,7 +271,7 @@ for trial_folder in trial_folders:
     # Save pupil size data
     padded_filename = str(current_trial).zfill(4)
     csv_file = csv_folder + "/" + padded_filename + ".csv"
-    np.savetxt(csv_file, pupil_areas, fmt='%.2f', delimiter=',')
+    np.savetxt(csv_file, pupil, fmt='%.2f', delimiter=',')
     
     # Report progress
     print("Finished Trial: {trial}".format(trial=current_trial))
@@ -272,7 +288,7 @@ for f in range(clip_length):
     padded_filename = str(f).zfill(4)
 
     # Create image file path from save folder
-    image_file_path = save_folder + "/" + padded_filename + ".png" 
+    image_file_path = clip_folder + "/" + padded_filename + ".png" 
 
     # Extract gray frame from clip
     gray = np.uint8(average_grayscale_clip[:,:,f] * 255)
