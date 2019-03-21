@@ -4,15 +4,19 @@ import cv2
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import zipfile
 
-# List relevant data locations
-root_folder = "/home/kampff/DK"
-day_folder = root_folder + "/SurpriseIntelligence_2017-07-25"
+# list all folders in Synology drive
+data_drive = r"\\Diskstation\SurprisingMinds"
+data_folders = sorted(os.listdir(data_drive))
 
-# Build relative analysis paths
-analysis_folder = day_folder + "/Analysis"
-clip_folder = analysis_folder + "/clip"
-csv_folder = analysis_folder + "/csv"
+# grab a folder NEED TO DO THIS FOR EVERY FOLDER
+day_zipped = os.path.join(data_drive, data_folders[1])
+
+# Build relative analysis paths in a folder with same name as zip folder
+analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
+clip_folder = os.path.join(analysis_folder, "clip")
+csv_folder = os.path.join(analysis_folder, "csv")
 
 # Create analysis folder (and sub-folders) if it (they) does (do) not exist
 if not os.path.exists(analysis_folder):
@@ -23,18 +27,25 @@ if not os.path.exists(clip_folder):
 if not os.path.exists(csv_folder):
     os.makedirs(csv_folder)
 
+# unzip the folder
+day_unzipped = zipfile.ZipFile(day_zipped, mode="r")
+# create a temp folder to store data (contents of unzipped folder)
+day_folder = os.path.join(data_drive, "temp")
+# extract files into temp folder
+day_unzipped.extractall(day_folder)
+# close the unzipped file
+day_unzipped.close()
+
 # List all trial folders
 trial_folders = []
 for folder in os.listdir(day_folder):
-    if(os.path.isdir(day_folder + '/' + folder)):
-        if(folder == "Analysis"):
-            continue
-        trial_folders.append(day_folder + '/' + folder)
+    if(os.path.isdir(os.path.join(day_folder, folder))):
+        trial_folders.append(os.path.join(day_folder, folder))
 num_trials = len(trial_folders)
 
 # Set averaging parameters
 align_time = 18.3 # w.r.t. end of world movie
-clip_length = 5
+clip_length = 360
 clip_offset = -120
 
 # Allocate empty space for average frame and movie clip
@@ -43,10 +54,6 @@ average_grayscale_clip = np.zeros((600,800,clip_length))
 # Load all right eye movies and average
 current_trial = 0
 for trial_folder in trial_folders:
-
-
-
-
     # Load CSV and create timestamps
     # ------------------------------
 
@@ -134,13 +141,7 @@ for trial_folder in trial_folders:
     # Find (right) eye align frame
     align_frame = frame_counter + clip_offset
 
-
-
-
-
     # Now start "spatial" alignment (i.e pupil detection)
-
-
 
     # Get (right) eye video filepath
     right_video_path = glob.glob(trial_folder + '/*righteye.avi')[0]
@@ -213,7 +214,7 @@ for trial_folder in trial_folders:
                 thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV)[1])
 
                 # Find contours
-                image_out, contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
 
                 if len(contours) > 0:
                     # Get largest contour
