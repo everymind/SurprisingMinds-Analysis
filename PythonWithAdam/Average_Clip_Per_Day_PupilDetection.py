@@ -5,6 +5,7 @@ import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 import zipfile
+import shutil
 
 # list all folders in Synology drive
 data_drive = r"\\Diskstation\SurprisingMinds"
@@ -277,6 +278,8 @@ for trial_folder in trial_folders:
     # Report progress
     print("Finished Trial: {trial}".format(trial=current_trial))
     current_trial = current_trial + 1
+    # release video capture
+    video.release()
     cv2.destroyAllWindows()
 
 # Compute average clip
@@ -296,5 +299,12 @@ for f in range(clip_length):
 
     # Write to image file
     ret = cv2.imwrite(image_file_path, gray)
+
+# report progress
+print("Finished {day}".format(day=day_zipped[:-4]))
+cv2.destroyAllWindows()
+
+# delete temporary file with unzipped data contents
+shutil.rmtree(day_folder)
 
 #FIN
