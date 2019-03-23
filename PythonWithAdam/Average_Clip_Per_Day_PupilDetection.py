@@ -34,13 +34,13 @@ def list_sub_folders(path_to_root_folder):
     return sub_folders
 
 def find_target_frame(ref_timestamps_csv, target_timestamps_csv, start_frame, target_time):
-    # Find the frame that best matches the target time (seconds) from the end of a movie file
-    # Get last frame time
+    # Find the frame that best matches the target time (seconds) from the start frame
+    # Get start frame time
     start_timestamp = ref_timestamps_csv[start_frame]
     start_timestamp = start_timestamp.split('+')[0][:-1]
     start_time = datetime.datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
 
-    # Generate delta times (w.r.t. last frame) for every frame timestamp
+    # Generate delta times (w.r.t. start_frame) for every frame timestamp
     frame_counter = 0
     for timestamp in target_timestamps_csv:
         timestamp = timestamp.split('+')[0][:-1]
