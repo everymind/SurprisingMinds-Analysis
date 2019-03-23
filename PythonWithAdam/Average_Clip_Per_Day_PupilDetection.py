@@ -67,8 +67,8 @@ def look_for_octopus(video):
             break
     return f
 
-def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, day_avg_clip):
-    # Loop through frames of eye video to find and save pupil xy positon and area
+def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, day_avg_clip, csv_path):
+    # Loop through frames of eye video to find and save pupil xy positon and area in csv file
     # Loop through frames, greyscale them, and add each frame to day_avg_clip: this generates
     #   a frame that is the average of every trial in the same day
 
@@ -189,8 +189,9 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
             day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
 
     # Save pupil size data
-    padded_filename = str(trial_number).zfill(4)
-    csv_file = os.path.join(csv_folder, which_eye, padded_filename, ".csv")
+    print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
+    padded_filename = which_eye + str(trial_number).zfill(4) + ".csv"
+    csv_file = os.path.join(csv_path, padded_filename)
     np.savetxt(csv_file, pupil, fmt='%.2f', delimiter=',')
     # release video capture
     video.release()
@@ -198,7 +199,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
 
 def save_average_clip_images(which_eye, no_of_frames, save_folder_path, images):
 # Save images from trial clip to folder
-    print("Saving averaged frames...")
+    print("Saving averaged frames from {eye}...".format(eye=which_eye))
     for f in range(no_of_frames):
 
         # Create file name with padded zeros
@@ -330,10 +331,10 @@ for item in zipped_data:
                 left_video_path = glob.glob(trial_folder + '/*lefteye.avi')[0]
                 # Find right eye pupils and save pupil data
                 print("Finding right eye pupils...")
-                find_pupil("right", current_trial, right_video_path, right_align_frame, clip_length, right_average_gray_clip)
+                find_pupil("right", current_trial, right_video_path, right_align_frame, clip_length, right_average_gray_clip, csv_folder)
                 # Find left eye pupils and save pupil data
                 print("Finding left eye pupils...")
-                find_pupil("left", current_trial, left_video_path, left_align_frame, clip_length, left_average_gray_clip)
+                find_pupil("left", current_trial, left_video_path, left_align_frame, clip_length, left_average_gray_clip, csv_folder)
                 # Report progress
                 print("Finished Trial: {trial}".format(trial=current_trial))
                 current_trial = current_trial + 1
@@ -350,11 +351,12 @@ for item in zipped_data:
         save_average_clip_images("left", clip_length, clip_folder, left_average_gray_clip)
 
         # report progress
-        video.release()
+        world_video.release()
         cv2.destroyAllWindows()
         print("Finished {day}".format(day=day_zipped[:-4]))
 
         # delete temporary file with unzipped data contents
+        print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
 
 #FIN
