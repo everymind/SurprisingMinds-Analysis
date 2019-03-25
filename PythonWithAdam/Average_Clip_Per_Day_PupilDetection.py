@@ -219,10 +219,18 @@ def save_average_clip_images(which_eye, no_of_frames, save_folder_path, images):
 ### LET THE ANALYSIS BEGIN!! ###
 
 # list all folders in Synology drive
+# when working from Synology NAS drive
 data_drive = r"\\Diskstation\SurprisingMinds"
+# when working from local drive
+#data_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\SurprisingMinds\fromSynology"
+# get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
-already_analysed = [item for item in data_folders if item not in zipped_data]
+zipped_names = [item[:-4] for item in zipped_data]
+# figure out which days have already been analysed
+analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+analysed_folders = sorted(os.listdir(analysed_drive))
+already_analysed = [item for item in zipped_names if item in analysed_folders]
 
 # unzip each folder, do the analysis, skip #recycle aka data_folders[0]
 for item in zipped_data:
@@ -239,7 +247,11 @@ for item in zipped_data:
     day_zipped = os.path.join(data_drive, item)
 
     # Build relative analysis paths in a folder with same name as zip folder
-    analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
+    # when keeping analysis csv files in data_drive folder
+    #analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
+    # when immediately placing analysis csv files in analysed drive
+    analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
+    # Analysis subfolders
     clip_folder = os.path.join(analysis_folder, "clip")
     csv_folder = os.path.join(analysis_folder, "csv")
 
@@ -248,8 +260,10 @@ for item in zipped_data:
         print("Creating analysis folder.")
         os.makedirs(analysis_folder)
     if not os.path.exists(clip_folder):
+        print("Creating clip folder.")
         os.makedirs(clip_folder)
     if not os.path.exists(csv_folder):
+        print("Creating csv folder.")
         os.makedirs(csv_folder)
 
     # create a temp folder to store data (contents of unzipped folder)
@@ -358,5 +372,7 @@ for item in zipped_data:
         # delete temporary file with unzipped data contents
         print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
+        print("Delete successful!")
 
 #FIN
+print("Completed analysis on all data folders in this drive!")
