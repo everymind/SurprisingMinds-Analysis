@@ -129,6 +129,9 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                     avg = (np.mean(cropped[:, 0]) + np.mean(cropped[:, -1])) / 2
                     std = (np.std(cropped[:, 0]) + np.std(cropped[:, -1])) / 2
 
+                    ## NEED TO CHECK IF CIRCLE IS DARK ENOUGH!!! ##
+                    # If avg is bigger than 150-ish, get rid of that circle?
+
                     # Threshold
                     thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV)[1])
 
