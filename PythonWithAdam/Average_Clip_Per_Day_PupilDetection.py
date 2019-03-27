@@ -12,6 +12,8 @@ import fnmatch
 
 def unpack_to_temp(path_to_zipped, path_to_temp):
     try:
+        ### SHOULD COPY ZIP FILE TO LOCAL FOLDER THEN UNZIP ###
+        
         # unzip the folder
         print("Unzipping files in {folder}...".format(folder=path_to_zipped))
         day_unzipped = zipfile.ZipFile(path_to_zipped, mode="r")
