@@ -4,3 +4,5 @@ Bonsai/Bonsai.exe.*
 Bonsai.SurprisingMinds/Bonsai.SurprisingMinds/bin
 Bonsai.SurprisingMinds/Bonsai.SurprisingMinds/obj
 Bonsai.SurprisingMinds/packages
+*.avi
+*.csv
