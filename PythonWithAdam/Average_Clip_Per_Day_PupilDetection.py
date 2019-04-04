@@ -189,7 +189,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                             # Draw debugging circle around darkest circle
                             axes = (darkest_circle[2], darkest_circle[2]) 
                             angle = 0
-                            frame = cv2.ellipse(frame, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 5, cv2.LINE_AA, 0)
+                            frame = cv2.ellipse(frame, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 2, cv2.LINE_AA, 0)
                             
                             # Save Data
                             darkest_circle_area = np.pi*(darkest_circle[2])**2
