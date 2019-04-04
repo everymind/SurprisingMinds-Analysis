@@ -130,8 +130,8 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
             # Hough circle detection
             rows = blurred.shape[0]
             circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 8,
-                                    param1=75, param2=40,
-                                    minRadius=16, maxRadius=200)
+                                    param1=75, param2=25,
+                                    minRadius=10, maxRadius=150)
             # If there are no circles, then what??
             if circles is not None:
                 print("Circles found: {circles}".format(circles=circles))
@@ -186,7 +186,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                             angle = np.int(ellipse[2])
                             frame = cv2.ellipse(frame, shifted_center, axes, angle, 0, 360, (0, 255, 0), 3, cv2.LINE_AA, 0)
                             
-                            # Draw ellipse around darkest circle
+                            # Draw debugging circle around darkest circle
                             axes = (darkest_circle[2], darkest_circle[2]) 
                             angle = 0
                             frame = cv2.ellipse(frame, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 5, cv2.LINE_AA, 0)
