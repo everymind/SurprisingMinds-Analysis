@@ -15,6 +15,18 @@ day_folder = os.path.join(root_folder, "SurprisingMinds_2017-10-21")
 analysis_folder = os.path.join(day_folder, "Analysis")
 csv_folder = os.path.join(analysis_folder, "csv")
 
+## consolidate csv files from multiple days into one data structure
+# load entire csv
+# print/save number of users per day
+# columns = time points
+# rows = each person (trial)
+## when doing this, filter for bad trials
+# decide criteria for pre-processing the data
+
+## COMBINE EXTRACTING PUPIL SIZE AND POSITION
+
+
+
 # List all csv trial files
 trial_files = glob.glob(csv_folder + r"/*.csv")
 num_trials = len(trial_files)
