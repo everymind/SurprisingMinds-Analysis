@@ -250,7 +250,7 @@ def save_average_clip_images(which_eye, no_of_frames, save_folder_path, images):
 now = datetime.datetime.now()
 # create log file named according to today's date
 current_working_directory = os.getcwd()
-log_filename = now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+log_filename = "log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
 log_file = os.path.join(current_working_directory, log_filename)
 # set up log file to store all printed messages
 sys.stdout = open(log_file, "w")
