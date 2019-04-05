@@ -155,7 +155,8 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
 
                     ## Find shape of pupil
                     # Threshold
-                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV)[1])
+                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_OTSU)[1])
+                    
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                     # if more than one contour
