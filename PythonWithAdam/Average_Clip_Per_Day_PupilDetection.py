@@ -8,6 +8,7 @@ import zipfile
 import shutil
 import fnmatch
 import sys
+import math
 
 ### FUNCTIONS ###
 
@@ -113,7 +114,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
     # Open display window for debugging
     cv2.namedWindow("Eye")
     # Create empty data array
-    pupil = np.zeros((no_of_frames, 3))
+    pupil = np.zeros((no_of_frames, 4))
     # Loop through frames of eye video to find and save pupil xy positon and area
     for f in range(0, no_of_frames, 1):
         # Read frame at current position
@@ -198,7 +199,8 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                             print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
                             pupil[f, 0] = darkest_circle[0]
                             pupil[f, 1] = darkest_circle[1]
-                            pupil[f, 2] = cv2.contourArea(largest_contour)
+                            pupil[f, 2] = (darkest_circle[2]**2) * math.pi
+                            pupil[f, 3] = cv2.contourArea(largest_contour)
                             # Fill debug displays and show
                             cv2.imshow("Eye", frame)
                             ret = cv2.waitKey(1)
