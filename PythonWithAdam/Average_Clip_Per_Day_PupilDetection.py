@@ -155,7 +155,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
 
                     ## Find shape of pupil
                     # Threshold
-                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_OTSU)[1])
+                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1])
                     
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -164,7 +164,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                         # Get largest contour
                         largest_contour = max(contours, key=cv2.contourArea)
                         # sanity check size of largest contour
-                        if(len(largest_contour) > 7):
+                        if(len(largest_contour) > 5):
                             # Fit ellipse to largest contour
                             ellipse = cv2.fitEllipse(largest_contour)
                             # Shift ellipse back to full frame coordinates
@@ -186,7 +186,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                             axes = (np.int(ellipse[1][0]/2),np.int(ellipse[1][1]/2)) 
                             angle = np.int(ellipse[2])
                             frame = cv2.ellipse(frame, shifted_center, axes, angle, 0, 360, (0, 255, 0), 3, cv2.LINE_AA, 0)
-                            
+
                             # Draw debugging circle around darkest circle
                             axes = (darkest_circle[2], darkest_circle[2]) 
                             angle = 0
@@ -375,7 +375,7 @@ for item in zipped_data:
 
                 # Jump to start of when octopus video clip starts (position)
                 ret = world_video.set(cv2.CAP_PROP_POS_FRAMES, octopus_start_frame)
-                
+
                 # Show the frame to check for start of octopus clip (ground truth)
                 fig_name = trial_name + ".png"
                 fig_path = os.path.join(alignment_folder, fig_name)
