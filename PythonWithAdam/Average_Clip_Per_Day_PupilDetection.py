@@ -301,6 +301,7 @@ for item in zipped_data:
     # Analysis subfolders
     clip_folder = os.path.join(analysis_folder, "clip")
     csv_folder = os.path.join(analysis_folder, "csv")
+    alignment_folder = os.path.join(analysis_folder, "alignment")
 
     # Create analysis folder (and sub-folders) if it (they) does (do) not exist
     if not os.path.exists(analysis_folder):
@@ -312,6 +313,9 @@ for item in zipped_data:
     if not os.path.exists(csv_folder):
         print("Creating csv folder.")
         os.makedirs(csv_folder)
+    if not os.path.exists(alignment_folder):
+        print("Creating alignment folder.")
+        os.makedirs(alignment_folder)
 
     # create a temp folder in current working directory to store data (contents of unzipped folder)
     day_folder = os.path.join(current_working_directory, "temp")
@@ -325,7 +329,7 @@ for item in zipped_data:
         num_trials = len(trial_folders)
 
         # Set temporal alignment parameters
-        clip_length = 500
+        clip_length = 1000 # eye cameras run at 60 fps
 
         # Allocate empty space for average frame and movie clip
         right_average_gray_clip = np.zeros((600,800,clip_length))
@@ -337,9 +341,10 @@ for item in zipped_data:
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
+                trial_name = trial_folder.split(os.sep)[-1]
                 # Load CSVs and create timestamps
                 # ------------------------------
-                print("Loading csv files...")
+                print("Loading csv files for {trial}...".format(trial=trial_name))
                 # Get world movie timestamp csv path
                 world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
 
@@ -372,12 +377,15 @@ for item in zipped_data:
                 ret = world_video.set(cv2.CAP_PROP_POS_FRAMES, octopus_start_frame)
                 
                 # Show the frame to check for start of octopus clip (ground truth)
+                fig_name = trial_name + ".png"
+                fig_path = os.path.join(alignment_folder, fig_name)
                 ret, frame = world_video.read()
                 plt.imshow(frame)
+                plt.savefig(fig_path)
                 plt.show(block=False)
                 plt.pause(1)
                 plt.close()
-                
+
                 # Set frame in world video where octopus appears
                 world_octopus_frame = octopus_start_frame
                 print("Octopus clip begins at frame {number} in world video".format(number=world_octopus_frame))
