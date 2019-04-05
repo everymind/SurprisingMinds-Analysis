@@ -130,6 +130,9 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
 
             # Hough circle detection
             rows = blurred.shape[0]
+
+            ## WTF DOES HOUGHCIRCLES DO??
+            ## sometimes the image seems really clean and easy to find the pupil and yet it still fails
             circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 8,
                                     param1=75, param2=25,
                                     minRadius=10, maxRadius=150)
@@ -165,6 +168,9 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
                         # Get largest contour
                         largest_contour = max(contours, key=cv2.contourArea)
                         # sanity check size of largest contour
+                        ## SHOULD MAKE SURE THAT LARGEST CONTOUR ISN'T BIGGER THAN CROPPED
+                        #####
+                        # make sure contour is large enough to fit an ellipse to it
                         if(len(largest_contour) > 5):
                             # Fit ellipse to largest contour
                             ellipse = cv2.fitEllipse(largest_contour)
