@@ -15,22 +15,22 @@ import math
 def unpack_to_temp(path_to_zipped, path_to_temp):
     try:
         # copy zip file to current working directory
-        print("Copying {folder} to current working directory...".format(folder=path_to_zipped))
+        #print("Copying {folder} to current working directory...".format(folder=path_to_zipped))
         current_working_directory = os.getcwd()
         copied_zipped = shutil.copy2(path_to_zipped, current_working_directory)
         path_to_copied_zipped = os.path.join(current_working_directory, copied_zipped.split(sep=os.sep)[-1])
         # unzip the folder
-        print("Unzipping files in {folder}...".format(folder=path_to_copied_zipped))
+        #print("Unzipping files in {folder}...".format(folder=path_to_copied_zipped))
         day_unzipped = zipfile.ZipFile(path_to_copied_zipped, mode="r")
         # extract files into temp folder
         day_unzipped.extractall(path_to_temp)
         # close the unzipped file
         day_unzipped.close()
-        print("Finished unzipping {folder}!".format(folder=path_to_copied_zipped))
+        #print("Finished unzipping {folder}!".format(folder=path_to_copied_zipped))
         # destroy copied zipped file
-        print("Deleting {file}...".format(file=path_to_copied_zipped))
+        #print("Deleting {file}...".format(file=path_to_copied_zipped))
         os.remove(path_to_copied_zipped)
-        print("Deleted {file}!".format(file=path_to_copied_zipped))
+        #print("Deleted {file}!".format(file=path_to_copied_zipped))
         return True
     except Exception: 
         print("Could not unzip {folder}".format(folder=path_to_zipped))    
@@ -64,7 +64,7 @@ def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
     return frame_counter
 
 def find_darkest_circle(list_of_circles, source_image):
-    print("Finding darkest circle in {list}...".format(list=list_of_circles))
+    #print("Finding darkest circle in {list}...".format(list=list_of_circles))
     # starting parameters
     darkest_intensity = 255
     darkest_index = 0
@@ -73,13 +73,12 @@ def find_darkest_circle(list_of_circles, source_image):
         print("{Image} is not grayscale!".format(Image=source_image))
         exit()
     for i in range(len(list_of_circles)):
-        print("Creating mask image...")
         # create a mask image that is the same size as source_image
         mask = np.zeros(source_image.shape, source_image.dtype)
         # get center coordinates and radius of circle from list_of_circle
         center = (list_of_circles[i][0], list_of_circles[i][1])
         radius = list_of_circles[i][2]
-        print("Center: {x},{y}".format(x=center[0], y=center[1]))
+        #print("Center: {x},{y}".format(x=center[0], y=center[1]))
         # draw mask circle at coordinates and w/radius of circle from list_of_circles
         mask_circle = cv2.circle(mask, center, radius, 255, -1)
 
@@ -98,12 +97,12 @@ def find_darkest_circle(list_of_circles, source_image):
         intensity_inside_circle_on_source_image = source_image[where[0], where[1]]
         # take average of those pixels in source_image
         average_intensity = np.average(intensity_inside_circle_on_source_image)
-        print("Average intensity of circle {number}: {intensity}".format(number=i, intensity=average_intensity))
+        #print("Average intensity of circle {number}: {intensity}".format(number=i, intensity=average_intensity))
         # check this circle's intensity against darkest circle found so far
         if (average_intensity < darkest_intensity):
             darkest_intensity = average_intensity
             darkest_index = i
-    print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
+    #print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
     return list_of_circles[darkest_index]
 
 def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, no_of_frames, day_avg_clip, csv_path):
@@ -138,10 +137,10 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                                     minRadius=10, maxRadius=150)
             # If there are no circles, then what??
             if circles is not None:
-                print("Circles found: {circles}".format(circles=circles))
+                #print("Circles found: {circles}".format(circles=circles))
                 # check that we are taking the darkest circle
                 darkest_circle = find_darkest_circle(circles[0], blurred)
-                print("Darkest circle: {circle}".format(circle=darkest_circle))
+                #print("Darkest circle: {circle}".format(circle=darkest_circle))
                 # Using the best circle...crop around center
                 # Threshold
                 # Fit an ellipse
@@ -201,8 +200,8 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                             
                             # Save Data
                             darkest_circle_area = np.pi*(darkest_circle[2])**2
-                            print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
-                            print("Pupil size predicted by circles: {area1}".format(area1=darkest_circle_area))
+                            #print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
+                            #print("Pupil size predicted by circles: {area1}".format(area1=darkest_circle_area))
                             # save data from both findContours and find_darkest_circle
                             pupil[f, 0] = shifted_center[0]
                             pupil[f, 1] = shifted_center[1]
@@ -214,25 +213,25 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                             cv2.imshow("Eye", frame)
                             ret = cv2.waitKey(1)
                         else:
-                            print("Pupil Size: n/a (too small)")
+                            #print("Pupil Size: n/a (too small)")
                             pupil[f,2] = -1
                             pupil[f,5] = -1
                     else:
-                        print("Pupil Size: n/a (pupil off screen)")
+                        #print("Pupil Size: n/a (pupil off screen)")
                         pupil[f,2] = -2
                         pupil[f,5] = -2
                 else:
-                    print("Pupil Size: n/a (no contour)")
+                    #print("Pupil Size: n/a (no contour)")
                     pupil[f,2] = -3
                     pupil[f,5] = -3
             else:
-                print("Pupil Size: n/a (no circles)")
+                #print("Pupil Size: n/a (no circles)")
                 pupil[f,2] = -4
                 pupil[f,5] = -4
             # Add current frame to average clip at correct slot
             day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
     # Save pupil size data
-    print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
+    #print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
     padded_filename = which_eye + "_" + which_stimuli + "_" + str(trial_number).zfill(4) + ".csv"
     csv_file = os.path.join(csv_path, padded_filename)
     np.savetxt(csv_file, pupil, fmt='%.2f', delimiter=',')
@@ -242,7 +241,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
 
 def save_average_clip_images(which_eye, no_of_frames, save_folder_path, images):
 # Save images from trial clip to folder
-    print("Saving averaged frames from {eye}...".format(eye=which_eye))
+    #print("Saving averaged frames from {eye}...".format(eye=which_eye))
     for f in range(no_of_frames):
 
         # Create file name with padded zeros
@@ -320,16 +319,16 @@ for item in zipped_data:
 
     # Create analysis folder (and sub-folders) if it (they) does (do) not exist
     if not os.path.exists(analysis_folder):
-        print("Creating analysis folder.")
+        #print("Creating analysis folder.")
         os.makedirs(analysis_folder)
     if not os.path.exists(clip_folder):
-        print("Creating clip folder.")
+        #print("Creating clip folder.")
         os.makedirs(clip_folder)
     if not os.path.exists(csv_folder):
-        print("Creating csv folder.")
+        #print("Creating csv folder.")
         os.makedirs(csv_folder)
     if not os.path.exists(alignment_folder):
-        print("Creating alignment folder.")
+        #print("Creating alignment folder.")
         os.makedirs(alignment_folder)
 
     # create a temp folder in current working directory to store data (contents of unzipped folder)
@@ -359,7 +358,7 @@ for item in zipped_data:
                 trial_name = trial_folder.split(os.sep)[-1]
                 # Load CSVs and create timestamps
                 # ------------------------------
-                print("Loading csv files for {trial}...".format(trial=trial_name))
+                #print("Loading csv files for {trial}...".format(trial=trial_name))
                 # Get world movie timestamp csv path
                 world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
 
@@ -379,9 +378,8 @@ for item in zipped_data:
                 # octopus_clip_start here refers to frame when octopus appears, w.r.t. last frame of movie
                 stimuli_number = world_csv_path.split("_")[-2]
                 octopus_start_frame = octo_frames[stimuli_number]
-                print("Finding octopus in video {name}...".format(name=stimuli_number))
+                #print("Finding octopus in video {name}...".format(name=stimuli_number))
                 # ------------------------------
-                print("Checking octopus...")
                 # Get world video filepath
                 world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
 
@@ -403,7 +401,7 @@ for item in zipped_data:
 
                 # Set frame in world video where octopus appears
                 world_octopus_frame = octopus_start_frame
-                print("Octopus clip begins at frame {number} in world video".format(number=world_octopus_frame))
+                #print("Octopus clip begins at frame {number} in world video".format(number=world_octopus_frame))
 
                 # ------------------------------
                 # Find align frame for analyzing eye videos, aka clip_offset + start of octopus clip
