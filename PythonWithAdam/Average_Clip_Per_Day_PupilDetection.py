@@ -106,7 +106,7 @@ def find_darkest_circle(list_of_circles, source_image):
     print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
     return list_of_circles[darkest_index]
 
-def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, day_avg_clip, csv_path):
+def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, no_of_frames, day_avg_clip, csv_path):
     # Open eye video and world video
     video = cv2.VideoCapture(video_path)
     # Jump to specific frame (position) for alignment purposes 
@@ -229,7 +229,7 @@ def find_pupil(which_eye, trial_number, video_path, align_frame, no_of_frames, d
             day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
     # Save pupil size data
     print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
-    padded_filename = which_eye + str(trial_number).zfill(4) + ".csv"
+    padded_filename = which_eye + which_stimuli + str(trial_number).zfill(4) + ".csv"
     csv_file = os.path.join(csv_path, padded_filename)
     np.savetxt(csv_file, pupil, fmt='%.2f', delimiter=',')
     # release video capture
@@ -418,10 +418,10 @@ for item in zipped_data:
                 
                 # Find right eye pupils and save pupil data
                 print("Finding right eye pupils...")
-                find_pupil("right", current_trial, right_video_path, right_eye_octopus, clip_length, right_average_gray_clip, csv_folder)
+                find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_octopus, clip_length, right_average_gray_clip, csv_folder)
                 # Find left eye pupils and save pupil data
                 print("Finding left eye pupils...")
-                find_pupil("left", current_trial, left_video_path, left_eye_octopus, clip_length, left_average_gray_clip, csv_folder)
+                find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_octopus, clip_length, left_average_gray_clip, csv_folder)
                 
                 # Report progress
                 world_video.release()
