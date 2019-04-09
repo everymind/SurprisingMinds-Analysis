@@ -233,7 +233,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
             day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
     # Save pupil size data
     print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
-    padded_filename = which_eye + which_stimuli + str(trial_number).zfill(4) + ".csv"
+    padded_filename = which_eye + "_" + which_stimuli + "_" + str(trial_number).zfill(4) + ".csv"
     csv_file = os.path.join(csv_path, padded_filename)
     np.savetxt(csv_file, pupil, fmt='%.2f', delimiter=',')
     # release video capture
