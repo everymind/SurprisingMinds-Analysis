@@ -216,15 +216,19 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                         else:
                             print("Pupil Size: n/a (too small)")
                             pupil[f,2] = -1
+                            pupil[f,5] = -1
                     else:
                         print("Pupil Size: n/a (pupil off screen)")
                         pupil[f,2] = -2
+                        pupil[f,5] = -2
                 else:
                     print("Pupil Size: n/a (no contour)")
                     pupil[f,2] = -3
+                    pupil[f,5] = -3
             else:
                 print("Pupil Size: n/a (no circles)")
                 pupil[f,2] = -4
+                pupil[f,5] = -4
             # Add current frame to average clip at correct slot
             day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
     # Save pupil size data
@@ -433,13 +437,13 @@ for item in zipped_data:
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
 
-        # Compute average clips
-        right_average_gray_clip = (right_average_gray_clip/num_trials)/255.0
-        left_average_gray_clip = (left_average_gray_clip/num_trials)/255.0
+        # # Compute average clips
+        # right_average_gray_clip = (right_average_gray_clip/num_trials)/255.0
+        # left_average_gray_clip = (left_average_gray_clip/num_trials)/255.0
 
-        # Save averaged images from day to clip folder
-        save_average_clip_images("right", clip_length, clip_folder, right_average_gray_clip)
-        save_average_clip_images("left", clip_length, clip_folder, left_average_gray_clip)
+        # # Save averaged images from day to clip folder
+        # save_average_clip_images("right", clip_length, clip_folder, right_average_gray_clip)
+        # save_average_clip_images("left", clip_length, clip_folder, left_average_gray_clip)
 
         # report progress
         world_video.release()
