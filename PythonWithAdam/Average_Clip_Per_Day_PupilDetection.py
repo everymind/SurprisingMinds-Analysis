@@ -50,7 +50,6 @@ def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
     ref_timestamp = ref_timestamps_csv[ref_frame]
     ref_timestamp = ref_timestamp.split('+')[0][:-1]
     ref_time = datetime.datetime.strptime(ref_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-
     # Generate delta times (w.r.t. start_frame) for every frame timestamp
     frame_counter = 0
     for timestamp in target_timestamps_csv:
@@ -81,7 +80,6 @@ def find_darkest_circle(list_of_circles, source_image):
         #print("Center: {x},{y}".format(x=center[0], y=center[1]))
         # draw mask circle at coordinates and w/radius of circle from list_of_circles
         mask_circle = cv2.circle(mask, center, radius, 255, -1)
-
         ## for debugging
         # this_circle = cv2.circle(source_image, center, radius, (i*100, 0, 100), 2)
         # plt.imshow(source_image)
@@ -90,7 +88,6 @@ def find_darkest_circle(list_of_circles, source_image):
         # plt.clf()
         # plt.cla()
         # plt.close()
-
         # get coordinates of mask circle pixels
         where = np.where(mask==255)
         # find those same coordinates in source_image
@@ -111,7 +108,8 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
     # Jump to specific frame (position) for alignment purposes 
     ret = video.set(cv2.CAP_PROP_POS_FRAMES, align_frame)
     # Open display window for debugging
-    cv2.namedWindow("Eye")
+    debug_name = "Eye"+"_"+video_path
+    cv2.namedWindow(debug_name)
     # Create empty data array
     pupil = np.zeros((no_of_frames, 6))
     # Loop through frames of eye video to find and save pupil xy positon and area
@@ -126,10 +124,8 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
             gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
             # Median blur
             blurred = cv2.medianBlur(gray, 25)
-
             # Hough circle detection
             rows = blurred.shape[0]
-
             ## WTF DOES HOUGHCIRCLES DO??
             ## sometimes the image seems really clean and easy to find the pupil and yet it still fails
             circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 8,
@@ -155,11 +151,9 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                     # Compute average and stdev of all pixel luminances along border
                     avg = (np.mean(cropped[:, 0]) + np.mean(cropped[:, -1])) / 2
                     std = (np.std(cropped[:, 0]) + np.std(cropped[:, -1])) / 2
-
                     ## Find shape of pupil
                     # Threshold
                     thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1])
-                    
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                     # if more than one contour
@@ -175,8 +169,6 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                             ellipse = cv2.fitEllipse(largest_contour)
                             # Shift ellipse back to full frame coordinates
                             shifted_center = (np.int(ellipse[0][0]) + left, np.int(ellipse[0][1]) + top)
-                            
-                            
                             # Draw circles
                             circles = np.uint16(np.around(circles))
                             for i in circles[0, :]:
@@ -186,18 +178,14 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                                 # circle outline
                                 radius = i[2]
                                 cv2.circle(frame, center, radius, (255, 0, 255), 1)
-                            
-                            
                             # Draw ellipse around largest contour
                             axes = (np.int(ellipse[1][0]/2),np.int(ellipse[1][1]/2)) 
                             angle = np.int(ellipse[2])
                             frame = cv2.ellipse(frame, shifted_center, axes, angle, 0, 360, (0, 255, 0), 3, cv2.LINE_AA, 0)
-
                             # Draw debugging circle around darkest circle
                             axes = (darkest_circle[2], darkest_circle[2]) 
                             angle = 0
                             frame = cv2.ellipse(frame, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 2, cv2.LINE_AA, 0)
-                            
                             # Save Data
                             darkest_circle_area = np.pi*(darkest_circle[2])**2
                             #print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
@@ -210,7 +198,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                             pupil[f, 4] = darkest_circle[1]
                             pupil[f, 5] = (darkest_circle[2]**2) * math.pi
                             # Fill debug displays and show
-                            cv2.imshow("Eye", frame)
+                            cv2.imshow(debug_name, frame)
                             ret = cv2.waitKey(1)
                         else:
                             #print("Pupil Size: n/a (too small)")
@@ -274,9 +262,11 @@ sys.stdout = open(log_file, "w")
 # list all folders in Synology drive
 
 # when working from Synology NAS drive
-data_drive = r"\\Diskstation\SurprisingMinds"
-# when working from local drive
-#data_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\SurprisingMinds\fromSynology"
+# data_drive = r"\\Diskstation\SurprisingMinds"
+# when working from local drive, lab computer
+# data_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\SurprisingMinds\fromSynology"
+# when working from laptop
+data_drive = r"C:\Users\taunsquared\Documents\thesis\SurprisingMindsAutomated"
 
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
@@ -284,7 +274,11 @@ zipped_data = fnmatch.filter(data_folders, '*.zip')
 zipped_names = [item[:-4] for item in zipped_data]
 
 # figure out which days have already been analysed
-analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+# when working from local drive, lab computer
+# analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+# when working from laptop
+analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+
 analysed_folders = sorted(os.listdir(analysed_drive))
 already_analysed = [item for item in zipped_names if item in analysed_folders]
 
@@ -306,11 +300,13 @@ for item in zipped_data:
     day_zipped = os.path.join(data_drive, item)
 
     # Build relative analysis paths in a folder with same name as zip folder
-    
+
     # when keeping analysis csv files in data_drive folder
-    #analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
+    # analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
     # when immediately placing analysis csv files in analysed drive
-    analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
+    # analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
+    # when debugging
+    analysis_folder = os.path.join(current_working_directory, item[:-4], "Analysis")
 
     # Analysis subfolders
     clip_folder = os.path.join(analysis_folder, "clip")
