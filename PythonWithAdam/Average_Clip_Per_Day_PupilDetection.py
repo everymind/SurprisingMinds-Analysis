@@ -45,7 +45,7 @@ def list_sub_folders(path_to_root_folder):
     return sub_folders
 
 def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
-    # Find the frame that best matches the target time (seconds) from the start frame
+    # Find the frame in one video that best matches the timestamp of ref frame from another video
     # Get ref frame time
     ref_timestamp = ref_timestamps_csv[ref_frame]
     ref_timestamp = ref_timestamp.split('+')[0][:-1]
@@ -102,7 +102,9 @@ def find_darkest_circle(list_of_circles, source_image):
     #print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
     return list_of_circles[darkest_index]
 
-def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, no_of_frames, day_avg_clip, csv_path):
+def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, align_frame, no_of_frames, day_avg_clip, csv_path):
+### NEED TO OVERHAUL THIS FUNCTION AAAAARARRRRRRRGGGGHHHHHHH!
+### row = timestamp, not frame #
     # Open eye video and world video
     video = cv2.VideoCapture(video_path)
     # Jump to specific frame (position) for alignment purposes 
@@ -111,7 +113,9 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
     debug_name = "Eye"+"_"+video_path
     cv2.namedWindow(debug_name)
     # Create empty data array
-    pupil = np.zeros((no_of_frames, 6))
+    # assuming no frames were dropped, use framerate of video to pick initial size of array
+    # fill the csv with rows of -5, so that if -5 remains this means frames were dropped
+    pupil = np.full((no_of_frames, 6), -5)
     # Loop through frames of eye video to find and save pupil xy positon and area
     for f in range(0, no_of_frames, 1):
         # Read frame at current position
@@ -149,10 +153,13 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, align_frame, 
                 if( (left >= 0) and (top >= 0) and ((left + crop_size) < 800) and ((top + crop_size) < 600) ):
                     cropped = gray[top:(top + crop_size), left:(left+crop_size)]
                     # Compute average and stdev of all pixel luminances along border
+                    ## this currently averages the rightmost and leftmost edges of the cropped window, because we assume that these pixels are not the pupil
                     avg = (np.mean(cropped[:, 0]) + np.mean(cropped[:, -1])) / 2
                     std = (np.std(cropped[:, 0]) + np.std(cropped[:, -1])) / 2
                     ## Find shape of pupil
                     # Threshold
+                    ## try removing otsu
+                    ## try using 2 standard devs away from average instead of 3
                     thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1])
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
@@ -283,7 +290,8 @@ analysed_folders = sorted(os.listdir(analysed_drive))
 already_analysed = [item for item in zipped_names if item in analysed_folders]
 
 # create dictionary of octopus clip start frames
-octo_frames = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
+octo_clip_start = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
+Frames_until_octo_appears = 195
 
 # unzip each folder, do the analysis, skip #recycle aka data_folders[0]
 for item in zipped_data:
@@ -373,7 +381,7 @@ for item in zipped_data:
                 # Set temporary align frame to the frame counter closest to octopus_clip_start
                 # octopus_clip_start here refers to frame when octopus appears, w.r.t. last frame of movie
                 stimuli_number = world_csv_path.split("_")[-2]
-                octopus_start_frame = octo_frames[stimuli_number]
+                octopus_start_frame = octo_clip_start[stimuli_number]
                 #print("Finding octopus in video {name}...".format(name=stimuli_number))
                 # ------------------------------
                 # Get world video filepath
