@@ -102,7 +102,16 @@ def find_darkest_circle(list_of_circles, source_image):
     #print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
     return list_of_circles[darkest_index]
 
-def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, align_frame, no_of_frames, day_avg_clip, csv_path):
+def make_time_buckets(start_timestamp, bucket_size, end_timestamp): 
+    start_timestamp = start_timestamp.split('+')[0][:-3]
+    end_timestamp = end_timestamp.split('+')[0][:-3]
+    buckets_start_time = datetime.datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+    buckets_end_time = datetime.datetime.strptime(end_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+
+    bucket_list.append(start_time)
+
+
+def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, align_frame, no_of_seconds, day_avg_clip, csv_path):
 ### NEED TO OVERHAUL THIS FUNCTION AAAAARARRRRRRRGGGGHHHHHHH!
 ### row = timestamp, not frame #
     # Open eye video and world video
@@ -113,11 +122,16 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, al
     debug_name = "Eye"+"_"+video_path
     cv2.namedWindow(debug_name)
     # Create empty data array
-    # assuming no frames were dropped, use framerate of video to pick initial size of array
-    # fill the csv with rows of -5, so that if -5 remains this means frames were dropped
-    pupil = np.full((no_of_frames, 6), -5)
-    # Loop through frames of eye video to find and save pupil xy positon and area
-    for f in range(0, no_of_frames, 1):
+    # fill the csv with rows of -5, so that if -5 remains this means no 'near-enough timestamp' frame was found in video
+    # each time bucket = 15ms; octobpus clip to thank you screen is 16.2 seconds
+    first_timestamp = video_csv[align_frame]
+    buckets = make_time_buckets(first_timestamp, )
+    
+
+    time_buckets = 
+    pupil = np.full((no_of_seconds, 6), -5)
+    # Loop through 15ms time buckets of eye video to find and save pupil xy positon and area
+    for f in range(0, no_of_seconds, 1):
         # Read frame at current position
         ret, frame = video.read()
         mask = np.copy(frame)
@@ -234,10 +248,10 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, al
     video.release()
     cv2.destroyAllWindows()
 
-def save_average_clip_images(which_eye, no_of_frames, save_folder_path, images):
+def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images):
 # Save images from trial clip to folder
     #print("Saving averaged frames from {eye}...".format(eye=which_eye))
-    for f in range(no_of_frames):
+    for f in range(no_of_seconds):
 
         # Create file name with padded zeros
         padded_filename = which_eye + str(f).zfill(4) + ".png"
