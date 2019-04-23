@@ -49,7 +49,7 @@ def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
 trial_folders = list_sub_folders(day_folder)
 num_trials = len(trial_folders)
 
-trial_folder = trial_folders[9]
+trial_folder = trial_folders[20]
 trial_name = trial_folder.split(os.sep)[-1]
 # Load CSVs and create timestamps
 # ------------------------------
@@ -82,9 +82,9 @@ right_octo_timestamps = right_eye_timestamps[right_octo:]
 left_octo_timestamps = left_eye_timestamps[left_octo:]
 
 # Generate delta times (w.r.t. start_frame) for every frame timestamp
-right_time_diffs_array = time_between_frames(right_octo_timestamps)
-left_time_diffs_array = time_between_frames(left_octo_timestamps)
-world_time_diffs_array = time_between_frames(world_octo_timestamps)
+right_time_diffs_array = time_between_frames(right_eye_timestamps)
+left_time_diffs_array = time_between_frames(left_eye_timestamps)
+world_time_diffs_array = time_between_frames(world_timestamps)
 
 plt.figure()
 
