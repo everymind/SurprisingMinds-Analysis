@@ -358,9 +358,9 @@ for item in zipped_data:
     # when keeping analysis csv files in data_drive folder
     # analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
     # when immediately placing analysis csv files in analysed drive
-    # analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
+    analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
     # when debugging
-    analysis_folder = os.path.join(current_working_directory, item[:-4], "Analysis")
+    #analysis_folder = os.path.join(current_working_directory, item[:-4], "Analysis")
 
     # Analysis subfolders
     clip_folder = os.path.join(analysis_folder, "clip")
