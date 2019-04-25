@@ -54,8 +54,7 @@ def list_sub_folders(path_to_root_folder):
     return sub_folders
 
 # List all trial folders
-day_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
-trial_folders = list_sub_folders(day_folder)
+trial_folders = list_sub_folders(data_drive)
 num_trials = len(trial_folders)
 
 trial_folder = trial_folders[0]
