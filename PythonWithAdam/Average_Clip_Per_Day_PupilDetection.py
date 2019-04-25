@@ -102,16 +102,33 @@ def find_darkest_circle(list_of_circles, source_image):
     #print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
     return list_of_circles[darkest_index]
 
-def make_time_buckets(start_timestamp, bucket_size, end_timestamp): 
+def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp): 
     start_timestamp = start_timestamp.split('+')[0][:-3]
     end_timestamp = end_timestamp.split('+')[0][:-3]
     buckets_start_time = datetime.datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
     buckets_end_time = datetime.datetime.strptime(end_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
 
-    bucket_list.append(start_time)
+    current_bucket = buckets_start_time
+    time_buckets = []
+    window = datetime.timedelta(milliseconds=bucket_size_ms)
+    while current_bucket <= buckets_end_time:
+        time_buckets.append(current_bucket)
+        current_bucket = current_bucket + window
 
+    bucket_list = dict.fromkeys(time_buckets)
 
-def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, align_frame, no_of_seconds, day_avg_clip, csv_path):
+    for key in time_buckets: 
+        bucket_list[key] = [0,0,-5,0,0,-5]
+    # -5 remains in a time bucket, this means no 'near-enough timestamp' frame was found in video
+
+    return bucket_list
+
+def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_window):
+    for key in dict_of_timestamps.keys():
+        if key <= timestamp_to_check <= (key + time_window):
+            return key
+
+def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timestamps, align_frame, csv_path):
 ### NEED TO OVERHAUL THIS FUNCTION AAAAARARRRRRRRGGGGHHHHHHH!
 ### row = timestamp, not frame #
     # Open eye video and world video
@@ -119,19 +136,24 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, al
     # Jump to specific frame (position) for alignment purposes 
     ret = video.set(cv2.CAP_PROP_POS_FRAMES, align_frame)
     # Open display window for debugging
-    debug_name = "Eye"+"_"+video_path
+    video_name = video_path.split(os.sep)[-1]
+    debug_name = "Eye"+"_"+video_name
     cv2.namedWindow(debug_name)
-    # Create empty data array
-    # fill the csv with rows of -5, so that if -5 remains this means no 'near-enough timestamp' frame was found in video
-    # each time bucket = 15ms; octobpus clip to thank you screen is 16.2 seconds
-    first_timestamp = video_csv[align_frame]
-    buckets = make_time_buckets(first_timestamp, )
+    # each time bucket = 4ms (eye cameras ran at 60fps, aka 16.6666 ms per frame)
+    # octobpus clip to thank you screen is 16.2 seconds
+    first_timestamp = video_timestamps[align_frame]
+    last_timestamp = video_timestamps[-1]
+    bucket_size = 4 #milliseconds
+    pupil_buckets = make_time_buckets(first_timestamp, bucket_size, last_timestamp)
     
-
-    time_buckets = 
-    pupil = np.full((no_of_seconds, 6), -5)
-    # Loop through 15ms time buckets of eye video to find and save pupil xy positon and area
-    for f in range(0, no_of_seconds, 1):
+    # Loop through 4ms time buckets of eye video to find nearest frame and save pupil xy positon and area
+    timestamps_to_check = video_timestamps[align_frame:]
+    for timestamp in timestamps_to_check:
+        # find the time bucket into which this frame falls
+        timestamp = timestamp.split('+')[0][:-3]
+        timestamp_dt = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+        bucket_window = datetime.timedelta(milliseconds=bucket_size)
+        current_key = find_nearest_timestamp_key(timestamp_dt, pupil_buckets, bucket_window)
         # Read frame at current position
         ret, frame = video.read()
         mask = np.copy(frame)
@@ -212,38 +234,48 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_csv, al
                             #print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
                             #print("Pupil size predicted by circles: {area1}".format(area1=darkest_circle_area))
                             # save data from both findContours and find_darkest_circle
-                            pupil[f, 0] = shifted_center[0]
-                            pupil[f, 1] = shifted_center[1]
-                            pupil[f, 2] = cv2.contourArea(largest_contour)
-                            pupil[f, 3] = darkest_circle[0]
-                            pupil[f, 4] = darkest_circle[1]
-                            pupil[f, 5] = (darkest_circle[2]**2) * math.pi
+                            pupil_buckets[current_key][0] = shifted_center[0]
+                            pupil_buckets[current_key][1] = shifted_center[1]
+                            pupil_buckets[current_key][2] = cv2.contourArea(largest_contour)
+                            pupil_buckets[current_key][3] = darkest_circle[0]
+                            pupil_buckets[current_key][4] = darkest_circle[1]
+                            pupil_buckets[current_key][5] = (darkest_circle[2]**2) * math.pi
                             # Fill debug displays and show
                             cv2.imshow(debug_name, frame)
                             ret = cv2.waitKey(1)
                         else:
                             #print("Pupil Size: n/a (too small)")
-                            pupil[f,2] = -1
-                            pupil[f,5] = -1
+                            pupil_buckets[current_key][2] = -1
+                            pupil_buckets[current_key][5] = -1
                     else:
                         #print("Pupil Size: n/a (pupil off screen)")
-                        pupil[f,2] = -2
-                        pupil[f,5] = -2
+                        pupil_buckets[current_key][2] = -2
+                        pupil_buckets[current_key][5] = -2
                 else:
                     #print("Pupil Size: n/a (no contour)")
-                    pupil[f,2] = -3
-                    pupil[f,5] = -3
+                    pupil_buckets[current_key][2] = -3
+                    pupil_buckets[current_key][5] = -3
             else:
                 #print("Pupil Size: n/a (no circles)")
-                pupil[f,2] = -4
-                pupil[f,5] = -4
+                pupil_buckets[current_key][2] = -4
+                pupil_buckets[current_key][5] = -4
+            ## STILL DOING THIS?????
             # Add current frame to average clip at correct slot
-            day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
+            #day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
     # Save pupil size data
+    # HOW TO SAVE A DICTIONARY AS A CSV????
+    time_chunks = []
+    for key in pupil_buckets.keys():
+        time_chunks.append(key)
+    time_chunks = sorted(time_chunks)
+    pupils = []
+    for time in time_chunks:
+        pupil = pupil_buckets[time]
+        pupils.append(pupil)
     #print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
     padded_filename = which_eye + "_" + which_stimuli + "_" + str(trial_number).zfill(4) + ".csv"
     csv_file = os.path.join(csv_path, padded_filename)
-    np.savetxt(csv_file, pupil, fmt='%.2f', delimiter=',')
+    np.savetxt(csv_file, pupils, fmt='%.2f', delimiter=',')
     # release video capture
     video.release()
     cv2.destroyAllWindows()
@@ -438,10 +470,11 @@ for item in zipped_data:
                 
                 # Find right eye pupils and save pupil data
                 print("Finding right eye pupils...")
-                find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_octopus, clip_length, right_average_gray_clip, csv_folder)
+                # find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timestamps, align_frame, csv_path)
+                find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_timestamps, right_eye_octopus, csv_folder)
                 # Find left eye pupils and save pupil data
                 print("Finding left eye pupils...")
-                find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_octopus, clip_length, left_average_gray_clip, csv_folder)
+                find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_timestamps, left_eye_octopus, csv_folder)
                 
                 # Report progress
                 world_video.release()
