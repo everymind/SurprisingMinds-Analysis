@@ -45,11 +45,20 @@ def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
         frame_counter = frame_counter + 1
     return frame_counter
 
+def list_sub_folders(path_to_root_folder):
+    # List all sub folders
+    sub_folders = []
+    for folder in os.listdir(path_to_root_folder):
+        if(os.path.isdir(os.path.join(path_to_root_folder, folder))):
+            sub_folders.append(os.path.join(path_to_root_folder, folder))
+    return sub_folders
+
 # List all trial folders
+day_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
 trial_folders = list_sub_folders(day_folder)
 num_trials = len(trial_folders)
 
-trial_folder = trial_folders[20]
+trial_folder = trial_folders[0]
 trial_name = trial_folder.split(os.sep)[-1]
 # Load CSVs and create timestamps
 # ------------------------------
