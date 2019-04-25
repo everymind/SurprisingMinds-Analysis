@@ -315,11 +315,11 @@ sys.stdout = open(log_file, "w")
 # list all folders in Synology drive
 
 # when working from Synology NAS drive
-# data_drive = r"\\Diskstation\SurprisingMinds"
+data_drive = r"\\Diskstation\SurprisingMinds"
 # when working from local drive, lab computer
-# data_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\SurprisingMinds\fromSynology"
+#data_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\SurprisingMinds\fromSynology"
 # when working from laptop
-data_drive = r"C:\Users\taunsquared\Documents\thesis\SurprisingMindsAutomated"
+#data_drive = r"C:\Users\taunsquared\Documents\thesis\SurprisingMindsAutomated"
 
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
@@ -328,9 +328,9 @@ zipped_names = [item[:-4] for item in zipped_data]
 
 # figure out which days have already been analysed
 # when working from local drive, lab computer
-# analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 # when working from laptop
-analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 
 analysed_folders = sorted(os.listdir(analysed_drive))
 already_analysed = [item for item in zipped_names if item in analysed_folders]
