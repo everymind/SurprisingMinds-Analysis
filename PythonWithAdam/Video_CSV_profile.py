@@ -10,7 +10,7 @@ import fnmatch
 import sys
 import math
 
-data_drive = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
+### FUNCTIONS ###
 
 def time_between_frames(timestamps_csv):
     time_diffs = []
@@ -22,8 +22,8 @@ def time_between_frames(timestamps_csv):
             last_time = this_time
         else: 
             time_diff = this_time - last_time
-            time_diff_seconds = time_diff.total_seconds()
-            time_diffs.append(time_diff_seconds)
+            time_diff_milliseconds = time_diff.total_seconds() * 1000
+            time_diffs.append(time_diff_milliseconds)
             last_time = this_time
     return np.array(time_diffs)
 
@@ -39,8 +39,8 @@ def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
         timestamp = timestamp.split('+')[0][:-1]
         time = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
         timedelta = ref_time - time
-        seconds_until_alignment = timedelta.total_seconds()
-        if(seconds_until_alignment < 0):
+        milliseconds_until_alignment = timedelta.total_seconds() * 1000
+        if(milliseconds_until_alignment < 0):
             break
         frame_counter = frame_counter + 1
     return frame_counter
@@ -53,56 +53,101 @@ def list_sub_folders(path_to_root_folder):
             sub_folders.append(os.path.join(path_to_root_folder, folder))
     return sub_folders
 
+### BEGIN ANALYSIS ###
+data_drive = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
+current_working_directory = os.getcwd()
+plots_folder = os.path.join(current_working_directory, "plots")
+
 # List all trial folders
 trial_folders = list_sub_folders(data_drive)
 num_trials = len(trial_folders)
 
-trial_folder = trial_folders[0]
-trial_name = trial_folder.split(os.sep)[-1]
-# Load CSVs and create timestamps
-# ------------------------------
-#print("Loading csv files for {trial}...".format(trial=trial_name))
-# Get world movie timestamp csv path
-world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
-stimuli_number = world_csv_path.split("_")[-2]
-
 # create dictionary of start frames for octopus clip
 octo_frames = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
-world_octo_start = octo_frames[stimuli_number]
+    
+# create dictionary to hold time differences between frames, categorized by stimuli
+all_right_diffs = {"stimuli024": [], "stimuli025": [], "stimuli026": [], "stimuli027": [], "stimuli028": [], "stimuli029": []}
+all_left_diffs = {"stimuli024": [], "stimuli025": [], "stimuli026": [], "stimuli027": [], "stimuli028": [], "stimuli029": []}
+all_world_diffs = {"stimuli024": [], "stimuli025": [], "stimuli026": [], "stimuli027": [], "stimuli028": [], "stimuli029": []}
 
-# Load world CSV
-world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
+for trial_folder in trial_folders:
+    trial_name = trial_folder.split(os.sep)[-1]
+    # Load CSVs and create timestamps
+    # ------------------------------
+    #print("Loading csv files for {trial}...".format(trial=trial_name))
+    # Get world movie timestamp csv path
+    world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
+    stimuli_number = world_csv_path.split("_")[-2]
 
-# Get eye timestamp csv paths
-right_eye_csv_path = glob.glob(trial_folder + '/*righteye.csv')[0]
-left_eye_csv_path = glob.glob(trial_folder + '/*lefteye.csv')[0]
+    world_octo_start = octo_frames[stimuli_number]
 
-# Load eye CSVs
-right_eye_timestamps = np.genfromtxt(right_eye_csv_path, dtype=np.str, delimiter=' ')
-left_eye_timestamps = np.genfromtxt(left_eye_csv_path, dtype=np.str, delimiter=' ')
+    # Load world CSV
+    this_trial_world = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
 
-# trim csvs to just octopus video
-right_octo = find_target_frame(world_timestamps, right_eye_timestamps, world_octo_start)
-left_octo = find_target_frame(world_timestamps, left_eye_timestamps, world_octo_start)
+    # Get eye timestamp csv paths
+    right_eye_csv_path = glob.glob(trial_folder + '/*righteye.csv')[0]
+    left_eye_csv_path = glob.glob(trial_folder + '/*lefteye.csv')[0]
 
-world_octo_timestamps = world_timestamps[world_octo_start:]
-right_octo_timestamps = right_eye_timestamps[right_octo:]
-left_octo_timestamps = left_eye_timestamps[left_octo:]
+    # Load eye CSVs
+    this_trial_right = np.genfromtxt(right_eye_csv_path, dtype=np.str, delimiter=' ')
+    this_trial_left = np.genfromtxt(left_eye_csv_path, dtype=np.str, delimiter=' ')
 
-# Generate delta times (w.r.t. start_frame) for every frame timestamp
-right_time_diffs_array = time_between_frames(right_eye_timestamps)
-left_time_diffs_array = time_between_frames(left_eye_timestamps)
-world_time_diffs_array = time_between_frames(world_timestamps)
+    # trim csvs to just octopus video
+    right_octo = find_target_frame(this_trial_world, this_trial_right, world_octo_start)
+    left_octo = find_target_frame(this_trial_world, this_trial_left, world_octo_start)
 
-plt.figure()
+    world_octo_timestamps = this_trial_world[world_octo_start:]
+    right_octo_timestamps = this_trial_right[right_octo:]
+    left_octo_timestamps = this_trial_left[left_octo:]
 
-plt.subplot(3,1,1)
-plt.plot(right_time_diffs_array.T,'.', MarkerSize=1, color=[1.0, 0.0, 0.0, 0.7])
+    # Generate delta times (w.r.t. start_frame) for every frame timestamp
+    right_time_diffs_array = time_between_frames(this_trial_right)
+    left_time_diffs_array = time_between_frames(this_trial_left)
+    world_time_diffs_array = time_between_frames(this_trial_world)
 
-plt.subplot(3,1,2)
-plt.plot(left_time_diffs_array.T,'.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.7])
+    # plot
+    figure_name = stimuli_number + '_' + trial_name + '_ms-bt-frames.pdf'
+    figure_path = os.path.join(plots_folder, figure_name)
+    figure_title = 'Time elapsed between frames \n participant: ' + trial_name + ', video: ' + stimuli_number
+    plt.figure(figsize=(7, 6.4), dpi=300)
+    plt.suptitle(figure_title, fontsize=12, y=0.98)
 
-plt.subplot(3,1,3)
-plt.plot(world_time_diffs_array.T, '.', MarkerSize = 1, color=[0.0, 0.0, 1.0, 0.7])
+    plt.subplot(3,1,1)
+    plt.title('Right eye camera', fontsize=9, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='-')
+    plt.grid(b=True, which='minor', linestyle='--')
+    plt.plot(right_time_diffs_array.T,'.', MarkerSize=1, color=[1.0, 0.0, 0.0, 0.7])
 
-plt.show()
+    plt.subplot(3,1,2)
+    ax = plt.gca()
+    ax.yaxis.set_label_coords(-0.09, 0.5) 
+    plt.ylabel('Milliseconds between frames', fontsize=11)
+    plt.title('Left eye camera', fontsize=9, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='-')
+    plt.grid(b=True, which='minor', linestyle='--')
+    plt.plot(left_time_diffs_array.T,'.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.7])
+
+    plt.subplot(3,1,3)
+    plt.xlabel('Frame number', fontsize=11)
+    plt.title('World camera', fontsize=9, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='-')
+    plt.grid(b=True, which='minor', linestyle='--')
+    plt.plot(world_time_diffs_array.T, '.', MarkerSize = 1, color=[0.0, 0.0, 1.0, 0.7])
+
+    plt.subplots_adjust(hspace=0.7)
+    #plt.tight_layout()
+
+    plt.savefig(figure_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+    # add to dictionary of time diffs, according to stimuli number
+    all_right_diffs[stimuli_number].append(right_time_diffs_array)
+    all_left_diffs[stimuli_number].append(left_time_diffs_array)
+    all_world_diffs[stimuli_number].append(world_time_diffs_array)
+
+# FIN
