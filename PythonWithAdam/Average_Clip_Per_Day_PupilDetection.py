@@ -118,7 +118,7 @@ def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp):
     bucket_list = dict.fromkeys(time_buckets)
 
     for key in time_buckets: 
-        bucket_list[key] = [0,0,-5,0,0,-5]
+        bucket_list[key] = [-5,-5,-5,-5,-5,-5]
     # -5 remains in a time bucket, this means no 'near-enough timestamp' frame was found in video
 
     return bucket_list
@@ -337,7 +337,7 @@ already_analysed = [item for item in zipped_names if item in analysed_folders]
 
 # create dictionary of octopus clip start frames
 octo_clip_start = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
-Frames_until_octo_appears = 195
+seconds_until_octo_appears = 6.5
 
 # unzip each folder, do the analysis, skip #recycle aka data_folders[0]
 for item in zipped_data:
