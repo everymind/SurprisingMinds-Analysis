@@ -54,7 +54,8 @@ def list_sub_folders(path_to_root_folder):
     return sub_folders
 
 ### BEGIN ANALYSIS ###
-data_drive = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
+#data_drive = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
+data_drive = r"D:\Users\KAMPFF-LAB-VIDEO\SurprisingMinds-VideoBuffer\SurprisingMinds_2018-05-05"
 current_working_directory = os.getcwd()
 plots_folder = os.path.join(current_working_directory, "plots")
 camera_profiles_folder = os.path.join(plots_folder, "camera_profiles")
