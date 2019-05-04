@@ -6,5 +6,5 @@ Bonsai.SurprisingMinds/Bonsai.SurprisingMinds/obj
 Bonsai.SurprisingMinds/packages
 *.avi
 *.csv
-log*.txt
+pupil*log*.txt
 PythonWithAdam/plots
