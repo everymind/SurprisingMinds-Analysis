@@ -171,6 +171,7 @@ np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
 
 # Plot activation count
 total_activation = sum(count[0] for count in activation_count)
+total_days_activated = len(activation_count)
 print("Total number of exhibit activations: {total}".format(total=total_activation))
 activation_array = np.array(activation_count)
 
@@ -181,7 +182,7 @@ plt.figure(figsize=(7, 6.4), dpi=100)
 plt.suptitle(figure_title, fontsize=12, y=0.98)
 
 plt.ylabel('Number of activations', fontsize=11)
-plt.xlabel('Date', fontsize=11)
+plt.xlabel('Days, Total days activated: ' + str(total_days_activated), fontsize=11)
 #plt.minorticks_on()
 plt.grid(b=True, which='major', linestyle='-')
 plt.grid(b=True, which='minor', linestyle='--')
