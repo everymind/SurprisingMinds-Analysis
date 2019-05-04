@@ -57,6 +57,15 @@ def list_sub_folders(path_to_root_folder):
 data_drive = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp"
 current_working_directory = os.getcwd()
 plots_folder = os.path.join(current_working_directory, "plots")
+camera_profiles_folder = os.path.join(plots_folder, "camera_profiles")
+
+# Create plots folder (and sub-folders) if it (they) does (do) not exist
+if not os.path.exists(plots_folder):
+    #print("Creating plots folder.")
+    os.makedirs(plots_folder)
+if not os.path.exists(camera_profiles_folder):
+    #print("Creating camera profiles folder.")
+    os.makedirs(camera_profiles_folder)
 
 # List all trial folders
 trial_folders = list_sub_folders(data_drive)
@@ -107,7 +116,7 @@ for trial_folder in trial_folders:
 
     # plot
     figure_name = stimuli_number + '_' + trial_name + '_ms-bt-frames.pdf'
-    figure_path = os.path.join(plots_folder, figure_name)
+    figure_path = os.path.join(camera_profiles_folder, figure_name)
     figure_title = 'Time elapsed between frames \n participant: ' + trial_name + ', video: ' + stimuli_number
     plt.figure(figsize=(7, 6.4), dpi=300)
     plt.suptitle(figure_title, fontsize=12, y=0.98)
