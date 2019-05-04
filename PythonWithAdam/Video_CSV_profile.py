@@ -140,7 +140,7 @@ for trial_folder in trial_folders:
 
     plt.subplot(3,1,3)
     plt.xlabel('Frame number', fontsize=11)
-    plt.title('World camera', fontsize=9, color='grey', style='italic')
+    plt.title('World camera (records monitor presenting video stimuli to participants)', fontsize=9, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='-')
     plt.grid(b=True, which='minor', linestyle='--')
