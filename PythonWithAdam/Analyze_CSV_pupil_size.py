@@ -122,7 +122,7 @@ activation_count = []
 # downsample = collect data from every 40ms or other multiples of 20
 downsample_rate_in_ms = 80
 original_bucket_size_in_ms = 4
-clip_length_in_time_buckets = 7000
+no_of_time_buckets = 5800
 
 for day_folder in day_folders: 
     # for each day...
@@ -133,8 +133,8 @@ for day_folder in day_folders:
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
     try: 
-        right_area_contours, right_area_circles, num_right_trials = load_daily_pupil_areas("right", csv_folder, clip_length_in_time_buckets, original_bucket_size_in_ms, downsample_rate_in_ms)
-        left_area_contours, left_area_circles, num_left_trials = load_daily_pupil_areas("left", csv_folder, clip_length_in_time_buckets, original_bucket_size_in_ms, downsample_rate_in_ms)
+        right_area_contours, right_area_circles, num_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_in_ms)
+        left_area_contours, left_area_circles, num_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_in_ms)
 
         activation_count.append((num_right_trials, num_left_trials))
         print("On {day}, exhibit was activated {count} times".format(day=day_name, count=num_right_trials))
@@ -203,8 +203,8 @@ all_left_contours_mean = np.nanmean(all_left_trials_array, 0)
 # Plot pupil sizes
 figure_name = 'AveragePupilSizes_' + todays_datetime + '.pdf'
 figure_path = os.path.join(pupils_folder, figure_name)
-figure_title = "Pupil sizes of participants,  \nPlotted on " + todays_datetime
-plt.figure(figsize=(7, 6.4), dpi=100)
+figure_title = "Pupil sizes of participants, N=" + str(total_activation) + "\nPlotted on " + todays_datetime
+plt.figure(figsize=(7, 6.4), dpi=50)
 plt.suptitle(figure_title, fontsize=12, y=0.98)
 
 plt.subplot(2,1,1)
