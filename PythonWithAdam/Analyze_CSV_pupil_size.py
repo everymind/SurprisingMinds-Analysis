@@ -8,18 +8,18 @@ import math
 import sys
 
 ### FUNCTIONS ###
-def load_daily_pupil_areas(which_eye, day_folder_path, max_trial_length, bucket_size, sample_rate_ms): 
+def load_daily_pupil_areas(which_eye, day_folder_path, max_chunk_length, bucket_size, sample_rate_ms): 
     if (sample_rate_ms % bucket_size == 0):
         bucket_window = int(sample_rate_ms/bucket_size)
-        trial_length = math.ceil(max_trial_length/bucket_window)
+        chunk_length = math.ceil(max_chunk_length/bucket_window)
         # List all csv trial files
         trial_files = glob.glob(day_folder_path + os.sep + which_eye + "*.csv")
         num_trials = len(trial_files)
 
-        data_contours = np.empty((num_trials, trial_length))
+        data_contours = np.empty((num_trials, chunk_length))
         data_contours[:] = -6
 
-        data_circles = np.empty((num_trials, trial_length))
+        data_circles = np.empty((num_trials, chunk_length))
         data_circles[:] = -6
 
         index = 0
@@ -36,6 +36,8 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_trial_length, bucket_
                 this_slice = trial[start:end]
                 for line in this_slice:
                     if (line<0).any():
+                        line[:] = np.nan
+                    if (line>15000).any():
                         line[:] = np.nan
                 # extract pupil sizes from valid time buckets
                 this_slice_contours = []
@@ -55,9 +57,9 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_trial_length, bucket_
             # if more than half of the trial is NaN, then throw away this trial
             # otherwise, if it's a good enough trial...
             if (bad_count_contours < (no_of_samples/2)): 
-                this_trial_length = len(this_trial_contours)
-                data_contours[index][0:this_trial_length] = this_trial_contours
-                data_circles[index][0:this_trial_length] = this_trial_circles
+                this_chunk_length = len(this_trial_contours)
+                data_contours[index][0:this_chunk_length] = this_trial_contours
+                data_circles[index][0:this_chunk_length] = this_trial_circles
             index = index + 1
         return data_contours, data_circles, num_trials
     else: 
@@ -97,8 +99,8 @@ log_file = os.path.join(current_working_directory, log_filename)
 sys.stdout = open(log_file, "w")
 
 # set up folders
-plots_folder = os.path.join(current_working_directory, "plots")
-pupils_folder = os.path.join(plots_folder, "pupils")
+plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
+pupils_folder = os.path.join(plots_folder, "pupil")
 engagement_folder = os.path.join(plots_folder, "engagement")
 
 # Create plots folder (and sub-folders) if it (they) does (do) not exist
@@ -114,6 +116,8 @@ if not os.path.exists(engagement_folder):
 
 # consolidate csv files from multiple days into one data structure
 day_folders = list_sub_folders(root_folder)
+# first day was a debugging session, so skip it
+day_folders = day_folders[1:]
 
 all_right_trials = []
 all_left_trials = []
@@ -122,7 +126,7 @@ activation_count = []
 # downsample = collect data from every 40ms or other multiples of 20
 downsample_rate_in_ms = 80
 original_bucket_size_in_ms = 4
-no_of_time_buckets = 5800
+no_of_time_buckets = 10000
 
 for day_folder in day_folders: 
     # for each day...
@@ -164,9 +168,14 @@ for day_folder in day_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 
+### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
 engagement_count_filename = 'Exhibit_Activation_Count_measured-' + todays_datetime + '.csv'
-csv_file = os.path.join(engagement_folder, engagement_count_filename)
+engagement_data_folder = os.path.join(current_working_directory, 'Exhibit-Engagement')
+if not os.path.exists(engagement_data_folder):
+    #print("Creating plots folder.")
+    os.makedirs(engagement_data_folder)
+csv_file = os.path.join(engagement_data_folder, engagement_count_filename)
 np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
 
 # Plot activation count
@@ -176,9 +185,9 @@ print("Total number of exhibit activations: {total}".format(total=total_activati
 activation_array = np.array(activation_count)
 
 figure_name = 'TotalExhibitActivation_' + todays_datetime + '.pdf'
-figure_path = os.path.join(pupils_folder, figure_name)
+figure_path = os.path.join(engagement_folder, figure_name)
 figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \nPlotted on " + todays_datetime
-plt.figure(figsize=(7, 6.4), dpi=100)
+plt.figure(figsize=(12, 6), dpi=200)
 plt.suptitle(figure_title, fontsize=12, y=0.98)
 
 plt.ylabel('Number of activations', fontsize=11)
@@ -193,46 +202,56 @@ plt.show(block=False)
 plt.pause(1)
 plt.close()
 
-# turn cleaned-up data into arrays
+### BACK TO THE PUPILS ###
 all_right_trials_array = np.array(all_right_trials)
-all_left_trials_array = np.array(all_left_trials)     
+all_left_trials_array = np.array(all_left_trials)
+
 # Compute global mean
 all_right_contours_mean = np.nanmean(all_right_trials_array, 0)
 all_left_contours_mean = np.nanmean(all_left_trials_array, 0)
 
 # Plot pupil sizes
-figure_name = 'AveragePupilSizes_' + todays_datetime + '.pdf'
-figure_path = os.path.join(pupils_folder, figure_name)
-figure_title = "Pupil sizes of participants, N=" + str(total_activation) + "\nPlotted on " + todays_datetime
-plt.figure(figsize=(7, 6.4), dpi=50)
-plt.suptitle(figure_title, fontsize=12, y=0.98)
+image_type_options = ['.png', '.pdf']
+for image_type in image_type_options:
+    if (image_type == '.pdf'):
+        dpi_sizes = [20]
+    else:
+        dpi_sizes = [80, 100, 120, 160, 200, 250, 300]
+    for size in dpi_sizes: 
+        figure_name = 'AveragePupilSizes_' + todays_datetime + '_dpi' + str(size) + image_type 
+        figure_path = os.path.join(pupils_folder, figure_name)
+        figure_title = "Pupil sizes of participants, N=" + str(total_activation) + "\nPlotted on " + todays_datetime
+        plt.figure(figsize=(7, 6.4), dpi=size)
+        plt.suptitle(figure_title, fontsize=12, y=0.98)
 
-plt.subplot(2,1,1)
-ax = plt.gca()
-ax.yaxis.set_label_coords(-0.09, 0.0) 
-plt.ylabel('Percentage from baseline', fontsize=11)
-plt.title('Right eye pupil sizes', fontsize=9, color='grey', style='italic')
-plt.minorticks_on()
-plt.grid(b=True, which='major', linestyle='-')
-plt.grid(b=True, which='minor', linestyle='--')
-plt.plot(all_right_trials_array.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
-plt.plot(all_right_contours_mean, linewidth=4, color=[1.0, 0.0, 0.0, 0.3])
-plt.ylim(0,2)
+        plt.subplot(2,1,1)
+        ax = plt.gca()
+        ax.yaxis.set_label_coords(-0.09, 0.0) 
+        plt.ylabel('Percentage from baseline', fontsize=11)
+        plt.title('Right eye pupil sizes', fontsize=9, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='-')
+        plt.grid(b=True, which='minor', linestyle='--')
+        plt.plot(all_right_trials_array.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
+        plt.plot(all_right_contours_mean, linewidth=2, color=[1.0, 0.0, 0.0, 0.3])
+        plt.xlim(0,330)
+        plt.ylim(0,2)
 
-plt.subplot(2,1,2)
-plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_in_ms) + 'ms)', fontsize=11)
-plt.title('Left eye pupil sizes', fontsize=9, color='grey', style='italic')
-plt.minorticks_on()
-plt.grid(b=True, which='major', linestyle='-')
-plt.grid(b=True, which='minor', linestyle='--')
-plt.plot(all_left_trials_array.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
-plt.plot(all_left_contours_mean, linewidth=4, color=[1.0, 0.0, 0.0, 0.3])
-plt.ylim(0,2)
+        plt.subplot(2,1,2)
+        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_in_ms) + 'ms)', fontsize=11)
+        plt.title('Left eye pupil sizes', fontsize=9, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='-')
+        plt.grid(b=True, which='minor', linestyle='--')
+        plt.plot(all_left_trials_array.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
+        plt.plot(all_left_contours_mean, linewidth=2, color=[1.0, 0.0, 0.0, 0.3])
+        plt.xlim(0,330)
+        plt.ylim(0,2)
 
-plt.savefig(figure_path)
-plt.show()
-
-
+        plt.savefig(figure_path)
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
 
 
 #FIN
