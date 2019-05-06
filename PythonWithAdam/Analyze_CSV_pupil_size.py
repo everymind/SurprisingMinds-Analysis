@@ -185,24 +185,26 @@ total_activation = sum(count[0] for count in activation_count)
 total_days_activated = len(activation_count)
 print("Total number of exhibit activations: {total}".format(total=total_activation))
 activation_array = np.array(activation_count)
+# do da plot
+image_type_options = ['.png', '.pdf']
+for image_type in image_type_options:
+    figure_name = 'TotalExhibitActivation_' + todays_datetime + image_type
+    figure_path = os.path.join(engagement_folder, figure_name)
+    figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \nPlotted on " + todays_datetime
+    plt.figure(figsize=(12, 6), dpi=200)
+    plt.suptitle(figure_title, fontsize=12, y=0.98)
 
-figure_name = 'TotalExhibitActivation_' + todays_datetime + '.pdf'
-figure_path = os.path.join(engagement_folder, figure_name)
-figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \nPlotted on " + todays_datetime
-plt.figure(figsize=(12, 6), dpi=200)
-plt.suptitle(figure_title, fontsize=12, y=0.98)
+    plt.ylabel('Number of activations', fontsize=11)
+    plt.xlabel('Days, Total days activated: ' + str(total_days_activated), fontsize=11)
+    #plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='-')
+    plt.grid(b=True, which='minor', linestyle='--')
+    plt.plot(activation_array, color=[0.0, 0.0, 1.0])
 
-plt.ylabel('Number of activations', fontsize=11)
-plt.xlabel('Days, Total days activated: ' + str(total_days_activated), fontsize=11)
-#plt.minorticks_on()
-plt.grid(b=True, which='major', linestyle='-')
-plt.grid(b=True, which='minor', linestyle='--')
-plt.plot(activation_array, color=[0.0, 0.0, 1.0])
-
-plt.savefig(figure_path)
-plt.show(block=False)
-plt.pause(1)
-plt.close()
+    plt.savefig(figure_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
 ### BACK TO THE PUPILS ###
 all_right_trials_array = np.array(all_right_trials)
@@ -213,17 +215,16 @@ all_right_contours_mean = np.nanmean(all_right_trials_array, 0)
 all_left_contours_mean = np.nanmean(all_left_trials_array, 0)
 
 # Plot pupil sizes
-image_type_options = ['.png', '.pdf']
 for image_type in image_type_options:
     if (image_type == '.pdf'):
-        dpi_sizes = [20]
+        dpi_sizes = [25]
     else:
         dpi_sizes = [150, 300, 350, 400]
     for size in dpi_sizes: 
         figure_name = 'AveragePupilSizes_' + todays_datetime + '_dpi' + str(size) + image_type 
         figure_path = os.path.join(pupils_folder, figure_name)
         figure_title = "Pupil sizes of participants, N=" + str(total_activation) + "\nPlotted on " + todays_datetime
-        plt.figure(figsize=(7, 6.4), dpi=size)
+        plt.figure(figsize=(12, 7), dpi=size)
         plt.suptitle(figure_title, fontsize=12, y=0.98)
 
         plt.subplot(2,1,1)
