@@ -118,6 +118,8 @@ if not os.path.exists(engagement_folder):
 day_folders = list_sub_folders(root_folder)
 # first day was a debugging session, so skip it
 day_folders = day_folders[1:]
+# currently still running pupil finding analysis...
+day_folders = day_folders[:-1]
 
 all_right_trials = []
 all_left_trials = []
@@ -233,7 +235,7 @@ for image_type in image_type_options:
         plt.grid(b=True, which='major', linestyle='-')
         plt.grid(b=True, which='minor', linestyle='--')
         plt.plot(all_right_trials_array.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
-        plt.plot(all_right_contours_mean, linewidth=2, color=[1.0, 0.0, 0.0, 0.3])
+        plt.plot(all_right_contours_mean, linewidth=1, color=[1.0, 0.0, 0.0, 0.3])
         plt.xlim(0,330)
         plt.ylim(0,2)
 
@@ -244,7 +246,7 @@ for image_type in image_type_options:
         plt.grid(b=True, which='major', linestyle='-')
         plt.grid(b=True, which='minor', linestyle='--')
         plt.plot(all_left_trials_array.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
-        plt.plot(all_left_contours_mean, linewidth=2, color=[1.0, 0.0, 0.0, 0.3])
+        plt.plot(all_left_contours_mean, linewidth=1, color=[1.0, 0.0, 0.0, 0.3])
         plt.xlim(0,330)
         plt.ylim(0,2)
 
