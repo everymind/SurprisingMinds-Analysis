@@ -218,7 +218,7 @@ for image_type in image_type_options:
     if (image_type == '.pdf'):
         dpi_sizes = [20]
     else:
-        dpi_sizes = [80, 100, 120, 160, 200, 250, 300]
+        dpi_sizes = [150, 300, 350, 400]
     for size in dpi_sizes: 
         figure_name = 'AveragePupilSizes_' + todays_datetime + '_dpi' + str(size) + image_type 
         figure_path = os.path.join(pupils_folder, figure_name)
