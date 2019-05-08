@@ -8,31 +8,33 @@ import math
 import sys
 
 ### FUNCTIONS ###
-def load_daily_pupil_areas(which_eye, day_folder_path, max_chunk_length, bucket_size, sample_rate_ms): 
-    if (sample_rate_ms % bucket_size == 0):
-        bucket_window = int(sample_rate_ms/bucket_size)
-        chunk_length = math.ceil(max_chunk_length/bucket_window)
+def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
+    if (new_bucket_size % original_bucket_size == 0):
+        new_sample_rate = int(new_bucket_size/original_bucket_size)
+        print("New bucket window = {size}, need to average every {sample_rate} buckets".format(size=new_bucket_size, sample_rate=new_sample_rate))
+        downsampled_no_of_buckets = math.ceil(max_no_of_buckets/new_sample_rate)
+        print("Downsampled number of buckets = {number}".format(number=downsampled_no_of_buckets))
         # List all csv trial files
         trial_files = glob.glob(day_folder_path + os.sep + which_eye + "*.csv")
         num_trials = len(trial_files)
-
-        data_contours = np.empty((num_trials, chunk_length))
+        # contours
+        data_contours = np.empty((num_trials, downsampled_no_of_buckets))
         data_contours[:] = -6
-
-        data_circles = np.empty((num_trials, chunk_length))
+        # circles
+        data_circles = np.empty((num_trials, downsampled_no_of_buckets))
         data_circles[:] = -6
 
         index = 0
         for trial_file in trial_files:
             trial_name = trial_file.split(os.sep)[-1]
             trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
-            no_of_samples = math.ceil(len(trial)/bucket_window)
+            no_of_samples = math.ceil(len(trial)/new_sample_rate)
             this_trial_contours = []
             this_trial_circles = []
             # loop through the trial at given sample rate
             for sample in range(no_of_samples):
-                start = sample * bucket_window
-                end = (sample * bucket_window) + (bucket_window - 1)
+                start = sample * new_sample_rate
+                end = (sample * new_sample_rate) + (new_sample_rate - 1)
                 this_slice = trial[start:end]
                 for line in this_slice:
                     if (line<0).any():
@@ -63,7 +65,7 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_chunk_length, bucket_
             index = index + 1
         return data_contours, data_circles, num_trials
     else: 
-        print("Sample rate must be a multiple of {bucket}".format(bucket=bucket_size))
+        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
 def list_sub_folders(path_to_root_folder):
     # List all sub folders
@@ -126,9 +128,10 @@ all_left_trials = []
 activation_count = []
 
 # downsample = collect data from every 40ms or other multiples of 20
-downsample_rate_in_ms = 80
+downsample_rate_ms = 60
 original_bucket_size_in_ms = 4
 no_of_time_buckets = 10000
+new_time_bucket_ms = downsample_rate_ms/original_bucket_size_in_ms
 
 for day_folder in day_folders: 
     # for each day...
@@ -139,8 +142,8 @@ for day_folder in day_folders:
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
     try: 
-        right_area_contours, right_area_circles, num_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_in_ms)
-        left_area_contours, left_area_circles, num_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_in_ms)
+        right_area_contours, right_area_circles, num_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
+        left_area_contours, left_area_circles, num_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
 
         activation_count.append((num_right_trials, num_left_trials))
         print("On {day}, exhibit was activated {count} times".format(day=day_name, count=num_right_trials))
@@ -156,8 +159,10 @@ for day_folder in day_folders:
         left_area_contours = threshold_to_nan(left_area_contours, 0, 'lower')
 
         # create a baseline - take first 3 seconds, aka 75 time buckets where each time bucket is 40ms
-        right_area_contours_baseline = np.nanmedian(right_area_contours[:,0:75], 1)
-        left_area_contours_baseline = np.nanmedian(left_area_contours[:,0:75], 1)
+        milliseconds_for_baseline = 3000
+        baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_ms)
+        right_area_contours_baseline = np.nanmedian(right_area_contours[:,0:baseline_no_buckets], 1)
+        left_area_contours_baseline = np.nanmedian(left_area_contours[:,0:baseline_no_buckets], 1)
 
         # normalize and append
         for index in range(len(right_area_contours_baseline)): 
@@ -214,12 +219,26 @@ all_left_trials_array = np.array(all_left_trials)
 all_right_contours_mean = np.nanmean(all_right_trials_array, 0)
 all_left_contours_mean = np.nanmean(all_left_trials_array, 0)
 
+# event locations in time
+milliseconds_until_octo_fully_visible = 6575
+milliseconds_until_octopus_inks = 11500
+milliseconds_until_octopus_disappears = 11675
+milliseconds_until_camera_out_of_ink_cloud = 13000
+milliseconds_until_thankyou_screen = 15225
+event_labels = ['Octopus video clip starts', 'Octopus fully visible', 'Octopus begins inking', 'Octopus disappears from camera view', 'Camera exits ink cloud', 'Thank you screen']
+tb_octo_visible = milliseconds_until_octo_fully_visible/downsample_rate_ms
+tb_octo_inks = milliseconds_until_octopus_inks/downsample_rate_ms
+tb_octo_disappears = milliseconds_until_octopus_disappears/downsample_rate_ms
+tb_camera_out_of_ink_cloud = milliseconds_until_camera_out_of_ink_cloud/downsample_rate_ms
+tb_thankyou_screen = milliseconds_until_thankyou_screen/downsample_rate_ms
+event_locations = np.array([0, tb_octo_visible, tb_octo_inks, tb_octo_disappears, tb_camera_out_of_ink_cloud, tb_thankyou_screen])
+
 # Plot pupil sizes
 for image_type in image_type_options:
     if (image_type == '.pdf'):
-        dpi_sizes = [25]
+        continue
     else:
-        dpi_sizes = [150, 300, 350, 400]
+        dpi_sizes = [400]
     for size in dpi_sizes: 
         figure_name = 'AveragePupilSizes_' + todays_datetime + '_dpi' + str(size) + image_type 
         figure_path = os.path.join(pupils_folder, figure_name)
@@ -236,20 +255,29 @@ for image_type in image_type_options:
         plt.grid(b=True, which='major', linestyle='-')
         plt.grid(b=True, which='minor', linestyle='--')
         plt.plot(all_right_trials_array.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
-        plt.plot(all_right_contours_mean, linewidth=1, color=[1.0, 0.0, 0.0, 0.3])
-        plt.xlim(0,330)
+        plt.plot(all_right_contours_mean, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
+        plt.xlim(-10,330)
         plt.ylim(0,2)
-
+        # mark events
+        for i in range(len(event_labels)):
+            plt.plot((event_locations[i],event_locations[i]), (0.25,1.8-((i-1)/8)), 'k-', linewidth=1)
+            plt.text(event_locations[i]+1,1.8-((i-1)/8), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+        
         plt.subplot(2,1,2)
-        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_in_ms) + 'ms)', fontsize=11)
+        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
         plt.title('Left eye pupil sizes', fontsize=9, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='-')
         plt.grid(b=True, which='minor', linestyle='--')
         plt.plot(all_left_trials_array.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
-        plt.plot(all_left_contours_mean, linewidth=1, color=[1.0, 0.0, 0.0, 0.3])
-        plt.xlim(0,330)
+        plt.plot(all_left_contours_mean, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
+        plt.xlim(-10,330)
         plt.ylim(0,2)
+        # mark events
+        for i in range(len(event_labels)):
+            plt.plot((event_locations[i],event_locations[i]), (0.25,1.8-((i-1)/8)), 'k-', linewidth=1)
+            plt.text(event_locations[i]+1,1.8-((i-1)/8), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+        
 
         plt.savefig(figure_path)
         plt.show(block=False)
