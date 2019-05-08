@@ -94,6 +94,7 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 current_working_directory = os.getcwd()
+stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\StimuliVid_Luminance"
 
 # set up log file to store all printed messages
 log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
@@ -134,6 +135,8 @@ downsample_rate_ms = 60
 original_bucket_size_in_ms = 4
 no_of_time_buckets = 10000
 new_time_bucket_ms = downsample_rate_ms/original_bucket_size_in_ms
+milliseconds_for_baseline = 3000
+baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_ms)
 
 for day_folder in day_folders: 
     # for each day...
@@ -165,8 +168,6 @@ for day_folder in day_folders:
         left_area_circles = threshold_to_nan(left_area_circles, 0, 'lower')
 
         # create a baseline - take first 3 seconds, aka 75 time buckets where each time bucket is 40ms
-        milliseconds_for_baseline = 3000
-        baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_ms)
         right_area_contours_baseline = np.nanmedian(right_area_contours[:,0:baseline_no_buckets], 1)
         right_area_circles_baseline = np.nanmedian(right_area_circles[:,0:baseline_no_buckets], 1)
         left_area_contours_baseline = np.nanmedian(left_area_contours[:,0:baseline_no_buckets], 1)
@@ -188,6 +189,23 @@ for day_folder in day_folders:
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
         print("Day {day} failed!".format(day=day_name))
+
+# find average luminance of stimuli vids
+luminance = []
+luminance_data_paths = glob.glob(stimuli_luminance_folder + "/stimuli*_LuminancePerFrame*.csv")
+for data_path in luminance_data_paths: 
+    luminance_values = np.genfromtxt(data_path, dtype=np.float, delimiter=' ')
+    luminance_values = [frame[0] for frame in luminance_values]
+    luminance_values = np.array(luminance_values)
+    luminance.append(luminance_values)
+luminance_array = np.array(luminance)
+average_luminance = np.average(luminance_array,axis=0)
+
+stimuli_vids_fps = 30
+seconds_for_baseline = 1
+frames_in_baseline = seconds_for_baseline*stimuli_vids_fps
+stim_vid_baseline = np.average(average_luminance[:frames_in_baseline],0)
+average_luminance_normalized = average_luminance/stim_vid_baseline
 
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
@@ -253,8 +271,8 @@ tb_camera_out_of_ink_cloud = milliseconds_until_camera_out_of_ink_cloud/downsamp
 tb_thankyou_screen = milliseconds_until_thankyou_screen/downsample_rate_ms
 event_locations = np.array([0, tb_octo_visible, tb_octo_inks, tb_octo_disappears, tb_camera_out_of_ink_cloud, tb_thankyou_screen])
 
-plot_types = ["contours", "circles"]
 # Plot pupil sizes
+plot_types = ["contours", "circles"]
 for i in range(len(trials_to_plot)):
     plot_type_right = trials_to_plot[i][0]
     plot_type_left = trials_to_plot[i][1]
@@ -273,7 +291,7 @@ for i in range(len(trials_to_plot)):
             plt.figure(figsize=(12, 7), dpi=size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
 
-            plt.subplot(2,1,1)
+            plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, 0.0) 
             plt.ylabel('Percentage from baseline', fontsize=11)
@@ -290,7 +308,7 @@ for i in range(len(trials_to_plot)):
                 plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
                 plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
             
-            plt.subplot(2,1,2)
+            plt.subplot(3,1,2)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
             plt.title('Left eye pupil sizes', fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
@@ -305,6 +323,14 @@ for i in range(len(trials_to_plot)):
                 plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
                 plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
             
+            plt.subplot(3,1,3)
+            plt.title('Luminance of stimuli video, grayscaled', fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            plt.plot(average_luminance.T, linewidth=2, color=[1.0, 0.0, 1.0, 1])
+            plt.xlim(-10,200)
+            plt.ylim(0,2.5)
 
             plt.savefig(figure_path)
             plt.show(block=False)
