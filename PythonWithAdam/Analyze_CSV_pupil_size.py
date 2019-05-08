@@ -131,11 +131,11 @@ all_left_trials_circles = []
 activation_count = []
 
 # downsample = collect data from every 40ms or other multiples of 20
-downsample_rate_ms = 60
+downsample_rate_ms = 40
 original_bucket_size_in_ms = 4
 no_of_time_buckets = 10000
 new_time_bucket_ms = downsample_rate_ms/original_bucket_size_in_ms
-milliseconds_for_baseline = 3000
+milliseconds_for_baseline = 2000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_ms)
 
 for day_folder in day_folders: 
@@ -204,7 +204,8 @@ average_luminance = np.average(luminance_array,axis=0)
 stimuli_vids_fps = 30
 seconds_for_baseline = 1
 frames_in_baseline = seconds_for_baseline*stimuli_vids_fps
-stim_vid_baseline = np.average(average_luminance[:frames_in_baseline],0)
+#stim_vid_baseline = np.average(average_luminance[:frames_in_baseline],0)
+stim_vid_baseline = average_luminance[0]
 average_luminance_normalized = average_luminance/stim_vid_baseline
 
 ### EXHIBIT ACTIVITY METADATA ### 
@@ -288,12 +289,12 @@ for i in range(len(trials_to_plot)):
             figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + todays_datetime + '_dpi' + str(size) + image_type 
             figure_path = os.path.join(pupils_folder, figure_name)
             figure_title = "Pupil sizes of participants, N=" + str(total_activation) +"\nAnalysis type: " + plot_type_name + "\nPlotted on " + todays_datetime
-            plt.figure(figsize=(12, 7), dpi=size)
+            plt.figure(figsize=(12, 9), dpi=size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
 
             plt.subplot(3,1,1)
             ax = plt.gca()
-            ax.yaxis.set_label_coords(-0.09, 0.0) 
+            ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.ylabel('Percentage from baseline', fontsize=11)
             plt.title('Right eye pupil sizes', fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
@@ -301,7 +302,7 @@ for i in range(len(trials_to_plot)):
             plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
             plt.plot(plot_means_right, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            plt.xlim(-10,330)
+            plt.xlim(-10,400)
             plt.ylim(0,2.5)
             # mark events
             for i in range(len(event_labels)):
@@ -316,7 +317,7 @@ for i in range(len(trials_to_plot)):
             plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
             plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            plt.xlim(-10,330)
+            plt.xlim(-10,400)
             plt.ylim(0,2.5)
             # mark events
             for i in range(len(event_labels)):
@@ -328,10 +329,11 @@ for i in range(len(trials_to_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(average_luminance.T, linewidth=2, color=[1.0, 0.0, 1.0, 1])
-            plt.xlim(-10,200)
-            plt.ylim(0,2.5)
+            plt.plot(average_luminance.T, linewidth=4, color=[1.0, 0.0, 1.0, 1])
+            #plt.xlim(-10,200)
+            #plt.ylim(0.2,1.8)
 
+            plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
             plt.show(block=False)
             plt.pause(1)
