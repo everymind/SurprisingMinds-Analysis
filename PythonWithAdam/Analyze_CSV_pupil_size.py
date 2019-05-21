@@ -309,17 +309,22 @@ np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
 # Plot activation count
 total_activation = sum(count[0] for count in activation_count)
 total_days_activated = len(activation_count)
-total_good_trials = sum(count[0] for count in analysed_count)
+good_trials_right = [count[0] for count in analysed_count]
+good_trials_left = [count[1] for count in analysed_count]
+total_good_trials_right = sum(good_trials_right)
+total_good_trials_left = sum(good_trials_left)
 print("Total number of exhibit activations: {total}".format(total=total_activation))
-print("Total number of good trials: {good_total}".format(good_total=total_good_trials))
+print("Total number of good right eye camera trials: {good_total}".format(good_total=total_good_trials_right))
+print("Total number of good left eye camera trials: {good_total}".format(good_total=total_good_trials_left))
 activation_array = np.array(activation_count)
-analysed_array = np.array(analysed_count)
+analysed_array_right = np.array(good_trials_right)
+analysed_array_left = np.array(good_trials_left)
 # do da plot
 image_type_options = ['.png', '.pdf']
 for image_type in image_type_options:
     figure_name = 'TotalExhibitActivation_' + todays_datetime + image_type
     figure_path = os.path.join(engagement_folder, figure_name)
-    figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \n (Number of good trials: " + str(total_good_trials) + ")\nPlotted on " + todays_datetime
+    figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \n Total good trials from right eye camera (red): " + str(total_good_trials_right) + "\n Total good trials from left eye camera (green): " + str(total_good_trials_left) + "\nPlotted on " + todays_datetime
     plt.figure(figsize=(18, 9), dpi=200)
     plt.suptitle(figure_title, fontsize=12, y=0.98)
 
@@ -329,7 +334,8 @@ for image_type in image_type_options:
     plt.grid(b=True, which='major', linestyle='-')
     plt.grid(b=True, which='minor', linestyle='--')
     plt.plot(activation_array, color=[0.0, 0.0, 1.0])
-    #plt.plot(analysed_array, color=[1.0, 0.0, 0.0])
+    plt.plot(analysed_array_right, color=[1.0, 0.0, 0.0, 0.4])
+    plt.plot(analysed_array_left, color=[0.0, 1.0, 0.0, 0.4])
 
     plt.savefig(figure_path)
     plt.show(block=False)
@@ -350,7 +356,7 @@ all_left_contours_mean = np.nanmean(all_left_trials_contours_array, 0)
 all_left_circles_mean = np.nanmean(all_left_trials_circles_array, 0)
 means_to_plot = [(all_right_contours_mean, all_left_contours_mean), (all_right_circles_mean, all_left_circles_mean)]
 
-# event locations in time
+# event locations in time - NEED TO THINK ABOUT HOW TO DO THIS 
 milliseconds_until_octo_fully_decamoud = 6575
 milliseconds_until_octopus_inks = 11500
 milliseconds_until_octopus_disappears = 11675
@@ -376,19 +382,18 @@ for i in range(len(trials_to_plot)):
         if (image_type == '.pdf'):
             continue
         else:
-            dpi_sizes = [100, 400]
+            dpi_sizes = [200]
         for size in dpi_sizes: 
             figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + todays_datetime + '_dpi' + str(size) + image_type 
             figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil sizes of participants, N=" + str(total_good_trials) + " good trials out of " + str(total_activation) + " activations" + "\nAnalysis type: " + plot_type_name + "\nPlotted on " + todays_datetime
+            figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nPlotted on " + todays_datetime
             plt.figure(figsize=(14, 14), dpi=size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
 
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.ylabel('Percentage from baseline', fontsize=11)
-            plt.title('Right eye pupil sizes', fontsize=9, color='grey', style='italic')
+            plt.title('Right eye pupil sizes; N = ' + str(total_good_trials_right), fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
@@ -398,8 +403,8 @@ for i in range(len(trials_to_plot)):
             plt.ylim(0,2.0)
             
             plt.subplot(3,1,2)
-            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
-            plt.title('Left eye pupil sizes', fontsize=9, color='grey', style='italic')
+            plt.ylabel('Percentage from baseline', fontsize=11)
+            plt.title('Left eye pupil sizes; N = ' + str(total_good_trials_left), fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
@@ -409,7 +414,8 @@ for i in range(len(trials_to_plot)):
             plt.ylim(0,2.0)
             
             plt.subplot(3,1,3)
-            plt.title('Average luminance of stimuli video, grayscaled', fontsize=9, color='grey', style='italic')
+            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
+            plt.title('Average luminance of stimuli video as seen by world camera, grayscaled; N = ' + str(len(luminance)), fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
@@ -417,10 +423,9 @@ for i in range(len(trials_to_plot)):
             plt.xlim(-10,500)
             plt.ylim(0,2.0)
             # mark events
-            for i in range(len(event_labels)):
-                plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
-                plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-
+            #for i in range(len(event_labels)):
+            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
+            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
             plt.show(block=False)
