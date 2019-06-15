@@ -173,7 +173,7 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 current_working_directory = os.getcwd()
-stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\StimuliVid_Luminance"
+stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\LuminanceCSVs"
 
 # set up log file to store all printed messages
 log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
@@ -184,6 +184,7 @@ sys.stdout = open(log_file, "w")
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")
 engagement_folder = os.path.join(plots_folder, "engagement")
+linReg_folder = os.path.join(plots_folder, "linReg")
 
 # Create plots folder (and sub-folders) if it (they) does (do) not exist
 if not os.path.exists(plots_folder):
@@ -195,6 +196,9 @@ if not os.path.exists(pupils_folder):
 if not os.path.exists(engagement_folder):
     #print("Creating engagement count folder.")
     os.makedirs(engagement_folder)
+if not os.path.exists(linReg_folder):
+    #print("Creating engagement count folder.")
+    os.makedirs(linReg_folder)
 
 # consolidate csv files from multiple days into one data structure
 day_folders = list_sub_folders(root_folder)
@@ -256,16 +260,16 @@ for day_folder in day_folders:
 
         # normalize and append
         for index in range(len(right_area_contours_baseline)): 
-            right_area_contours[index,:] = right_area_contours[index,:]/right_area_contours_baseline[index]
+            right_area_contours[index,:] = (right_area_contours[index,:]-right_area_contours_baseline[index])/right_area_contours_baseline[index]
             all_right_trials_contours.append(right_area_contours[index,:])
         for index in range(len(right_area_circles_baseline)): 
-            right_area_circles[index,:] = right_area_circles[index,:]/right_area_circles_baseline[index]
+            right_area_circles[index,:] = (right_area_circles[index,:]-right_area_circles_baseline[index])/right_area_circles_baseline[index]
             all_right_trials_circles.append(right_area_circles[index,:])
         for index in range(len(left_area_contours_baseline)): 
-            left_area_contours[index,:] = left_area_contours[index,:]/left_area_contours_baseline[index]
+            left_area_contours[index,:] = (left_area_contours[index,:]-left_area_contours_baseline[index])/left_area_contours_baseline[index]
             all_left_trials_contours.append(left_area_contours[index,:])
         for index in range(len(left_area_circles_baseline)): 
-            left_area_circles[index,:] = left_area_circles[index,:]/left_area_circles_baseline[index]
+            left_area_circles[index,:] = (left_area_circles[index,:]-left_area_circles_baseline[index])/left_area_circles_baseline[index]
             all_left_trials_circles.append(left_area_circles[index,:])
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
@@ -280,7 +284,7 @@ for day_folder in day_folders:
 # stimuli028 = 247
 # stimuli029 = 314
 luminance = []
-luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_LuminancePerFrame.csv")
+luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
 for data_path in luminance_data_paths: 
     luminance_values = np.genfromtxt(data_path, dtype=np.str, delimiter='  ')
     luminance_values = np.array(luminance_values)
@@ -288,7 +292,8 @@ for data_path in luminance_data_paths:
 luminance_array = np.array(luminance)
 average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, 630)
 baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
-avg_lum_baselined = [(x/baseline) for x in average_luminance]
+avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
+avg_lum_base_array = np.array(avg_lum_baselined)
 
 ### NOTES FROM LAB MEETING ###
 # based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
@@ -306,7 +311,7 @@ if not os.path.exists(engagement_data_folder):
 csv_file = os.path.join(engagement_data_folder, engagement_count_filename)
 np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
 
-# Plot activation count
+# Plot activation count - IMPROVE AXIS LABELS
 total_activation = sum(count[0] for count in activation_count)
 total_days_activated = len(activation_count)
 good_trials_right = [count[0] for count in analysed_count]
@@ -321,11 +326,13 @@ analysed_array_right = np.array(good_trials_right)
 analysed_array_left = np.array(good_trials_left)
 # do da plot
 image_type_options = ['.png', '.pdf']
+
+## PLOT EXHIBIT ENGAGEMENT ##
 for image_type in image_type_options:
     figure_name = 'TotalExhibitActivation_' + todays_datetime + image_type
     figure_path = os.path.join(engagement_folder, figure_name)
     figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \n Total good trials from right eye camera (red): " + str(total_good_trials_right) + "\n Total good trials from left eye camera (green): " + str(total_good_trials_left) + "\nPlotted on " + todays_datetime
-    plt.figure(figsize=(18, 9), dpi=200)
+    plt.figure(figsize=(27, 9), dpi=200)
     plt.suptitle(figure_title, fontsize=12, y=0.98)
 
     plt.ylabel('Number of activations', fontsize=11)
@@ -355,6 +362,156 @@ all_right_circles_mean = np.nanmean(all_right_trials_circles_array, 0)
 all_left_contours_mean = np.nanmean(all_left_trials_contours_array, 0)
 all_left_circles_mean = np.nanmean(all_left_trials_circles_array, 0)
 means_to_plot = [(all_right_contours_mean, all_left_contours_mean), (all_right_circles_mean, all_left_circles_mean)]
+
+### -------------------------- ###
+### UNDER CONSTRUCTION!!!!!!!! ###
+### -------------------------- ###
+### LINEAR REGRESSION ANALYSIS ###
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.pipeline import make_pipeline
+from sklearn.metrics import r2_score
+from mpl_toolkits.mplot3d import Axes3D  
+
+# offset, to account for latency of pupillary response. best latency = 20 time bucket delay
+latency = [10, 15, 16, 17, 18, 19, 20, 21, 25]
+r2_lum_scores = []
+r2_lumFrames_scores = []
+r2_Xdof2_scores = []
+r2_Xdof3_scores = []
+offsets_ms = []
+for offset_frames in latency: 
+    print(str(offset_frames))
+    offset_ms = int(offset_frames*downsample_rate_ms)
+    offsets_ms.append(offset_ms)
+    print(offsets_ms)
+    start = 0
+    end = 480
+    all_left_circles_mean_trimmed = all_left_circles_mean[(start+offset_frames):(end+offset_frames)]
+    avg_lum_base_trimmed = avg_lum_base_array[start:end]
+
+    # Build linear regression model using Avg Luminance as predictor
+    # Split data into predictors X and output Y
+    avg_lum_reshaped = avg_lum_base_trimmed.reshape(-1,1)
+    X = avg_lum_reshaped
+    relative_frame_numbers = np.arange(len(X))
+    X_frames = np.empty((len(X), 2))
+    for i in range(len(X)):
+        X_frames[i] = [X[i], relative_frame_numbers[i]]
+    y = all_left_circles_mean_trimmed
+
+    # Initialise and fit model
+    # linear: just luminance values
+    model_linX = LinearRegression().fit(X, y)
+    # multiple linear: luminance values + frame number
+    model_linXframes = LinearRegression().fit(X_frames, y)
+    # quadratic
+    X_dof2 = PolynomialFeatures(degree=2, include_bias=False).fit_transform(X)
+    X_dof3 = PolynomialFeatures(degree=3, include_bias=False).fit_transform(X)
+    # Initialise and fit model
+    model_X_dof2 = LinearRegression().fit(X_dof2,y)
+    model_X_dof3 = LinearRegression().fit(X_dof3,y)
+
+    # Print Coefficients
+    print(f'beta_0 = {model_linX.intercept_}')
+    print(f'beta = {model_linX.coef_}')
+    print(f'beta_0_frames = {model_linXframes.intercept_}')
+    print(f'betas_frames = {model_linXframes.coef_}')
+    print(f'beta_0_X_dof2 = {model_X_dof2.intercept_}')
+    print(f'betas_X_dof2 = {model_X_dof2.coef_}')
+    print(f'beta_0_X_dof3 = {model_X_dof3.intercept_}')
+    print(f'betas_X_dof3 = {model_X_dof3.coef_}')
+
+    # predicted response
+    model_linX_prediction = model_linX.predict(X)
+    model_linXframes_prediction = model_linXframes.predict(X_frames)
+    model_Xdof2_prediction = model_X_dof2.predict(X_dof2)
+    model_Xdof3_prediction = model_X_dof3.predict(X_dof3)
+
+    #r^2 (coefficient of determination) regression score function.
+    r2_lum = model_linX.score(X,y)
+    r2_lum_scores.append(r2_lum)
+    r2_lumFrames = model_linXframes.score(X_frames,y)
+    r2_lumFrames_scores.append(r2_lumFrames)
+    r2_Xdof2 = model_X_dof2.score(X_dof2,y)
+    r2_Xdof2_scores.append(r2_Xdof2)
+    r2_Xdof3 = model_X_dof3.score(X_dof3,y)
+    r2_Xdof3_scores.append(r2_Xdof3)
+    print(f'linear model (luminance) = {r2_lum}')
+    print(f'multiple linear model (luminance + frame number) = {r2_lumFrames}')
+    print(f'polynomial model, luminance, 2 dof = {r2_Xdof2}')
+    print(f'polynomial model, luminance, 3 dof = {r2_Xdof3}')
+
+    # plot each model
+    # linear
+    figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
+    figure2d_path = os.path.join(linReg_folder, figure2d_name)
+    figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
+    plt.figure(dpi=200)
+    plt.suptitle(figure2d_title, fontsize=10, y=0.98)
+
+    plt.scatter(X, y)
+    plt.plot(X, model_linX_prediction, 'yellow')
+    plt.plot(X, model_Xdof2_prediction, '.r')
+    plt.plot(X, model_Xdof3_prediction, 'lime')
+    plt.ylim(-0.25,0.4)
+    plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
+    plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
+    plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum) + "\n$R^2$ score, polynomial (DOF=2, red) = " + str(r2_Xdof2) + "\n$R^2$ score, polynomial (DOF=3, green) = " + str(r2_Xdof3), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+    plt.savefig(figure2d_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+    # multiple linear
+    figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
+    figure2d_path = os.path.join(linReg_folder, figure2d_name)
+    figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
+    plt.figure(dpi=200)
+    plt.suptitle(figure2d_title, fontsize=10, y=0.98)
+
+    plt.scatter(relative_frame_numbers, X)
+    plt.plot(X_frames, model_linXframes, 'yellow')
+    plt.plot(X_frames, model_Xframes_dof2, '.r')
+    plt.plot(X_frames, model_Xframes_dof3, 'lime')
+    plt.ylim(-0.25,0.4)
+    plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
+    plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
+    plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum) + "\n$R^2$ score, linear (luminance + frame number, red) = " + str(r2_lumFrames) + "\n$R^2$ score, polynomial (DOF=2, green) = " + str(r2_dof2), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+    plt.savefig(figure2d_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+    # visualize this in 3d
+    figure3d_name = 'LinearReg3d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
+    figure3d_path = os.path.join(linReg_folder, figure3d_name)
+    figure3d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
+    plt.figure(dpi=200)
+    plt.suptitle(figure3d_title, fontsize=10, y=0.98)
+    fig = plt.figure(figsize=(8,8))
+    ax = fig.add_subplot(111, projection='3d')
+    ax.scatter(X, X_frames, model_linXframes_prediction)
+    ax.scatter(X, X_dof2, y)
+    ax.view_init(elev=40., azim=-45)
+    ax.set_xlabel('Avg Luminance')
+    ax.set_ylabel('$(Avg Lum)^2$')
+    ax.set_zlabel('Avg pupil size')
+    plt.savefig(figure3d_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close
+
+print("Finished!")
+# plot R^2 scores for each offset
+y_pos = np.arange(len(offsets_ms))
+plt.bar(y_pos, r2_lumFrames_scores, align='center', alpha=0.5)
+plt.xticks(y_pos, offsets_ms)
+plt.ylabel('$R^2 scores$, luminance+frames')
+plt.title('Comparison of goodness-of-fit for different latencies (ms)')
+
+### END OF CONSTRUCTION ###
+### ------------------- ###
 
 # event locations in time - NEED TO THINK ABOUT HOW TO DO THIS 
 milliseconds_until_octo_fully_decamoud = 6575
@@ -400,7 +557,7 @@ for i in range(len(trials_to_plot)):
             plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
             plt.plot(plot_means_right, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
             plt.xlim(-10,500)
-            plt.ylim(0,2.0)
+            plt.ylim(-0.5,0.5)
             
             plt.subplot(3,1,2)
             plt.ylabel('Percentage from baseline', fontsize=11)
@@ -411,7 +568,7 @@ for i in range(len(trials_to_plot)):
             plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
             plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
             plt.xlim(-10,500)
-            plt.ylim(0,2.0)
+            plt.ylim(-0.5,0.5)
             
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
@@ -421,7 +578,7 @@ for i in range(len(trials_to_plot)):
             plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(avg_lum_baselined, linewidth=4, color=[1.0, 0.0, 1.0, 1])
             plt.xlim(-10,500)
-            plt.ylim(0,2.0)
+            plt.ylim(-1.0,1.0)
             # mark events
             #for i in range(len(event_labels)):
             #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
