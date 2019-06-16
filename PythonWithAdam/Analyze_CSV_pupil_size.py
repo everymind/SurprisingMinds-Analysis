@@ -57,10 +57,13 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                             line[:] = np.nan
                         if (line>15000).any():
                             line[:] = np.nan
-                    # extract pupil sizes from valid time buckets
+                    # extract pupil sizes and locations from valid time buckets
                     this_slice_contours = []
                     this_slice_circles = []
                     for frame in this_slice:
+                        # contour x,y
+                        this_slice_contours_X.append(frame[0])
+                        this_slice
                         this_slice_contours.append(frame[2])
                         this_slice_circles.append(frame[5])
                     # average the pupil size in this sample slice
@@ -215,9 +218,9 @@ activation_count = []
 analysed_count = []
 
 # downsample = collect data from every 40ms or other multiples of 20
-downsample_rate_ms = 40
+downsample_rate_ms = 20
 original_bucket_size_in_ms = 4
-no_of_time_buckets = 10000
+no_of_time_buckets = 20000
 new_time_bucket_ms = downsample_rate_ms/original_bucket_size_in_ms
 milliseconds_for_baseline = 2000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_ms)
@@ -374,11 +377,18 @@ from sklearn.metrics import r2_score
 from mpl_toolkits.mplot3d import Axes3D  
 
 # offset, to account for latency of pupillary response. best latency = 20 time bucket delay
-latency = [10, 15, 16, 17, 18, 19, 20, 21, 25]
-r2_lum_scores = []
-r2_lumFrames_scores = []
-r2_Xdof2_scores = []
-r2_Xdof3_scores = []
+latency = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+X_test_all = []
+X_test_frames_all = []
+model_linX_prediction_all = []
+model_linXframes_prediction_all = []
+model_Xdof2_prediction_all = []
+r2_lum_training_scores = []
+r2_lum_test_scores = []
+r2_lumFrames_training_scores = []
+r2_lumFrames_test_scores = []
+r2_Xdof2_training_scores = []
+r2_Xdof2_test_scores = []
 offsets_ms = []
 for offset_frames in latency: 
     print(str(offset_frames))
@@ -389,28 +399,41 @@ for offset_frames in latency:
     end = 480
     all_left_circles_mean_trimmed = all_left_circles_mean[(start+offset_frames):(end+offset_frames)]
     avg_lum_base_trimmed = avg_lum_base_array[start:end]
-
     # Build linear regression model using Avg Luminance as predictor
     # Split data into predictors X and output Y
-    avg_lum_reshaped = avg_lum_base_trimmed.reshape(-1,1)
-    X = avg_lum_reshaped
-    relative_frame_numbers = np.arange(len(X))
-    X_frames = np.empty((len(X), 2))
-    for i in range(len(X)):
-        X_frames[i] = [X[i], relative_frame_numbers[i]]
+    X = avg_lum_base_trimmed.reshape(-1,1)
     y = all_left_circles_mean_trimmed
+    # divide dataset into training and test portions
+    # training data - first 100 frames
+    train_start = 0
+    train_end = 99
+    # test data - frame 101 to end
+    test_start = 100
+    test_end = len(X)
+    X_training = X[train_start:train_end]
+    X_test = X[test_start:test_end]
+    y_training = y[train_start:train_end]
+    y_test = y[test_start:test_end]
+    # add frame number as a predictor
+    relative_frame_numbers_training = np.arange(len(X_training))
+    relative_frame_numbers_test = np.arange(len(X_test))
+    X_frames_training = np.empty((len(X_training), 2))
+    for i in range(len(X_training)):
+        X_frames_training[i] = [X_training[i], relative_frame_numbers_training[i]]
+    X_frames_test = np.empty((len(X_test), 2))
+    for i in range(len(X_test)):
+        X_test_frames[i] = [X_test[i], relative_frame_numbers_test[i]]
 
     # Initialise and fit model
     # linear: just luminance values
-    model_linX = LinearRegression().fit(X, y)
+    model_linX = LinearRegression().fit(X_training, y_training)
     # multiple linear: luminance values + frame number
-    model_linXframes = LinearRegression().fit(X_frames, y)
+    model_linXframes = LinearRegression().fit(X_training_frames, y_training)
     # quadratic
-    X_dof2 = PolynomialFeatures(degree=2, include_bias=False).fit_transform(X)
-    X_dof3 = PolynomialFeatures(degree=3, include_bias=False).fit_transform(X)
+    X_dof2_training = PolynomialFeatures(degree=2, include_bias=False).fit_transform(X_training)
+    X_dof2_test = PolynomialFeatures(degree=2, include_bias=False).fit_transform(X_test)
     # Initialise and fit model
-    model_X_dof2 = LinearRegression().fit(X_dof2,y)
-    model_X_dof3 = LinearRegression().fit(X_dof3,y)
+    model_X_dof2 = LinearRegression().fit(X_dof2_training,y_training)
 
     # Print Coefficients
     print(f'beta_0 = {model_linX.intercept_}')
@@ -419,96 +442,118 @@ for offset_frames in latency:
     print(f'betas_frames = {model_linXframes.coef_}')
     print(f'beta_0_X_dof2 = {model_X_dof2.intercept_}')
     print(f'betas_X_dof2 = {model_X_dof2.coef_}')
-    print(f'beta_0_X_dof3 = {model_X_dof3.intercept_}')
-    print(f'betas_X_dof3 = {model_X_dof3.coef_}')
 
     # predicted response
-    model_linX_prediction = model_linX.predict(X)
-    model_linXframes_prediction = model_linXframes.predict(X_frames)
-    model_Xdof2_prediction = model_X_dof2.predict(X_dof2)
-    model_Xdof3_prediction = model_X_dof3.predict(X_dof3)
+    model_linX_prediction = model_linX.predict(X_test)
+    model_linX_prediction_all.append(model_linX_prediction)
+    model_linXframes_prediction = model_linXframes.predict(X_frames_test)
+    model_linXframes_prediction_all.append(model_linXframes_prediction)
+    model_Xdof2_prediction = model_X_dof2.predict(X_dof2_test)
+    model_Xdof2_prediction_all.append(model_Xdof2_prediction)
 
     #r^2 (coefficient of determination) regression score function.
-    r2_lum = model_linX.score(X,y)
-    r2_lum_scores.append(r2_lum)
-    r2_lumFrames = model_linXframes.score(X_frames,y)
-    r2_lumFrames_scores.append(r2_lumFrames)
-    r2_Xdof2 = model_X_dof2.score(X_dof2,y)
-    r2_Xdof2_scores.append(r2_Xdof2)
-    r2_Xdof3 = model_X_dof3.score(X_dof3,y)
-    r2_Xdof3_scores.append(r2_Xdof3)
-    print(f'linear model (luminance) = {r2_lum}')
-    print(f'multiple linear model (luminance + frame number) = {r2_lumFrames}')
-    print(f'polynomial model, luminance, 2 dof = {r2_Xdof2}')
-    print(f'polynomial model, luminance, 3 dof = {r2_Xdof3}')
+    r2_lum_training = model_linX.score(X_training,y_training)
+    r2_lum_training_scores.append(r2_lum_training)
+    r2_lum_test = model_linX.score(X_test,y_test)
+    r2_lum_test_scores.append(r2_lum_test)
 
-    # plot each model
-    # linear
-    figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
-    figure2d_path = os.path.join(linReg_folder, figure2d_name)
-    figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
-    plt.figure(dpi=200)
-    plt.suptitle(figure2d_title, fontsize=10, y=0.98)
+    r2_lumFrames_training = model_linXframes.score(X_frames_training,y_training)
+    r2_lumFrames_training_scores.append(r2_lumFrames_training)
+    r2_lumFrames_test = model_linXframes.score(X_frames_test,y_test)
+    r2_lumFrames_test_scores.append(r2_lumFrames_test)
 
-    plt.scatter(X, y)
-    plt.plot(X, model_linX_prediction, 'yellow')
-    plt.plot(X, model_Xdof2_prediction, '.r')
-    plt.plot(X, model_Xdof3_prediction, 'lime')
-    plt.ylim(-0.25,0.4)
-    plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
-    plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
-    plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum) + "\n$R^2$ score, polynomial (DOF=2, red) = " + str(r2_Xdof2) + "\n$R^2$ score, polynomial (DOF=3, green) = " + str(r2_Xdof3), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-    plt.savefig(figure2d_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
+    r2_Xdof2_training = model_X_dof2.score(X_dof2_training,y_training)
+    r2_Xdof2_training_scores.append(r2_Xdof2_training)
+    r2_Xdof2_test = model_X_dof2.score(X_dof2_test,y_test)
+    r2_Xdof2_test_scores.append(r2_Xdof2_test)
 
-    # multiple linear
-    figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
-    figure2d_path = os.path.join(linReg_folder, figure2d_name)
-    figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
-    plt.figure(dpi=200)
-    plt.suptitle(figure2d_title, fontsize=10, y=0.98)
+    print(f'linear model (luminance) = {r2_lum_training}')
+    print(f'multiple linear model (luminance + frame number) = {r2_lumFrames_training}')
+    print(f'polynomial model, luminance, 2 dof = {r2_Xdof2_training}')
 
-    plt.scatter(relative_frame_numbers, X)
-    plt.plot(X_frames, model_linXframes, 'yellow')
-    plt.plot(X_frames, model_Xframes_dof2, '.r')
-    plt.plot(X_frames, model_Xframes_dof3, 'lime')
-    plt.ylim(-0.25,0.4)
-    plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
-    plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
-    plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum) + "\n$R^2$ score, linear (luminance + frame number, red) = " + str(r2_lumFrames) + "\n$R^2$ score, polynomial (DOF=2, green) = " + str(r2_dof2), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-    plt.savefig(figure2d_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
-
-    # visualize this in 3d
-    figure3d_name = 'LinearReg3d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
-    figure3d_path = os.path.join(linReg_folder, figure3d_name)
-    figure3d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
-    plt.figure(dpi=200)
-    plt.suptitle(figure3d_title, fontsize=10, y=0.98)
-    fig = plt.figure(figsize=(8,8))
-    ax = fig.add_subplot(111, projection='3d')
-    ax.scatter(X, X_frames, model_linXframes_prediction)
-    ax.scatter(X, X_dof2, y)
-    ax.view_init(elev=40., azim=-45)
-    ax.set_xlabel('Avg Luminance')
-    ax.set_ylabel('$(Avg Lum)^2$')
-    ax.set_zlabel('Avg pupil size')
-    plt.savefig(figure3d_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close
-
-print("Finished!")
 # plot R^2 scores for each offset
 y_pos = np.arange(len(offsets_ms))
-plt.bar(y_pos, r2_lumFrames_scores, align='center', alpha=0.5)
+training_scores = [r2_lum_training_scores, r2_lumFrames_training_scores, r2_Xdof2_training_scores]
+test_scores = [r2_lum_test_scores, r2_lumFrames_test_scores, r2_Xdof2_test_scores]
+y_labels = ['$R^2 scores$, luminance', '$R^2 scores$, luminance+frames', '$R^2 scores$, DoF=2', '$R^2 scores$, DoF=3']
+
+#for i in range(len(scores)): 
+i = 0
+r2_scores_plot_title = 'Comparison of goodness-of-fit for different latencies (ms) \nTraining data: first 100 frames'
+plt.figure(dpi=200)
+plt.suptitle(r2_scores_plot_title, fontsize=10, y=0.98)
+bars = plt.bar(y_pos, training_scores[i], color='red', align='center', alpha=0.5)
+plt.ylim(0,1)
 plt.xticks(y_pos, offsets_ms)
-plt.ylabel('$R^2 scores$, luminance+frames')
-plt.title('Comparison of goodness-of-fit for different latencies (ms)')
+plt.ylabel(y_labels[i])
+for rect in bars:
+    height = rect.get_height()
+    plt.text(rect.get_x() + rect.get_width()/2.0, height, '%.4f' % height, ha='center', va='bottom', fontsize=6, rotation=60)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+# plot the best model
+# index of best latency
+best_index = 0
+# linear
+figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms[best_index]) + 'ms_' + todays_datetime + '.png'
+figure2d_path = os.path.join(linReg_folder, figure2d_name)
+figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms[best_index]) + "ms to account for latency of pupillary response"
+plt.figure(dpi=200)
+plt.suptitle(figure2d_title, fontsize=10, y=0.98)
+
+plt.scatter(X_test, y_test)
+plt.plot(X_test, model_linX_prediction[best_index], 'yellow')
+plt.plot(X_test, model_Xdof2_prediction[best_index], '.r')
+plt.plot(X_test, model_Xdof3_prediction[best_index], 'lime')
+plt.ylim(-0.25,0.4)
+plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
+plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
+plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum_scores[best_index]) + "\n$R^2$ score, polynomial (DOF=2, red) = " + str(r2_Xdof2_scores[best_index]) + "\n$R^2$ score, polynomial (DOF=3, green) = " + str(r2_Xdof3_scores[best_index]), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+plt.savefig(figure2d_path)
+plt.show(block=False)
+plt.pause(1)
+plt.close()
+
+# multiple linear
+figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
+figure2d_path = os.path.join(linReg_folder, figure2d_name)
+figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
+plt.figure(dpi=200)
+plt.suptitle(figure2d_title, fontsize=10, y=0.98)
+
+plt.scatter(relative_frame_numbers, X)
+plt.plot(X_frames, model_linXframes, 'yellow')
+plt.plot(X_frames, model_Xframes_dof2, '.r')
+plt.plot(X_frames, model_Xframes_dof3, 'lime')
+plt.ylim(-0.25,0.4)
+plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
+plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
+plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum) + "\n$R^2$ score, linear (luminance + frame number, red) = " + str(r2_lumFrames) + "\n$R^2$ score, polynomial (DOF=2, green) = " + str(r2_dof2), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+plt.savefig(figure2d_path)
+plt.show(block=False)
+plt.pause(1)
+plt.close()
+
+# visualize this in 3d
+figure3d_name = 'LinearReg3d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
+figure3d_path = os.path.join(linReg_folder, figure3d_name)
+figure3d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
+plt.figure(dpi=200)
+plt.suptitle(figure3d_title, fontsize=10, y=0.98)
+fig = plt.figure(figsize=(8,8))
+ax = fig.add_subplot(111, projection='3d')
+ax.scatter(X, X_frames, model_linXframes_prediction)
+ax.scatter(X, X_dof2, y)
+ax.view_init(elev=40., azim=-45)
+ax.set_xlabel('Avg Luminance')
+ax.set_ylabel('$(Avg Lum)^2$')
+ax.set_zlabel('Avg pupil size')
+plt.savefig(figure3d_path)
+plt.show(block=False)
+plt.pause(1)
+plt.close
 
 ### END OF CONSTRUCTION ###
 ### ------------------- ###
