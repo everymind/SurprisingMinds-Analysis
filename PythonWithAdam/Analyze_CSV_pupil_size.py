@@ -10,6 +10,7 @@ import itertools
 
 ### FUNCTIONS ###
 def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
+    # "right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms
     if (new_bucket_size % original_bucket_size == 0):
         new_sample_rate = int(new_bucket_size/original_bucket_size)
         #print("New bucket window = {size}, need to average every {sample_rate} buckets".format(size=new_bucket_size, sample_rate=new_sample_rate))
@@ -20,13 +21,13 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
         num_trials = len(trial_files)
         good_trials = num_trials
         # contours
-        data_contours_XY = np.empty((num_trials, downsampled_no_of_buckets))
-        data_contours_XY[:] = -6
+        data_contours_XY = np.empty((num_trials, downsampled_no_of_buckets, 2))
+        data_contours_XY[:] = [-6, -6]
         data_contours = np.empty((num_trials, downsampled_no_of_buckets))
         data_contours[:] = -6
         # circles
-        data_circles_XY = np.empty((num_trials, downsampled_no_of_buckets))
-        data_circles_XY[:] = -6
+        data_circles_XY = np.empty((num_trials, downsampled_no_of_buckets, 2))
+        data_circles_XY[:] = [-6, -6]
         data_circles = np.empty((num_trials, downsampled_no_of_buckets))
         data_circles[:] = -6
 
@@ -78,9 +79,9 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                         # circles area
                         this_slice_circles.append(frame[5])
                     # average the pupil size and movement in this sample slice
-                    this_slice_avg_contour_XY = np.nanmean(this_slice_contours_XY)
+                    this_slice_avg_contour_XY = np.nanmean(this_slice_contours_XY, axis=0)
                     this_slice_avg_contour = np.nanmean(this_slice_contours) 
-                    this_slice_avg_circle_XY = np.nanmean(this_slice_circles_X)       
+                    this_slice_avg_circle_XY = np.nanmean(this_slice_circles_XY, axis=0)       
                     this_slice_avg_circle = np.nanmean(this_slice_circles)
                     # append to list of downsampled pupil sizes and movements
                     this_trial_contours_XY.append(this_slice_avg_contour_XY)
@@ -88,9 +89,9 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                     this_trial_circles_XY.append(this_slice_avg_circle_XY)
                     this_trial_circles.append(this_slice_avg_circle)
                 # Find count of bad measurements
-                bad_count_contours_XY = sum(np.isnan(this_trial_contours_XY))
+                bad_count_contours_XY = max(sum(np.isnan(this_trial_contours_XY)))
                 bad_count_contours = sum(np.isnan(this_trial_contours))
-                bad_count_circles_XY = sum(np.isnan(this_trial_circles_XY))
+                bad_count_circles_XY = max(sum(np.isnan(this_trial_circles_XY)))
                 bad_count_circles = sum(np.isnan(this_trial_circles))
                 # if more than half of the trial is NaN, then throw away this trial
                 # otherwise, if it's a good enough trial...
@@ -194,6 +195,10 @@ def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_si
     avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
     return avg_lum_final
 
+def movement_filter(xy_positions_array, upper_speed_threshold, max_no_nan_buckets):
+    for trial in xy_positions_array:
+
+
 ### BEGIN ANALYSIS ###
 # grab today's date
 now = datetime.datetime.now()
@@ -236,9 +241,13 @@ day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
 
+all_right_trials_contours_XY = []
 all_right_trials_contours = []
+all_right_trials_circles_XY = []
 all_right_trials_circles = []
+all_left_trials_contours_XY = []
 all_left_trials_contours = []
+all_left_trials_circles_XY = []
 all_left_trials_circles = []
 activation_count = []
 analysed_count = []
@@ -270,6 +279,9 @@ for day_folder in day_folders:
         ## COMBINE EXTRACTING PUPIL SIZE AND POSITION
 
         # filter data for outlier points
+
+        ### SANDBOX FOR VISUALIZING PUPIL MOVEMENT DATA ### 
+
         # right eye movements that are too big - NEED TO WRITE NEW FUNCTION HERE
         right_area_contours_XY = 
         right_area_circles_XY = 
