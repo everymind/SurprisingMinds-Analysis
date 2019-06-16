@@ -20,9 +20,17 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
         num_trials = len(trial_files)
         good_trials = num_trials
         # contours
+        data_contours_X = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours_X[:] = -6
+        data_contours_Y = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours_Y[:] = -6
         data_contours = np.empty((num_trials, downsampled_no_of_buckets))
         data_contours[:] = -6
         # circles
+        data_circles_X = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles_X[:] = -6
+        data_circles_Y = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles_Y[:] = -6
         data_circles = np.empty((num_trials, downsampled_no_of_buckets))
         data_circles[:] = -6
 
@@ -45,7 +53,11 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
             #print("For trial {name}, the longest cluster is {length}".format(name=trial_name, length=longest_cluster))
             if longest_cluster<100:
                 no_of_samples = math.ceil(len(trial)/new_sample_rate)
+                this_trial_contours_X = []
+                this_trial_contours_Y = []
                 this_trial_contours = []
+                this_trial_circles_X = []
+                this_trial_circles_Y = []
                 this_trial_circles = []
                 # loop through the trial at given sample rate
                 for sample in range(no_of_samples):
@@ -58,35 +70,67 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                         if (line>15000).any():
                             line[:] = np.nan
                     # extract pupil sizes and locations from valid time buckets
+                    this_slice_contours_X = []
+                    this_slice_contours_Y = []
                     this_slice_contours = []
+                    this_slice_circles_X = []
+                    this_slice_circles_Y = []
                     this_slice_circles = []
                     for frame in this_slice:
                         # contour x,y
                         this_slice_contours_X.append(frame[0])
-                        this_slice
+                        this_slice_contours_Y.append(frame[1])
+                        # contour area
                         this_slice_contours.append(frame[2])
+                        # circles x,y
+                        this_slice_circles_X.append(frame[3])
+                        this_slice_circles_Y.append(frame[4])
+                        # circles area
                         this_slice_circles.append(frame[5])
-                    # average the pupil size in this sample slice
-                    this_slice_avg_contour = np.nanmean(this_slice_contours)            
+                    # average the pupil size and movement in this sample slice
+                    this_slice_avg_contour_X = np.nanmean(this_slice_contours_X)
+                    this_slice_avg_contour_Y = np.nanmean(this_slice_contours_Y)  
+                    this_slice_avg_contour = np.nanmean(this_slice_contours) 
+                    this_slice_avg_circle_X = np.nanmean(this_slice_circles_X)
+                    this_slice_avg_circle_Y = np.nanmean(this_slice_circles_Y)           
                     this_slice_avg_circle = np.nanmean(this_slice_circles)
-                    # append to list of downsampled pupil sizes
+                    # append to list of downsampled pupil sizes and movements
+                    this_trial_contours_X.append(this_slice_avg_contour_X)
+                    this_trial_contours_Y.append(this_slice_avg_contour_Y)
                     this_trial_contours.append(this_slice_avg_contour)
+                    this_trial_circles_X.append(this_slice_avg_circle_X)
+                    this_trial_circles_Y.append(this_slice_avg_circle_Y)
                     this_trial_circles.append(this_slice_avg_circle)
                 # Find count of bad measurements
+                bad_count_contours_X = sum(np.isnan(this_trial_contours_X))
+                bad_count_contours_Y = sum(np.isnan(this_trial_contours_Y))
                 bad_count_contours = sum(np.isnan(this_trial_contours))
+                bad_count_circles_X = sum(np.isnan(this_trial_circles_X))
+                bad_count_circles_Y = sum(np.isnan(this_trial_circles_Y))
                 bad_count_circles = sum(np.isnan(this_trial_circles))
                 # if more than half of the trial is NaN, then throw away this trial
                 # otherwise, if it's a good enough trial...
-                if (bad_count_contours < (no_of_samples/2)): 
+                bad_threshold = no_of_samples/2
+                if (bad_count_contours_X<bad_threshold) or (bad_count_contours_Y<bad_threshold): 
+                    this_chunk_length = len(this_trial_contours_X)
+                    data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
+                    data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
+                if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold): 
                     this_chunk_length = len(this_trial_contours)
                     data_contours[index][0:this_chunk_length] = this_trial_contours
+                if (bad_count_circles_X<bad_threshold) or (bad_count_circles_Y<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles_X)
+                    data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
+                    data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
+                if (bad_count_circles<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles)
                     data_circles[index][0:this_chunk_length] = this_trial_circles
                 index = index + 1
             else:
                 #print("Discarding trial {name}".format(name=trial_name))
                 index = index + 1
                 good_trials = good_trials - 1
-        return data_contours, data_circles, num_trials, good_trials
+        return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
