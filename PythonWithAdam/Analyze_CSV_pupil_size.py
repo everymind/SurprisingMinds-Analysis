@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import math
 import sys
 import itertools
+import matplotlib.animation as animation
 
 ### FUNCTIONS ###
 def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -129,10 +130,16 @@ def threshold_to_nan(array_of_arrays, threshold, upper_or_lower):
     for array in array_of_arrays:
         for index in range(len(array)): 
             if upper_or_lower=='upper':
-                if np.isnan(array[index])==False and array[index]>threshold:
+                if len(array[index].shape)>0:
+                    if (np.isnan(array[index])).any()==False and (array[index]>threshold).any():
+                        array[index][:] = np.nan
+                elif np.isnan(array[index])==False and array[index]>threshold:
                     array[index] = np.nan
             if upper_or_lower=='lower':
-                if np.isnan(array[index])==False and array[index]<threshold:
+                if len(array[index].shape)>0:
+                    if (np.isnan(array[index])).any()==False and (array[index]<threshold).any():
+                        array[index][:] = np.nan
+                elif np.isnan(array[index])==False and array[index]<threshold:
                     array[index] = np.nan
     return array_of_arrays
 
@@ -195,8 +202,9 @@ def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_si
     avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
     return avg_lum_final
 
-def movement_filter(xy_positions_array, upper_speed_threshold, max_no_nan_buckets):
-    for trial in xy_positions_array:
+### NEED TO WRITE THIS FUNCTION
+#def movement_filter(xy_positions_array, upper_speed_threshold, max_no_nan_buckets):
+    #for trial in xy_positions_array:
 
 
 ### BEGIN ANALYSIS ###
@@ -277,48 +285,36 @@ for day_folder in day_folders:
         print("On {day}, exhibit was activated {count} times, with {good_count} good trials".format(day=day_name, count=num_right_activations, good_count=num_good_right_trials))
 
         ## COMBINE EXTRACTING PUPIL SIZE AND POSITION
-
         # filter data for outlier points
-
-        ### SANDBOX FOR VISUALIZING PUPIL MOVEMENT DATA ### 
-
-        # right eye movements that are too big - NEED TO WRITE NEW FUNCTION HERE
-        right_area_contours_XY = 
-        right_area_circles_XY = 
-        # right eye contours/circles that are too big
-        right_area_contours = threshold_to_nan(right_area_contours, 15000, 'upper')
-        right_area_circles = threshold_to_nan(right_area_circles, 15000, 'upper')
-        # left eye movements that are too big - NEED TO WRITE NEW FUCTION HERE
-        left_area_contours_XY = 
-        left_area_circles_XY = 
-        # left eye contours/circles that are too big
-        left_area_contours = threshold_to_nan(left_area_contours, 15000, 'upper')
-        left_area_circles = threshold_to_nan(left_area_circles, 15000, 'upper')
+        all_position_data = [right_area_contours_XY, right_area_circles_XY, left_area_contours_XY, left_area_circles_XY]
+        all_size_data = [right_area_contours, right_area_circles, left_area_contours, left_area_circles]
+        # remove:
+        # eye positions that are not realistic
         # time buckets with no corresponding frames
-        right_area_contours = threshold_to_nan(right_area_contours, 0, 'lower')
-        right_area_circles = threshold_to_nan(right_area_circles, 0, 'lower')
-        left_area_contours = threshold_to_nan(left_area_contours, 0, 'lower')
-        left_area_circles = threshold_to_nan(left_area_circles, 0, 'lower')
+        # video pixel limits are (798,599)
+        for data in all_position_data:
+            data = threshold_to_nan(data, 798, 'upper')
+            data = threshold_to_nan(data, 0, 'lower')
+        # contours/circles that are too big
+        for data in all_size_data:
+            data = threshold_to_nan(data, 15000, 'upper')
+            data = threshold_to_nan(data, 0, 'lower')
 
-        # create a baseline - take first 3 seconds, aka 75 time buckets where each time bucket is 40ms
-        right_area_contours_baseline = np.nanmedian(right_area_contours[:,0:baseline_no_buckets], 1)
-        right_area_circles_baseline = np.nanmedian(right_area_circles[:,0:baseline_no_buckets], 1)
-        left_area_contours_baseline = np.nanmedian(left_area_contours[:,0:baseline_no_buckets], 1)
-        left_area_circles_baseline = np.nanmedian(left_area_circles[:,0:baseline_no_buckets], 1)
+        # create a baseline
+        all_position_data_baselines = []
+        all_size_data_baselines = []
+        for data in all_position_data:
+            all_position_data_baselines.append(np.nanmedian(data[:, 0:baseline_no_buckets], 1))
+        for data in all_size_data:
+            all_size_data_baselines.append(np.nanmedian(data[:,0:baseline_no_buckets], 1))
 
         # normalize and append
-        for index in range(len(right_area_contours_baseline)): 
-            right_area_contours[index,:] = (right_area_contours[index,:]-right_area_contours_baseline[index])/right_area_contours_baseline[index]
-            all_right_trials_contours.append(right_area_contours[index,:])
-        for index in range(len(right_area_circles_baseline)): 
-            right_area_circles[index,:] = (right_area_circles[index,:]-right_area_circles_baseline[index])/right_area_circles_baseline[index]
-            all_right_trials_circles.append(right_area_circles[index,:])
-        for index in range(len(left_area_contours_baseline)): 
-            left_area_contours[index,:] = (left_area_contours[index,:]-left_area_contours_baseline[index])/left_area_contours_baseline[index]
-            all_left_trials_contours.append(left_area_contours[index,:])
-        for index in range(len(left_area_circles_baseline)): 
-            left_area_circles[index,:] = (left_area_circles[index,:]-left_area_circles_baseline[index])/left_area_circles_baseline[index]
-            all_left_trials_circles.append(left_area_circles[index,:])
+        for x in range(len(all_position_data)):
+            for index in range(len(all_position_data_baselines[x])):
+                all_position_data[x][index,:] = (all_position_data[x][index,:]-all_position_data_baselines[x][index])/all_position_data_baselines[x][index]
+        for x in range(len(all_size_data)):
+            for index in range(len(all_size_data_baselines[x])):
+                all_size_data[x][index,:] = (all_size_data[x][index,:]-all_size_data_baselines[x][index])/all_size_data_baselines[x][index]
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
         print("Day {day} failed!".format(day=day_name))
