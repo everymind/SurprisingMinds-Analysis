@@ -334,7 +334,7 @@ for data_path in luminance_data_paths:
     luminance_values = np.array(luminance_values)
     luminance.append(luminance_values)
 luminance_array = np.array(luminance)
-average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, 630)
+average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, 1260)
 baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
 avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
 avg_lum_base_array = np.array(avg_lum_baselined)
