@@ -423,23 +423,25 @@ for item in zipped_data:
                 right_eye_timestamps = np.genfromtxt(right_eye_csv_path, dtype=np.str, delimiter=' ')
                 left_eye_timestamps = np.genfromtxt(left_eye_csv_path, dtype=np.str, delimiter=' ')
 
-                # ------------------------------
+                """ # ------------------------------
                 # Set temporary align frame to the frame counter closest to octopus_clip_start
                 # octopus_clip_start here refers to frame when octopus appears, w.r.t. last frame of movie
                 stimuli_number = world_csv_path.split("_")[-2]
                 octopus_start_frame = octo_clip_start[stimuli_number]
                 #print("Finding octopus in video {name}...".format(name=stimuli_number))
-                # ------------------------------
+                # ------------------------------ """
+
                 # Get world video filepath
                 world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
 
                 # Open world video
                 world_video = cv2.VideoCapture(world_video_path)
 
-                # Jump to start of when octopus video clip starts (position)
-                ret = world_video.set(cv2.CAP_PROP_POS_FRAMES, octopus_start_frame)
+                """ # Jump to start of when octopus video clip starts (position)
+                ret = world_video.set(cv2.CAP_PROP_POS_FRAMES, octopus_start_frame) """
+                ### NOW WE ARE FINDING PUPILS FOR THE WHOLE STIMULI SEQUENCE ###
 
-                # Show the frame to check for start of octopus clip (ground truth)
+                # Show the frame to check where we are staring pupil finding (ground truth)
                 fig_name = trial_name + ".png"
                 fig_path = os.path.join(alignment_folder, fig_name)
                 ret, frame = world_video.read()
@@ -449,7 +451,7 @@ for item in zipped_data:
                 plt.pause(1)
                 plt.close()
 
-                # Set frame in world video where octopus appears
+                """ # Set frame in world video where octopus appears
                 world_octopus_frame = octopus_start_frame
                 #print("Octopus clip begins at frame {number} in world video".format(number=world_octopus_frame))
 
@@ -457,7 +459,7 @@ for item in zipped_data:
                 # Find align frame for analyzing eye videos, aka clip_offset + start of octopus clip
                 # this means our analysis starts a little bit (# of frames = clip_offset) before the start of the octopus clip
                 right_eye_octopus = find_target_frame(world_timestamps, right_eye_timestamps, world_octopus_frame)
-                left_eye_octopus = find_target_frame(world_timestamps, left_eye_timestamps, world_octopus_frame)
+                left_eye_octopus = find_target_frame(world_timestamps, left_eye_timestamps, world_octopus_frame) """
                 # ------------------------------
                 # ------------------------------
                 # ------------------------------
@@ -471,10 +473,13 @@ for item in zipped_data:
                 # Find right eye pupils and save pupil data
                 print("Finding right eye pupils...")
                 # find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timestamps, align_frame, csv_path)
-                find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_timestamps, right_eye_octopus, csv_folder)
+                #find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_timestamps, right_eye_octopus, csv_folder)
+                # NOW WE ARE FINDING PUPILS FOR THE WHOLE STIMULI SEQUENCE
+                find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_timestamps, 0, csv_folder)
                 # Find left eye pupils and save pupil data
                 print("Finding left eye pupils...")
-                find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_timestamps, left_eye_octopus, csv_folder)
+                #find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_timestamps, left_eye_octopus, csv_folder)
+                find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_timestamps, 0, csv_folder)
                 
                 # Report progress
                 world_video.release()
