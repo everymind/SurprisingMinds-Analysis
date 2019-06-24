@@ -393,7 +393,7 @@ for item in zipped_data:
         num_trials = len(trial_folders)
 
         # Set temporal alignment parameters
-        clip_length = 2500 # eye cameras run at 60 fps
+        clip_length = 10000 # eye cameras run at 60 fps
 
         # Allocate empty space for average frame and movie clip
         right_average_gray_clip = np.zeros((600,800,clip_length))
@@ -411,6 +411,7 @@ for item in zipped_data:
                 #print("Loading csv files for {trial}...".format(trial=trial_name))
                 # Get world movie timestamp csv path
                 world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
+                stimuli_number = world_csv_path.split("_")[-2]
 
                 # Load world CSV
                 world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
@@ -422,21 +423,12 @@ for item in zipped_data:
                 # Load eye CSVs
                 right_eye_timestamps = np.genfromtxt(right_eye_csv_path, dtype=np.str, delimiter=' ')
                 left_eye_timestamps = np.genfromtxt(left_eye_csv_path, dtype=np.str, delimiter=' ')
-                """ # ------------------------------
-                # Set temporary align frame to the frame counter closest to octopus_clip_start
-                # octopus_clip_start here refers to frame when octopus appears, w.r.t. last frame of movie
-                stimuli_number = world_csv_path.split("_")[-2]
-                octopus_start_frame = octo_clip_start[stimuli_number]
-                #print("Finding octopus in video {name}...".format(name=stimuli_number))
-                # ------------------------------ """
                 # Get world video filepath
                 world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
                 # Open world video
                 world_video = cv2.VideoCapture(world_video_path)
-                """ # Jump to start of when octopus video clip starts (position)
-                ret = world_video.set(cv2.CAP_PROP_POS_FRAMES, octopus_start_frame) """
                 ### NOW WE ARE FINDING PUPILS FOR THE WHOLE STIMULI SEQUENCE ###
-                # Show the frame to check where we are staring pupil finding (ground truth)
+                # Show the frame to check where we are starting pupil finding (ground truth)
                 fig_name = trial_name + ".png"
                 fig_path = os.path.join(alignment_folder, fig_name)
                 ret, frame = world_video.read()
@@ -445,14 +437,6 @@ for item in zipped_data:
                 plt.show(block=False)
                 plt.pause(1)
                 plt.close()
-                """ # Set frame in world video where octopus appears
-                world_octopus_frame = octopus_start_frame
-                #print("Octopus clip begins at frame {number} in world video".format(number=world_octopus_frame))
-                # ------------------------------
-                # Find align frame for analyzing eye videos, aka clip_offset + start of octopus clip
-                # this means our analysis starts a little bit (# of frames = clip_offset) before the start of the octopus clip
-                right_eye_octopus = find_target_frame(world_timestamps, right_eye_timestamps, world_octopus_frame)
-                left_eye_octopus = find_target_frame(world_timestamps, left_eye_timestamps, world_octopus_frame) """
                 # ------------------------------
                 # ------------------------------
                 # ------------------------------
