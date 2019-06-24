@@ -363,7 +363,6 @@ for item in zipped_data:
     #analysis_folder = os.path.join(current_working_directory, item[:-4], "Analysis")
 
     # Analysis subfolders
-    clip_folder = os.path.join(analysis_folder, "clip")
     csv_folder = os.path.join(analysis_folder, "csv")
     alignment_folder = os.path.join(analysis_folder, "alignment")
 
@@ -371,9 +370,6 @@ for item in zipped_data:
     if not os.path.exists(analysis_folder):
         #print("Creating analysis folder.")
         os.makedirs(analysis_folder)
-    if not os.path.exists(clip_folder):
-        #print("Creating clip folder.")
-        os.makedirs(clip_folder)
     if not os.path.exists(csv_folder):
         #print("Creating csv folder.")
         os.makedirs(csv_folder)
@@ -391,13 +387,6 @@ for item in zipped_data:
         # List all trial folders
         trial_folders = list_sub_folders(day_folder)
         num_trials = len(trial_folders)
-
-        # Set temporal alignment parameters
-        clip_length = 10000 # eye cameras run at 60 fps
-
-        # Allocate empty space for average frame and movie clip
-        right_average_gray_clip = np.zeros((600,800,clip_length))
-        left_average_gray_clip = np.zeros((600,800,clip_length))
 
         # Load all right eye movies and average
         current_trial = 0
