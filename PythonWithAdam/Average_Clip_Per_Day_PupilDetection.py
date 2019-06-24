@@ -339,7 +339,7 @@ already_analysed = [item for item in zipped_names if item in analysed_folders]
 octo_clip_start = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
 seconds_until_octo_appears = 6.5
 
-# unzip each folder, do the analysis, skip #recycle aka data_folders[0]
+# unzip each folder, do the analysis
 for item in zipped_data:
 
     # check to see if this folder has already been analyzed
