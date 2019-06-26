@@ -22,13 +22,17 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
         num_trials = len(trial_files)
         good_trials = num_trials
         # contours
-        data_contours_XY = np.empty((num_trials, downsampled_no_of_buckets, 2))
-        data_contours_XY[:] = [-6, -6]
+        data_contours_X = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours_X[:] = -6
+        data_contours_Y = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours_Y[:] = -6
         data_contours = np.empty((num_trials, downsampled_no_of_buckets))
         data_contours[:] = -6
         # circles
-        data_circles_XY = np.empty((num_trials, downsampled_no_of_buckets, 2))
-        data_circles_XY[:] = [-6, -6]
+        data_circles_X = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles_X[:] = -6
+        data_circles_Y = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles_Y[:] = -6
         data_circles = np.empty((num_trials, downsampled_no_of_buckets))
         data_circles[:] = -6
 
@@ -51,9 +55,11 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
             #print("For trial {name}, the longest cluster is {length}".format(name=trial_name, length=longest_cluster))
             if longest_cluster<100:
                 no_of_samples = math.ceil(len(trial)/new_sample_rate)
-                this_trial_contours_XY = []
+                this_trial_contours_X = []
+                this_trial_contours_Y = []
                 this_trial_contours = []
-                this_trial_circles_XY = []
+                this_trial_circles_X = []
+                this_trial_circles_Y = []
                 this_trial_circles = []
                 # loop through the trial at given sample rate
                 for sample in range(no_of_samples):
@@ -66,46 +72,64 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                         if (line>15000).any():
                             line[:] = np.nan
                     # extract pupil sizes and locations from valid time buckets
-                    this_slice_contours_XY = []
+                    this_slice_contours_X = []
+                    this_slice_contours_Y = []
                     this_slice_contours = []
-                    this_slice_circles_XY = []
+                    this_slice_circles_X = []
+                    this_slice_circles_Y = []
                     this_slice_circles = []
                     for frame in this_slice:
                         # contour x,y
-                        this_slice_contours_XY.append([frame[0],frame[1]])
+                        ## DON'T PAIR X-Y YET
+                        this_slice_contours_X.append(frame[0])
+                        this_slice_contours_Y.append(frame[1])
                         # contour area
                         this_slice_contours.append(frame[2])
                         # circles x,y
-                        this_slice_circles_XY.append([frame[3],frame[4]])
+                        ## DON'T PAIR X-Y YET
+                        this_slice_circles_X.append(frame[3])
+                        this_slice_circles_Y.append(frame[4])
                         # circles area
                         this_slice_circles.append(frame[5])
                     # average the pupil size and movement in this sample slice
-                    this_slice_avg_contour_XY = np.nanmean(this_slice_contours_XY, axis=0)
+                    this_slice_avg_contour_X = np.nanmean(this_slice_contours_X)
+                    this_slice_avg_contour_Y = np.nanmean(this_slice_contours_Y)
                     this_slice_avg_contour = np.nanmean(this_slice_contours) 
-                    this_slice_avg_circle_XY = np.nanmean(this_slice_circles_XY, axis=0)       
+                    this_slice_avg_circle_X = np.nanmean(this_slice_circles_X)
+                    this_slice_avg_circle_Y = np.nanmean(this_slice_circles_Y)       
                     this_slice_avg_circle = np.nanmean(this_slice_circles)
                     # append to list of downsampled pupil sizes and movements
-                    this_trial_contours_XY.append(this_slice_avg_contour_XY)
+                    this_trial_contours_X.append(this_slice_avg_contour_X)
+                    this_trial_contours_Y.append(this_slice_avg_contour_Y)
                     this_trial_contours.append(this_slice_avg_contour)
-                    this_trial_circles_XY.append(this_slice_avg_circle_XY)
+                    this_trial_circles_X.append(this_slice_avg_circle_X)
+                    this_trial_circles_Y.append(this_slice_avg_circle_Y)
                     this_trial_circles.append(this_slice_avg_circle)
                 # Find count of bad measurements
-                bad_count_contours_XY = max(sum(np.isnan(this_trial_contours_XY)))
+                bad_count_contours_X = sum(np.isnan(this_trial_contours_X))
+                bad_count_contours_Y = sum(np.isnan(this_trial_contours_Y))
                 bad_count_contours = sum(np.isnan(this_trial_contours))
-                bad_count_circles_XY = max(sum(np.isnan(this_trial_circles_XY)))
+                bad_count_circles_X = sum(np.isnan(this_trial_circles_X))
+                bad_count_circles_Y = sum(np.isnan(this_trial_circles_Y))
                 bad_count_circles = sum(np.isnan(this_trial_circles))
                 # if more than half of the trial is NaN, then throw away this trial
                 # otherwise, if it's a good enough trial...
                 bad_threshold = no_of_samples/2
-                if (bad_count_contours_XY<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours_XY)
-                    data_contours_XY[index][0:this_chunk_length] = this_trial_contours_XY
+                if (bad_count_contours_X<bad_threshold): 
+                    this_chunk_length = len(this_trial_contours_X)
+                    data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
+                if (bad_count_contours_Y<bad_threshold): 
+                    this_chunk_length = len(this_trial_contours_Y)
+                    data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
                 if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold): 
                     this_chunk_length = len(this_trial_contours)
                     data_contours[index][0:this_chunk_length] = this_trial_contours
-                if (bad_count_circles_XY<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles_XY)
-                    data_circles_XY[index][0:this_chunk_length] = this_trial_circles_XY
+                if (bad_count_circles_X<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles_X)
+                    data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
+                if (bad_count_circles_Y<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles_Y)
+                    data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
                 if (bad_count_circles<bad_threshold): 
                     this_chunk_length = len(this_trial_circles)
                     data_circles[index][0:this_chunk_length] = this_trial_circles
@@ -114,7 +138,7 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                 #print("Discarding trial {name}".format(name=trial_name))
                 index = index + 1
                 good_trials = good_trials - 1
-        return data_contours_XY, data_contours, data_circles_XY, data_circles, num_trials, good_trials
+        return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
@@ -130,16 +154,10 @@ def threshold_to_nan(array_of_arrays, threshold, upper_or_lower):
     for array in array_of_arrays:
         for index in range(len(array)): 
             if upper_or_lower=='upper':
-                if len(array[index].shape)>0:
-                    if (np.isnan(array[index])).any()==False and (array[index]>threshold).any():
-                        array[index][:] = np.nan
-                elif np.isnan(array[index])==False and array[index]>threshold:
+                if np.isnan(array[index])==False and array[index]>threshold:
                     array[index] = np.nan
             if upper_or_lower=='lower':
-                if len(array[index].shape)>0:
-                    if (np.isnan(array[index])).any()==False and (array[index]<threshold).any():
-                        array[index][:] = np.nan
-                elif np.isnan(array[index])==False and array[index]<threshold:
+                if np.isnan(array[index])==False and array[index]<threshold:
                     array[index] = np.nan
     return array_of_arrays
 
@@ -202,9 +220,12 @@ def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_si
     avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
     return avg_lum_final
 
-### NEED TO WRITE THIS FUNCTION
-#def movement_filter(xy_positions_array, upper_speed_threshold, max_no_nan_buckets):
-    #for trial in xy_positions_array:
+### NEED TO WRITE THESE FUNCTIONS
+### WRITE A SACCADE DETECTOR
+# frame by frame change in xy
+### WRITE A FUNCTION TO FIND A PERSON'S "VIEW SPACE" BASED ON CALIBRATION SEQUENCE
+# make a crude linear calibration
+### what is the distance between eyes and monitor in the exhibit??
 
 
 ### BEGIN ANALYSIS ###
@@ -249,14 +270,21 @@ day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
 
-all_right_trials_contours_XY = []
+all_right_trials_contours_X = []
+all_right_trials_contours_Y = []
 all_right_trials_contours = []
-all_right_trials_circles_XY = []
+all_right_trials_circles_X = []
+all_right_trials_circles_Y = []
 all_right_trials_circles = []
-all_left_trials_contours_XY = []
+all_left_trials_contours_X = []
+all_left_trials_contours_Y = []
 all_left_trials_contours = []
-all_left_trials_circles_XY = []
+all_left_trials_circles_X = []
+all_left_trials_circles_Y = []
 all_left_trials_circles = []
+
+all_trials_position_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y, all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
+all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
 activation_count = []
 analysed_count = []
 
@@ -277,8 +305,8 @@ for day_folder in day_folders:
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
     try: 
-        right_area_contours_XY, right_area_contours, right_area_circles_XY, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
-        left_area_contours_XY, left_area_contours, left_area_circles_XY, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
+        right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
+        left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
 
         analysed_count.append((num_good_right_trials, num_good_left_trials))
         activation_count.append((num_right_activations, num_left_activations))
@@ -286,7 +314,7 @@ for day_folder in day_folders:
 
         ## COMBINE EXTRACTING PUPIL SIZE AND POSITION
         # filter data for outlier points
-        all_position_data = [right_area_contours_XY, right_area_circles_XY, left_area_contours_XY, left_area_circles_XY]
+        all_position_data = [right_area_contours_X, right_area_contours_Y, right_area_circles_X, right_area_circles_Y, left_area_contours_X, left_area_contours_Y, left_area_circles_X, left_area_circles_Y]
         all_size_data = [right_area_contours, right_area_circles, left_area_contours, left_area_circles]
         # remove:
         # eye positions that are not realistic
@@ -312,9 +340,11 @@ for day_folder in day_folders:
         for x in range(len(all_position_data)):
             for index in range(len(all_position_data_baselines[x])):
                 all_position_data[x][index,:] = (all_position_data[x][index,:]-all_position_data_baselines[x][index])/all_position_data_baselines[x][index]
+                all_trials_position_data[x].append(all_position_data[x][index,:])
         for x in range(len(all_size_data)):
             for index in range(len(all_size_data_baselines[x])):
                 all_size_data[x][index,:] = (all_size_data[x][index,:]-all_size_data_baselines[x][index])/all_size_data_baselines[x][index]
+                all_trials_size_data[x].append(all_size_data[x][index,:])
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
         print("Day {day} failed!".format(day=day_name))
