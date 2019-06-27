@@ -236,7 +236,7 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 current_working_directory = os.getcwd()
-stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\LuminanceCSVs"
+stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
 
 # set up log file to store all printed messages
 log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
@@ -310,7 +310,7 @@ for day_folder in day_folders:
 
         analysed_count.append((num_good_right_trials, num_good_left_trials))
         activation_count.append((num_right_activations, num_left_activations))
-        print("On {day}, exhibit was activated {count} times, with {good_count} good trials".format(day=day_name, count=num_right_activations, good_count=num_good_right_trials))
+        print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
 
         ## COMBINE EXTRACTING PUPIL SIZE AND POSITION
         # filter data for outlier points
@@ -357,17 +357,24 @@ for day_folder in day_folders:
 # stimuli027 = 180
 # stimuli028 = 247
 # stimuli029 = 314
-luminance = []
+luminances = {"stimuli024":[], "stimuli025":[], "stimuli026":[], "stimuli027":[], "stimuli028":[], "stimuli029":[]}
+luminances_avg = {"stimuli024":[], "stimuli025":[], "stimuli026":[], "stimuli027":[], "stimuli028":[], "stimuli029":[]}
+luminances_baseline = {"stimuli024":[], "stimuli025":[], "stimuli026":[], "stimuli027":[], "stimuli028":[], "stimuli029":[]}
 luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
+## NEED TO SEPARATE BY STIMULI NUMBER
 for data_path in luminance_data_paths: 
     luminance_values = np.genfromtxt(data_path, dtype=np.str, delimiter='  ')
     luminance_values = np.array(luminance_values)
-    luminance.append(luminance_values)
-luminance_array = np.array(luminance)
-average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, 1260)
-baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
-avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
-avg_lum_base_array = np.array(avg_lum_baselined)
+    stimulus_type = data_path.split("_")[-3]
+    luminances[stimulus_type].append(luminance_values)
+for stimulus in luminances: 
+    luminance_array = np.array(luminances[stimulus])
+    average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, no_of_time_buckets)
+    luminances_avg[stimulus].append(average_luminance)
+    baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
+    avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
+    avg_lum_base_array = np.array(avg_lum_baselined)
+    luminances_baseline[stimulus].append(average_luminance)
 
 ### NOTES FROM LAB MEETING ###
 # based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
@@ -424,18 +431,32 @@ for image_type in image_type_options:
     plt.close()
 
 ### BACK TO THE PUPILS ###
+all_right_trials_contours_X_array = np.array(all_right_trials_contours_X)
+all_right_trials_contours_Y_array = np.array(all_right_trials_contours_Y)
 all_right_trials_contours_array = np.array(all_right_trials_contours)
+
+all_right_trials_circles_X_array = np.array(all_right_trials_circles_X)
+all_right_trials_circles_Y_array = np.array(all_right_trials_circles_Y)
 all_right_trials_circles_array = np.array(all_right_trials_circles)
+
+all_left_trials_contours_X_array = np.array(all_left_trials_contours_X)
+all_left_trials_contours_Y_array = np.array(all_left_trials_contours_Y)
 all_left_trials_contours_array = np.array(all_left_trials_contours)
+
+all_left_trials_circles_X_array = np.array(all_left_trials_circles_X)
+all_left_trials_circles_Y_array = np.array(all_left_trials_circles_Y)
 all_left_trials_circles_array = np.array(all_left_trials_circles)
-trials_to_plot = [(all_right_trials_contours_array, all_left_trials_contours_array), (all_right_trials_circles_array, all_left_trials_circles_array)]
+
+#position_trials_to_plot = [()]
+size_trials_to_plot = [(all_right_trials_contours_array, all_left_trials_contours_array), (all_right_trials_circles_array, all_left_trials_circles_array)]
 
 # Compute global mean
 all_right_contours_mean = np.nanmean(all_right_trials_contours_array, 0)
 all_right_circles_mean = np.nanmean(all_right_trials_circles_array, 0)
 all_left_contours_mean = np.nanmean(all_left_trials_contours_array, 0)
 all_left_circles_mean = np.nanmean(all_left_trials_circles_array, 0)
-means_to_plot = [(all_right_contours_mean, all_left_contours_mean), (all_right_circles_mean, all_left_circles_mean)]
+
+size_means_to_plot = [(all_right_contours_mean, all_left_contours_mean), (all_right_circles_mean, all_left_circles_mean)]
 
 ### -------------------------- ###
 ### UNDER CONSTRUCTION!!!!!!!! ###
@@ -645,11 +666,11 @@ event_locations = np.array([0, tb_octo_decamoud, tb_octo_inks, tb_octo_disappear
 
 # Plot pupil sizes
 plot_types = ["contours", "circles"]
-for i in range(len(trials_to_plot)):
-    plot_type_right = trials_to_plot[i][0]
-    plot_type_left = trials_to_plot[i][1]
-    plot_means_right = means_to_plot[i][0]
-    plot_means_left = means_to_plot[i][1]
+for i in range(len(size_trials_to_plot)):
+    plot_type_right = size_trials_to_plot[i][0]
+    plot_type_left = size_trials_to_plot[i][1]
+    plot_means_right = size_means_to_plot[i][0]
+    plot_means_left = size_means_to_plot[i][1]
     plot_type_name = plot_types[i]
     for image_type in image_type_options:
         if (image_type == '.pdf'):
@@ -672,8 +693,8 @@ for i in range(len(trials_to_plot)):
             plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
             plt.plot(plot_means_right, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            plt.xlim(-10,500)
-            plt.ylim(-0.5,0.5)
+            #plt.xlim(-10,500)
+            plt.ylim(-1,1)
             
             plt.subplot(3,1,2)
             plt.ylabel('Percentage from baseline', fontsize=11)
@@ -683,8 +704,8 @@ for i in range(len(trials_to_plot)):
             plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
             plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            plt.xlim(-10,500)
-            plt.ylim(-0.5,0.5)
+            #plt.xlim(-10,500)
+            plt.ylim(-1,1)
             
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
@@ -693,8 +714,8 @@ for i in range(len(trials_to_plot)):
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(avg_lum_baselined, linewidth=4, color=[1.0, 0.0, 1.0, 1])
-            plt.xlim(-10,500)
-            plt.ylim(-1.0,1.0)
+            #plt.xlim(-10,500)
+            #plt.ylim(-1.0,1.0)
             # mark events
             #for i in range(len(event_labels)):
             #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
