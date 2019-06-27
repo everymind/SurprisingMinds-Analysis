@@ -461,16 +461,19 @@ for day_folder in day_folders:
 # stimuli027 = 180
 # stimuli028 = 247
 # stimuli029 = 314
-luminances = {"stimuli024":[], "stimuli025":[], "stimuli026":[], "stimuli027":[], "stimuli028":[], "stimuli029":[]}
-luminances_avg = {"stimuli024":[], "stimuli025":[], "stimuli026":[], "stimuli027":[], "stimuli028":[], "stimuli029":[]}
-luminances_baseline = {"stimuli024":[], "stimuli025":[], "stimuli026":[], "stimuli027":[], "stimuli028":[], "stimuli029":[]}
+stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
+luminances = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+luminances_avg = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+luminances_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
 ## NEED TO SEPARATE BY STIMULI NUMBER
 for data_path in luminance_data_paths: 
     luminance_values = np.genfromtxt(data_path, dtype=np.str, delimiter='  ')
     luminance_values = np.array(luminance_values)
     stimulus_type = data_path.split("_")[-3]
-    luminances[stimulus_type].append(luminance_values)
+    stimulus_num = stim_name_to_float[stimulus_type]
+    luminances[stimulus_num].append(luminance_values)
 for stimulus in luminances: 
     luminance_array = np.array(luminances[stimulus])
     average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, no_of_time_buckets)
@@ -512,7 +515,7 @@ analysed_array_left = np.array(good_trials_left)
 # do da plot
 image_type_options = ['.png', '.pdf']
 
-## PLOT EXHIBIT ENGAGEMENT ##
+""" ## PLOT EXHIBIT ENGAGEMENT ##
 for image_type in image_type_options:
     figure_name = 'TotalExhibitActivation_' + todays_datetime + image_type
     figure_path = os.path.join(engagement_folder, figure_name)
@@ -532,35 +535,90 @@ for image_type in image_type_options:
     plt.savefig(figure_path)
     plt.show(block=False)
     plt.pause(1)
-    plt.close()
+    plt.close() """
 
 ### BACK TO THE PUPILS ###
-all_right_trials_contours_X_array = np.array(all_right_trials_contours_X)
-all_right_trials_contours_Y_array = np.array(all_right_trials_contours_Y)
-all_right_trials_contours_array = np.array(all_right_trials_contours)
-
-all_right_trials_circles_X_array = np.array(all_right_trials_circles_X)
-all_right_trials_circles_Y_array = np.array(all_right_trials_circles_Y)
-all_right_trials_circles_array = np.array(all_right_trials_circles)
-
-all_left_trials_contours_X_array = np.array(all_left_trials_contours_X)
-all_left_trials_contours_Y_array = np.array(all_left_trials_contours_Y)
-all_left_trials_contours_array = np.array(all_left_trials_contours)
-
-all_left_trials_circles_X_array = np.array(all_left_trials_circles_X)
-all_left_trials_circles_Y_array = np.array(all_left_trials_circles_Y)
-all_left_trials_circles_array = np.array(all_left_trials_circles)
-
-#position_trials_to_plot = [()]
-size_trials_to_plot = [(all_right_trials_contours_array, all_left_trials_contours_array), (all_right_trials_circles_array, all_left_trials_circles_array)]
-
+all_right_positions = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
+all_left_positions = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
+all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
+all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
+all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
+all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
 # Compute global mean
-all_right_contours_mean = np.nanmean(all_right_trials_contours_array, 0)
-all_right_circles_mean = np.nanmean(all_right_trials_circles_array, 0)
-all_left_contours_mean = np.nanmean(all_left_trials_contours_array, 0)
-all_left_circles_mean = np.nanmean(all_left_trials_circles_array, 0)
+for i in range(len(all_right_sizes)):
+    for stimulus in all_right_sizes[i]: 
+        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
+for i in range(len(all_left_sizes)):
+    for stimulus in all_left_sizes[i]: 
+        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
 
-size_means_to_plot = [(all_right_contours_mean, all_left_contours_mean), (all_right_circles_mean, all_left_circles_mean)]
+# Plot pupil sizes
+plot_types = ["contours", "circles"]
+stimuli = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
+for stim_type in stimuli: 
+    for i in range(len(all_right_sizes)): 
+        plot_type_right = np.array(all_right_sizes[i][stim_type])
+        plot_type_left = np.array(all_left_sizes[i][stim_type])
+        plot_means_right = np.array(all_right_size_means[i][stim_type])[0]
+        plot_means_left = np.array(all_left_size_means[i][stim_type])[0]
+        plot_luminance = np.array(luminances_avg[stim_type])[0]
+        plot_type_name = plot_types[i]
+        stim_name = stim_float_to_name[stim_type]
+        dpi_sizes = [200]
+        for size in dpi_sizes: 
+            figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(size) + '.png' 
+            figure_path = os.path.join(pupils_folder, figure_name)
+            figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
+            plt.figure(figsize=(14, 14), dpi=size)
+            plt.suptitle(figure_title, fontsize=12, y=0.98)
+
+            plt.subplot(3,1,1)
+            ax = plt.gca()
+            ax.yaxis.set_label_coords(-0.09, -0.5) 
+            plt.title('Right eye pupil sizes; N = ' + str(total_good_trials_right), fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
+            plt.plot(plot_means_right, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
+            plt.xlim(-10,2500)
+            plt.ylim(-1,1)
+            
+            plt.subplot(3,1,2)
+            plt.ylabel('Percentage from baseline', fontsize=11)
+            plt.title('Left eye pupil sizes; N = ' + str(total_good_trials_left), fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
+            plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
+            plt.xlim(-10,2500)
+            plt.ylim(-1,1)
+            
+            plt.subplot(3,1,3)
+            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            plt.plot(plot_luminance, linewidth=2, color=[1.0, 0.0, 1.0, 1])
+            plt.xlim(-10,2500)
+            #plt.ylim(-1.0,1.0)
+            # mark events
+            #for i in range(len(event_labels)):
+            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
+            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            plt.subplots_adjust(hspace=0.5)
+            plt.savefig(figure_path)
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close()
+
+##################################################
 
 ### -------------------------- ###
 ### UNDER CONSTRUCTION!!!!!!!! ###
@@ -768,67 +826,6 @@ tb_camera_out_of_ink_cloud = milliseconds_until_camera_out_of_ink_cloud/downsamp
 tb_thankyou_screen = milliseconds_until_thankyou_screen/downsample_rate_ms
 event_locations = np.array([0, tb_octo_decamoud, tb_octo_inks, tb_octo_disappears, tb_camera_out_of_ink_cloud, tb_thankyou_screen])
 
-# Plot pupil sizes
-plot_types = ["contours", "circles"]
-for i in range(len(size_trials_to_plot)):
-    plot_type_right = size_trials_to_plot[i][0]
-    plot_type_left = size_trials_to_plot[i][1]
-    plot_means_right = size_means_to_plot[i][0]
-    plot_means_left = size_means_to_plot[i][1]
-    plot_type_name = plot_types[i]
-    for image_type in image_type_options:
-        if (image_type == '.pdf'):
-            continue
-        else:
-            dpi_sizes = [200]
-        for size in dpi_sizes: 
-            figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + todays_datetime + '_dpi' + str(size) + image_type 
-            figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nPlotted on " + todays_datetime
-            plt.figure(figsize=(14, 14), dpi=size)
-            plt.suptitle(figure_title, fontsize=12, y=0.98)
-
-            plt.subplot(3,1,1)
-            ax = plt.gca()
-            ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.title('Right eye pupil sizes; N = ' + str(total_good_trials_right), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
-            plt.plot(plot_means_right, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            #plt.xlim(-10,500)
-            plt.ylim(-1,1)
-            
-            plt.subplot(3,1,2)
-            plt.ylabel('Percentage from baseline', fontsize=11)
-            plt.title('Left eye pupil sizes; N = ' + str(total_good_trials_left), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
-            plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            #plt.xlim(-10,500)
-            plt.ylim(-1,1)
-            
-            plt.subplot(3,1,3)
-            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
-            plt.title('Average luminance of stimuli video as seen by world camera, grayscaled; N = ' + str(len(luminance)), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(avg_lum_baselined, linewidth=4, color=[1.0, 0.0, 1.0, 1])
-            #plt.xlim(-10,500)
-            #plt.ylim(-1.0,1.0)
-            # mark events
-            #for i in range(len(event_labels)):
-            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
-            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-            plt.subplots_adjust(hspace=0.5)
-            plt.savefig(figure_path)
-            plt.show(block=False)
-            plt.pause(1)
-            plt.close()
 
 
 #FIN
