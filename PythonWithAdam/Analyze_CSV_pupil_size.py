@@ -22,23 +22,25 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
         num_trials = len(trial_files)
         good_trials = num_trials
         # contours
-        data_contours_X = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours_X = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_contours_X[:] = -6
-        data_contours_Y = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours_Y = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_contours_Y[:] = -6
-        data_contours = np.empty((num_trials, downsampled_no_of_buckets))
+        data_contours = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_contours[:] = -6
         # circles
-        data_circles_X = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles_X = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_circles_X[:] = -6
-        data_circles_Y = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles_Y = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_circles_Y[:] = -6
-        data_circles = np.empty((num_trials, downsampled_no_of_buckets))
+        data_circles = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_circles[:] = -6
 
         index = 0
         for trial_file in trial_files:
             trial_name = trial_file.split(os.sep)[-1]
+            trial_stimulus = trial_name.split("_")[1]
+            trial_stim_number = np.float(trial_stimulus[-2:])
             trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
             # if there are too many -5 rows (frames) in a row, don't analyse this trial
             bad_frame_count = []
@@ -118,21 +120,27 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
                 if (bad_count_contours_X<bad_threshold): 
                     this_chunk_length = len(this_trial_contours_X)
                     data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
+                    data_contours_X[index][-1] = trial_stim_number
                 if (bad_count_contours_Y<bad_threshold): 
                     this_chunk_length = len(this_trial_contours_Y)
                     data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
+                    data_contours_Y[index][-1] = trial_stim_number
                 if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold): 
                     this_chunk_length = len(this_trial_contours)
                     data_contours[index][0:this_chunk_length] = this_trial_contours
+                    data_contours[index][-1] = trial_stim_number
                 if (bad_count_circles_X<bad_threshold): 
                     this_chunk_length = len(this_trial_circles_X)
                     data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
+                    data_circles_X[index][-1] = trial_stim_number
                 if (bad_count_circles_Y<bad_threshold): 
                     this_chunk_length = len(this_trial_circles_Y)
                     data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
+                    data_circles_Y[index][-1] = trial_stim_number
                 if (bad_count_circles<bad_threshold): 
                     this_chunk_length = len(this_trial_circles)
                     data_circles[index][0:this_chunk_length] = this_trial_circles
+                    data_circles[index][-1] = trial_stim_number
                 index = index + 1
             else:
                 #print("Discarding trial {name}".format(name=trial_name))
@@ -270,18 +278,18 @@ day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
 
-all_right_trials_contours_X = []
-all_right_trials_contours_Y = []
-all_right_trials_contours = []
-all_right_trials_circles_X = []
-all_right_trials_circles_Y = []
-all_right_trials_circles = []
-all_left_trials_contours_X = []
-all_left_trials_contours_Y = []
-all_left_trials_contours = []
-all_left_trials_circles_X = []
-all_left_trials_circles_Y = []
-all_left_trials_circles = []
+all_right_trials_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_trials_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_trials_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_trials_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_trials_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_trials_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_trials_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_trials_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_trials_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_trials_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_trials_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_trials_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 
 all_trials_position_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y, all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
@@ -313,38 +321,134 @@ for day_folder in day_folders:
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
 
         ## COMBINE EXTRACTING PUPIL SIZE AND POSITION
+        # separate by stimulus number
+        R_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        R_contours_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in right_area_contours_X:
+            stim_num = data[-1]
+            if stim_num in R_contours_X.keys():
+                R_contours_X[stim_num].append(data[:-1])
+
+        R_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        R_contours_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in right_area_contours_Y:
+            stim_num = data[-1]
+            if stim_num in R_contours_Y.keys():
+                R_contours_Y[stim_num].append(data[:-1])
+
+        R_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        R_contours_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in right_area_contours:
+            stim_num = data[-1]
+            if stim_num in R_contours.keys():
+                R_contours[stim_num].append(data[:-1])
+
+        R_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        R_circles_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in right_area_circles_X:
+            stim_num = data[-1]
+            if stim_num in R_circles_X.keys():
+                R_circles_X[stim_num].append(data[:-1])
+
+        R_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        R_circles_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in right_area_circles_Y:
+            stim_num = data[-1]
+            if stim_num in R_circles_Y.keys():
+                R_circles_Y[stim_num].append(data[:-1])
+
+        R_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        R_circles_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in right_area_circles:
+            stim_num = data[-1]
+            if stim_num in R_circles.keys():
+                R_circles[stim_num].append(data[:-1])
+
+        L_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        L_contours_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in left_area_contours_X:
+            stim_num = data[-1]
+            if stim_num in L_contours_X.keys():
+                L_contours_X[stim_num].append(data[:-1])
+
+        L_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        L_contours_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in left_area_contours_Y:
+            stim_num = data[-1]
+            if stim_num in L_contours_Y.keys():
+                L_contours_Y[stim_num].append(data[:-1])
+
+        L_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        L_contours_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in left_area_contours:
+            stim_num = data[-1]
+            if stim_num in L_contours.keys():
+                L_contours[stim_num].append(data[:-1])
+
+        L_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        L_circles_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in left_area_circles_X:
+            stim_num = data[-1]
+            if stim_num in L_circles_X.keys():
+                L_circles_X[stim_num].append(data[:-1])
+
+        L_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        L_circles_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in left_area_circles_Y:
+            stim_num = data[-1]
+            if stim_num in L_circles_Y.keys():
+                L_circles_Y[stim_num].append(data[:-1])
+
+        L_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        L_circles_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+        for data in left_area_circles:
+            stim_num = data[-1]
+            if stim_num in L_circles.keys():
+                L_circles[stim_num].append(data[:-1])
+
         # filter data for outlier points
-        all_position_data = [right_area_contours_X, right_area_contours_Y, right_area_circles_X, right_area_circles_Y, left_area_contours_X, left_area_contours_Y, left_area_circles_X, left_area_circles_Y]
-        all_size_data = [right_area_contours, right_area_circles, left_area_contours, left_area_circles]
+        all_position_data = [R_contours_X, R_contours_Y, R_circles_X, R_circles_Y, L_contours_X, L_contours_Y, L_circles_X, L_circles_Y]
+        all_position_baselines = [R_contours_X_baseline, R_contours_Y_baseline, R_circles_X_baseline, R_circles_Y_baseline, L_contours_X_baseline, L_contours_Y_baseline, L_circles_X_baseline, L_circles_Y_baseline]
+        all_size_data = [R_contours, R_circles, L_contours, L_circles]
+        all_size_baselines = [R_contours_baseline, R_circles_baseline, L_contours_baseline, L_circles_baseline]
         # remove:
         # eye positions that are not realistic
         # time buckets with no corresponding frames
         # video pixel limits are (798,599)
-        for data in all_position_data:
-            data = threshold_to_nan(data, 798, 'upper')
-            data = threshold_to_nan(data, 0, 'lower')
+        for data_type in all_position_data:
+            for stimulus in data_type: 
+                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 798, 'upper')
+                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
         # contours/circles that are too big
-        for data in all_size_data:
-            data = threshold_to_nan(data, 15000, 'upper')
-            data = threshold_to_nan(data, 0, 'lower')
+        for data_type in all_position_data:
+            for stimulus in data_type: 
+                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 15000, 'upper')
+                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
 
         # create a baseline
-        all_position_data_baselines = []
-        all_size_data_baselines = []
-        for data in all_position_data:
-            all_position_data_baselines.append(np.nanmedian(data[:, 0:baseline_no_buckets], 1))
-        for data in all_size_data:
-            all_size_data_baselines.append(np.nanmedian(data[:,0:baseline_no_buckets], 1))
+        for x in range(len(all_position_data)):
+            for stimulus in all_position_data[x]: 
+                for trial in all_position_data[x][stimulus]:
+                    baseline = np.nanmedian(trial[:baseline_no_buckets])
+                    all_position_baselines[x][stimulus].append(baseline)
+        for x in range(len(all_size_data)):
+            for stimulus in all_size_data[x]: 
+                for trial in all_size_data[x][stimulus]:
+                    baseline = np.nanmedian(trial[:baseline_no_buckets])
+                    all_size_baselines[x][stimulus].append(baseline)
 
         # normalize and append
         for x in range(len(all_position_data)):
-            for index in range(len(all_position_data_baselines[x])):
-                all_position_data[x][index,:] = (all_position_data[x][index,:]-all_position_data_baselines[x][index])/all_position_data_baselines[x][index]
-                all_trials_position_data[x].append(all_position_data[x][index,:])
+            for stimulus in all_position_data[x]:
+                for index in range(len(all_position_baselines[x][stimulus])):
+                    all_position_data[x][stimulus][index] = (all_position_data[x][stimulus][index]-all_position_baselines[x][stimulus][index])/all_position_baselines[x][stimulus][index]
+                    all_trials_position_data[x][stimulus].append(all_position_data[x][stimulus][index])
+                    #print(all_trials_position_data[x][stimulus])
         for x in range(len(all_size_data)):
-            for index in range(len(all_size_data_baselines[x])):
-                all_size_data[x][index,:] = (all_size_data[x][index,:]-all_size_data_baselines[x][index])/all_size_data_baselines[x][index]
-                all_trials_size_data[x].append(all_size_data[x][index,:])
+            for stimulus in all_size_data[x]:
+                for index in range(len(all_size_baselines[x][stimulus])):
+                    all_size_data[x][stimulus][index] = (all_size_data[x][stimulus][index]-all_size_baselines[x][stimulus][index])/all_size_baselines[x][stimulus][index]
+                    all_trials_size_data[x][stimulus].append(all_size_data[x][stimulus][index])
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
         print("Day {day} failed!".format(day=day_name))
