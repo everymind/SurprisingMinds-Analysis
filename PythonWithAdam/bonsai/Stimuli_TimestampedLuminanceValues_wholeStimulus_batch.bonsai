@@ -74,10 +74,11 @@
               <Combinator xsi:type="q2:Sum" />
             </Expression>
             <Expression xsi:type="q3:PythonTransform">
-              <q3:Script>@returns(str)
+              <q3:Script>import os
+
+@returns(str)
 def process(value):
   global output
-  import os
   L = len(value)-4
   current_dir = os.getcwd()
   luminance_dir = os.path.join(current_dir, "LuminancePerFrame")
