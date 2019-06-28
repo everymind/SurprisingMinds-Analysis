@@ -562,7 +562,9 @@ stimuli = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 for stim_type in stimuli: 
     for i in range(len(all_right_sizes)): 
         plot_type_right = np.array(all_right_sizes[i][stim_type])
+        plot_N_right = len(all_right_sizes[i][stim_type])
         plot_type_left = np.array(all_left_sizes[i][stim_type])
+        plot_N_left = len(all_left_sizes[i][stim_type])
         plot_means_right = np.array(all_right_size_means[i][stim_type])[0]
         plot_means_left = np.array(all_left_size_means[i][stim_type])[0]
         plot_luminance = np.array(luminances_avg[stim_type])[0]
@@ -579,7 +581,7 @@ for stim_type in stimuli:
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.title('Right eye pupil sizes; N = ' + str(total_good_trials_right), fontsize=9, color='grey', style='italic')
+            plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
@@ -590,7 +592,7 @@ for stim_type in stimuli:
             
             plt.subplot(3,1,2)
             plt.ylabel('Percentage from baseline', fontsize=11)
-            plt.title('Left eye pupil sizes; N = ' + str(total_good_trials_left), fontsize=9, color='grey', style='italic')
+            plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=9, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
