@@ -515,6 +515,12 @@ analysed_array_left = np.array(good_trials_left)
 # do da plot
 image_type_options = ['.png', '.pdf']
 
+### NEED BETTER PLOTS FOR EXHIBIT ENGAGEMENT
+# activation based on: 
+# day of the week
+# time of the day
+# month of the year
+# language chosen
 """ ## PLOT EXHIBIT ENGAGEMENT ##
 for image_type in image_type_options:
     figure_name = 'TotalExhibitActivation_' + todays_datetime + image_type
