@@ -428,7 +428,7 @@ for day_folder in day_folders:
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 599, 'upper')
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
         # contours/circles that are too big
-        for data_type in all_position_data:
+        for data_type in all_size_data:
             for stimulus in data_type: 
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 15000, 'upper')
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
