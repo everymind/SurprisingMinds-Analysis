@@ -7,7 +7,7 @@
       </Expression>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="q1:GetFiles">
-          <q1:Path>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp</q1:Path>
+          <q1:Path>C:\Users\taunsquared\Desktop\temp</q1:Path>
           <q1:SearchPattern>*world.avi</q1:SearchPattern>
           <q1:SearchOption>AllDirectories</q1:SearchOption>
         </Combinator>
@@ -50,7 +50,7 @@
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
             <Expression xsi:type="q1:CsvWriter">
-              <q1:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_10-21-12\2017-10-15_10-21-12_stimuli025_world_LuminancePerFrame.csv</q1:FileName>
+              <q1:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame\2018-02-12_10-30-18_stimuli024_world_LuminancePerFrame.csv</q1:FileName>
               <q1:Append>false</q1:Append>
               <q1:Overwrite>false</q1:Overwrite>
               <q1:Suffix>None</q1:Suffix>
@@ -61,7 +61,7 @@
               <Combinator xsi:type="Zip" />
             </Expression>
             <Expression xsi:type="q1:CsvReader">
-              <q1:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_09-18-14\2017-10-15_09-18-14_stimuli026_world.csv</q1:FileName>
+              <q1:FileName>C:\Users\taunsquared\Desktop\temp\2018-02-12_10-30-18\2018-02-12_10-30-18_stimuli024_world.csv</q1:FileName>
               <q1:SkipRows>0</q1:SkipRows>
             </Expression>
             <Expression xsi:type="MemberSelector">
@@ -78,12 +78,10 @@
 
 @returns(str)
 def process(value):
-  global output
-  L = len(value)-4
-  current_dir = os.getcwd()
-  luminance_dir = os.path.join(current_dir, "LuminancePerFrame")
-  file_name = value[0:L] + "_LuminancePerFrame.csv"
-  output = os.path.join(luminance_dir, file_name)
+  filename, extension = os.path.splitext(value)
+  dirname, filename = os.path.split(filename)
+  dirname = r'C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame'
+  output = os.path.join(dirname, filename + "_LuminancePerFrame.csv")
   return output</q3:Script>
             </Expression>
             <Expression xsi:type="Combinator">
@@ -96,7 +94,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q4:FileCapture">
-                <q4:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_09-18-14\2017-10-15_09-18-14_stimuli026_world.avi</q4:FileName>
+                <q4:FileName>C:\Users\taunsquared\Desktop\temp\2018-02-12_10-30-18\2018-02-12_10-30-18_stimuli024_world.avi</q4:FileName>
                 <q4:PlaybackRate>0</q4:PlaybackRate>
                 <q4:StartPosition>0</q4:StartPosition>
                 <q4:PositionUnits>Frames</q4:PositionUnits>
@@ -132,11 +130,24 @@ def process(value):
             <Expression xsi:type="SubscribeSubject">
               <Name>Filename</Name>
             </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Catch" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="Take">
+                <Count>1</Count>
+              </Combinator>
+            </Expression>
           </Nodes>
           <Edges>
             <Edge>
               <From>0</From>
               <To>14</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>2</From>
+              <To>18</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -146,7 +157,7 @@ def process(value):
             </Edge>
             <Edge>
               <From>3</From>
-              <To>1</To>
+              <To>19</To>
               <Label>Source1</Label>
             </Edge>
             <Edge>
@@ -214,6 +225,16 @@ def process(value):
               <To>16</To>
               <Label>Source1</Label>
             </Edge>
+            <Edge>
+              <From>18</From>
+              <To>1</To>
+              <Label>Source1</Label>
+            </Edge>
+            <Edge>
+              <From>19</From>
+              <To>18</To>
+              <Label>Source2</Label>
+            </Edge>
           </Edges>
         </Workflow>
       </Expression>
@@ -254,5 +275,7 @@ def process(value):
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
     <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Catch, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
+    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
   </ExtensionTypes>
 </WorkflowBuilder>

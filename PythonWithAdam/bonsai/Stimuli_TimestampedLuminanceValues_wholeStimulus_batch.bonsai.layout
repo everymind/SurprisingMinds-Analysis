@@ -62,8 +62,8 @@
     <EditorDialogSettings>
       <Visible>true</Visible>
       <Location>
-        <X>86</X>
-        <Y>322</Y>
+        <X>116</X>
+        <Y>332</Y>
       </Location>
       <Size>
         <Width>814</Width>
@@ -157,7 +157,7 @@
         <WindowState>Normal</WindowState>
       </DialogSettings>
       <DialogSettings>
-        <Visible>true</Visible>
+        <Visible>false</Visible>
         <Location>
           <X>102</X>
           <Y>491</Y>
@@ -172,7 +172,7 @@
           <ScalarVisualizer>
             <Capacity>640</Capacity>
             <Min>0</Min>
-            <Max>1.1</Max>
+            <Max>2500000</Max>
             <AutoScale>true</AutoScale>
           </ScalarVisualizer>
         </VisualizerSettings>
@@ -190,7 +190,7 @@
         <WindowState>Normal</WindowState>
       </DialogSettings>
       <DialogSettings>
-        <Visible>true</Visible>
+        <Visible>false</Visible>
         <Location>
           <X>85</X>
           <Y>175</Y>
@@ -204,6 +204,30 @@
         <VisualizerSettings>
           <IplImageVisualizer />
         </VisualizerSettings>
+      </DialogSettings>
+      <DialogSettings>
+        <Visible>false</Visible>
+        <Location>
+          <X>0</X>
+          <Y>0</Y>
+        </Location>
+        <Size>
+          <Width>0</Width>
+          <Height>0</Height>
+        </Size>
+        <WindowState>Normal</WindowState>
+      </DialogSettings>
+      <DialogSettings>
+        <Visible>false</Visible>
+        <Location>
+          <X>0</X>
+          <Y>0</Y>
+        </Location>
+        <Size>
+          <Width>0</Width>
+          <Height>0</Height>
+        </Size>
+        <WindowState>Normal</WindowState>
       </DialogSettings>
       <DialogSettings>
         <Visible>false</Visible>
