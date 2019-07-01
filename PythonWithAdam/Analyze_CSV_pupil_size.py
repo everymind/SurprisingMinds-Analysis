@@ -291,6 +291,9 @@ all_left_trials_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[
 all_left_trials_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 all_left_trials_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 
+stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
+
 all_trials_position_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y, all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
 activation_count = []
@@ -313,6 +316,7 @@ for day_folder in day_folders:
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
     try: 
+        ## EXTRACT PUPIL SIZE AND POSITION
         right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
         left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsample_rate_ms)
 
@@ -320,7 +324,6 @@ for day_folder in day_folders:
         activation_count.append((num_right_activations, num_left_activations))
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
 
-        ## COMBINE EXTRACTING PUPIL SIZE AND POSITION
         # separate by stimulus number
         R_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
         R_contours_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
@@ -426,11 +429,12 @@ for day_folder in day_folders:
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
 
         # create a baseline
-        for x in range(len(all_position_data)):
+        # not sure if baseline is needed for position data??
+        """ for x in range(len(all_position_data)):
             for stimulus in all_position_data[x]: 
                 for trial in all_position_data[x][stimulus]:
                     baseline = np.nanmedian(trial[:baseline_no_buckets])
-                    all_position_baselines[x][stimulus].append(baseline)
+                    all_position_baselines[x][stimulus].append(baseline) """
         for x in range(len(all_size_data)):
             for stimulus in all_size_data[x]: 
                 for trial in all_size_data[x][stimulus]:
@@ -453,6 +457,13 @@ for day_folder in day_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 
+
+### NOTES FROM LAB MEETING ###
+# based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
+## during tracking, save luminance of "darkest circle"
+# if there is too much variability in frame rate, then don't plot that trial
+# if standard dev of diameter is "too big", then don't plot
+
 # find average luminance of stimuli vids
 # octo_clip_start for stimuli videos
 # stimuli024 = 169
@@ -461,8 +472,6 @@ for day_folder in day_folders:
 # stimuli027 = 180
 # stimuli028 = 247
 # stimuli029 = 314
-stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
-stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
 luminances = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 luminances_avg = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 luminances_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
@@ -483,11 +492,31 @@ for stimulus in luminances:
     avg_lum_base_array = np.array(avg_lum_baselined)
     luminances_baseline[stimulus].append(average_luminance)
 
-### NOTES FROM LAB MEETING ###
-# based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
-## during tracking, save luminance of "darkest circle"
-# if there is too much variability in frame rate, then don't plot that trial
-# if standard dev of diameter is "too big", then don't plot
+### PUPILS ###
+# position and movement
+all_right_positions = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
+all_left_positions = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
+# currently we are not pairing right and left eye coordinates
+
+
+
+# average pupil diameters
+all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
+all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
+all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
+all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
+# Compute global mean
+for i in range(len(all_right_sizes)):
+    for stimulus in all_right_sizes[i]: 
+        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
+for i in range(len(all_left_sizes)):
+    for stimulus in all_left_sizes[i]: 
+        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
+
 
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
@@ -543,25 +572,7 @@ for image_type in image_type_options:
     plt.pause(1)
     plt.close() """
 
-### BACK TO THE PUPILS ###
-all_right_positions = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
-all_left_positions = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
-all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
-all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
-all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
-all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
-# Compute global mean
-for i in range(len(all_right_sizes)):
-    for stimulus in all_right_sizes[i]: 
-        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
-for i in range(len(all_left_sizes)):
-    for stimulus in all_left_sizes[i]: 
-        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
-
+### PLOTTING PUPIL STUFF ###
 # Plot pupil sizes
 plot_types = ["contours", "circles"]
 stimuli = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
