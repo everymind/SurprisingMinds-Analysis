@@ -294,7 +294,8 @@ all_left_trials_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
 
-all_trials_position_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y, all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
+all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
+all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circles_Y, all_left_trials_contours_Y, all_left_trials_circles_Y]
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
 activation_count = []
 analysed_count = []
@@ -410,17 +411,21 @@ for day_folder in day_folders:
                 L_circles[stim_num].append(data[:-1])
 
         # filter data for outlier points
-        all_position_data = [R_contours_X, R_contours_Y, R_circles_X, R_circles_Y, L_contours_X, L_contours_Y, L_circles_X, L_circles_Y]
-        all_position_baselines = [R_contours_X_baseline, R_contours_Y_baseline, R_circles_X_baseline, R_circles_Y_baseline, L_contours_X_baseline, L_contours_Y_baseline, L_circles_X_baseline, L_circles_Y_baseline]
+        all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
+        all_position_Y_data = [R_contours_Y, R_circles_Y, L_contours_Y, L_circles_Y]
         all_size_data = [R_contours, R_circles, L_contours, L_circles]
         all_size_baselines = [R_contours_baseline, R_circles_baseline, L_contours_baseline, L_circles_baseline]
         # remove:
         # eye positions that are not realistic
         # time buckets with no corresponding frames
         # video pixel limits are (798,599)
-        for data_type in all_position_data:
+        for data_type in all_position_X_data:
             for stimulus in data_type: 
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 798, 'upper')
+                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
+        for data_type in all_position_Y_data:
+            for stimulus in data_type: 
+                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 599, 'upper')
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
         # contours/circles that are too big
         for data_type in all_position_data:
@@ -428,35 +433,93 @@ for day_folder in day_folders:
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 15000, 'upper')
                 data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
 
-        # create a baseline
-        # not sure if baseline is needed for position data??
-        """ for x in range(len(all_position_data)):
-            for stimulus in all_position_data[x]: 
-                for trial in all_position_data[x][stimulus]:
-                    baseline = np.nanmedian(trial[:baseline_no_buckets])
-                    all_position_baselines[x][stimulus].append(baseline) """
+        # create a baseline for size data
         for x in range(len(all_size_data)):
             for stimulus in all_size_data[x]: 
                 for trial in all_size_data[x][stimulus]:
                     baseline = np.nanmedian(trial[:baseline_no_buckets])
                     all_size_baselines[x][stimulus].append(baseline)
 
-        # normalize and append
-        for x in range(len(all_position_data)):
-            for stimulus in all_position_data[x]:
-                for index in range(len(all_position_baselines[x][stimulus])):
-                    all_position_data[x][stimulus][index] = (all_position_data[x][stimulus][index]-all_position_baselines[x][stimulus][index])/all_position_baselines[x][stimulus][index]
-                    all_trials_position_data[x][stimulus].append(all_position_data[x][stimulus][index])
-                    #print(all_trials_position_data[x][stimulus])
-        for x in range(len(all_size_data)):
-            for stimulus in all_size_data[x]:
-                for index in range(len(all_size_baselines[x][stimulus])):
-                    all_size_data[x][stimulus][index] = (all_size_data[x][stimulus][index]-all_size_baselines[x][stimulus][index])/all_size_baselines[x][stimulus][index]
-                    all_trials_size_data[x][stimulus].append(all_size_data[x][stimulus][index])
+        # append position data to global data structure
+        for i in range(len(all_position_X_data)):
+            for stimulus in all_position_X_data[i]:
+                for index in range(len(all_position_X_data[i][stimulus])):
+                    all_trials_position_X_data[i][stimulus].append(all_position_X_data[i][stimulus][index])
+        for i in range(len(all_position_Y_data)):
+            for stimulus in all_position_Y_data[i]:
+                for index in range(len(all_position_Y_data[i][stimulus])):
+                    all_trials_position_Y_data[i][stimulus].append(all_position_Y_data[i][stimulus][index])
+        # normalize and append size data to global data structure
+        for i in range(len(all_size_data)):
+            for stimulus in all_size_data[i]:
+                for index in range(len(all_size_baselines[i][stimulus])):
+                    all_size_data[i][stimulus][index] = (all_size_data[i][stimulus][index]-all_size_baselines[i][stimulus][index])/all_size_baselines[i][stimulus][index]
+                    all_trials_size_data[i][stimulus].append(all_size_data[i][stimulus][index])
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 
+### PUPILS ###
+# position and movement
+all_right_positions_X = [all_right_trials_contours_X, all_right_trials_circles_X]
+all_right_positions_Y = [all_right_trials_contours_Y, all_right_trials_circles_Y]
+all_left_positions_X = [all_left_trials_contours_X, all_left_trials_circles_X]
+all_left_positions_Y = [all_left_trials_contours_Y, all_left_trials_circles_Y]
+# currently we are not pairing right and left eye coordinates
+# measure movement from one frame to next
+all_right_contours_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_circles_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_movement_X = [all_right_contours_movement_X, all_right_circles_movement_X]
+for d in range(len(all_right_positions_X)):
+    for stimuli in all_right_positions_X[d]:
+        for trial in all_right_positions_X[d][stimuli]:
+            this_trial_movement = []
+            nans_in_a_row = 0
+            prev = np.nan
+            for i in range(len(trial)):
+                now = trial[i]
+                #print("now: "+str(now))
+                #print("prev: "+str(prev))
+                if np.isnan(now):
+                    # keep the nan to understand where the dropped frames are
+                    this_trial_movement.append(np.nan)
+                    nans_in_a_row = nans_in_a_row + 1
+                    continue
+                #if nans_in_a_row>(1000/downsample_rate_ms):
+                    # if there are nans for more than a second of video time, then toss this whole trial
+                    #break
+                if i==0:
+                    this_trial_movement.append(0)
+                    prev = now
+                if not np.isnan(prev):
+                    movement = now - prev
+                    this_trial_movement.append(movement)
+                    prev = now
+                    nans_in_a_row = 0 
+                #print("movements: " + str(this_trial_movement))
+                #print("consecutive nans: " + str(nans_in_a_row))
+            all_right_movement_X[d][stimuli].append(this_trial_movement)
+
+
+                
+
+
+# average pupil diameters
+all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
+all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
+all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
+all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
+# Compute global mean
+for i in range(len(all_right_sizes)):
+    for stimulus in all_right_sizes[i]: 
+        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
+for i in range(len(all_left_sizes)):
+    for stimulus in all_left_sizes[i]: 
+        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
 
 ### NOTES FROM LAB MEETING ###
 # based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
@@ -491,32 +554,6 @@ for stimulus in luminances:
     avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
     avg_lum_base_array = np.array(avg_lum_baselined)
     luminances_baseline[stimulus].append(average_luminance)
-
-### PUPILS ###
-# position and movement
-all_right_positions = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
-all_left_positions = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
-# currently we are not pairing right and left eye coordinates
-
-
-
-# average pupil diameters
-all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
-all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
-all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
-all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
-# Compute global mean
-for i in range(len(all_right_sizes)):
-    for stimulus in all_right_sizes[i]: 
-        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
-for i in range(len(all_left_sizes)):
-    for stimulus in all_left_sizes[i]: 
-        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
-
 
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
