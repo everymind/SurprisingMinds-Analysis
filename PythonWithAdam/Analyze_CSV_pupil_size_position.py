@@ -465,43 +465,54 @@ all_right_positions_X = [all_right_trials_contours_X, all_right_trials_circles_X
 all_right_positions_Y = [all_right_trials_contours_Y, all_right_trials_circles_Y]
 all_left_positions_X = [all_left_trials_contours_X, all_left_trials_circles_X]
 all_left_positions_Y = [all_left_trials_contours_Y, all_left_trials_circles_Y]
+all_positions = [all_right_positions_X, all_right_positions_Y, all_left_positions_X, all_left_positions_Y]
 # currently we are not pairing right and left eye coordinates
 # measure movement from one frame to next
 all_right_contours_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 all_right_circles_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_contours_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_circles_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_contours_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_circles_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_contours_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_circles_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
 all_right_movement_X = [all_right_contours_movement_X, all_right_circles_movement_X]
-for d in range(len(all_right_positions_X)):
-    for stimuli in all_right_positions_X[d]:
-        for trial in all_right_positions_X[d][stimuli]:
-            this_trial_movement = []
-            nans_in_a_row = 0
-            prev = np.nan
-            for i in range(len(trial)):
-                now = trial[i]
-                #print("now: "+str(now))
-                #print("prev: "+str(prev))
-                if np.isnan(now):
-                    # keep the nan to understand where the dropped frames are
-                    this_trial_movement.append(np.nan)
-                    nans_in_a_row = nans_in_a_row + 1
-                    continue
-                #if nans_in_a_row>(1000/downsample_rate_ms):
-                    # if there are nans for more than a second of video time, then toss this whole trial
-                    #break
-                if i==0:
-                    this_trial_movement.append(0)
-                    prev = now
-                if not np.isnan(prev):
-                    movement = now - prev
-                    this_trial_movement.append(movement)
-                    prev = now
-                    nans_in_a_row = 0 
-                #print("movements: " + str(this_trial_movement))
-                #print("consecutive nans: " + str(nans_in_a_row))
-            all_right_movement_X[d][stimuli].append(this_trial_movement)
+all_right_movement_Y = [all_right_contours_movement_Y, all_right_circles_movement_Y]
+all_left_movement_X = [all_left_contours_movement_X, all_left_circles_movement_X]
+all_left_movement_Y = [all_left_contours_movement_Y, all_left_circles_movement_Y]
+all_movements = [all_right_movement_X, all_right_movement_Y, all_left_movement_X, all_left_movement_Y]
 
+for dataset in all_positions:
+    for subdata in dataset:
+        for stimuli in subdata:
+            for trial in subdata[stimuli]:
+                this_trial_movement = []
+                nans_in_a_row = 0
+                prev = np.nan
+                for i in range(len(trial)):
+                    now = trial[i]
+                    #print("now: "+str(now))
+                    #print("prev: "+str(prev))
+                    if np.isnan(now):
+                        # keep the nan to understand where the dropped frames are
+                        this_trial_movement.append(np.nan)
+                        nans_in_a_row = nans_in_a_row + 1
+                        continue
+                    #if nans_in_a_row>(1000/downsample_rate_ms):
+                        # if there are nans for more than a second of video time, then toss this whole trial
+                        #break
+                    if i==0:
+                        this_trial_movement.append(0)
+                        prev = now
+                    if not np.isnan(prev):
+                        movement = now - prev
+                        this_trial_movement.append(movement)
+                        prev = now
+                        nans_in_a_row = 0 
+                    #print("movements: " + str(this_trial_movement))
+                    #print("consecutive nans: " + str(nans_in_a_row))
+                subdata[stimuli].append(this_trial_movement)
 
-                
 
 
 # average pupil diameters
