@@ -278,18 +278,20 @@ day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
 
-all_right_trials_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_trials_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_trials_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_trials_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_trials_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_trials_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_trials_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_trials_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_trials_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_trials_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_trials_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_trials_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+stim_vids = (24.0, 25.0, 26.0, 27.0, 28.0, 29.0)
+
+all_right_trials_contours_X = dict.fromkeys(stim_vids, [])
+all_right_trials_contours_Y = dict.fromkeys(stim_vids, [])
+all_right_trials_contours = dict.fromkeys(stim_vids, [])
+all_right_trials_circles_X = dict.fromkeys(stim_vids, [])
+all_right_trials_circles_Y = dict.fromkeys(stim_vids, [])
+all_right_trials_circles = dict.fromkeys(stim_vids, [])
+all_left_trials_contours_X = dict.fromkeys(stim_vids, [])
+all_left_trials_contours_Y = dict.fromkeys(stim_vids, [])
+all_left_trials_contours = dict.fromkeys(stim_vids, [])
+all_left_trials_circles_X = dict.fromkeys(stim_vids, [])
+all_left_trials_circles_Y = dict.fromkeys(stim_vids, [])
+all_left_trials_circles = dict.fromkeys(stim_vids, [])
 
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
@@ -326,89 +328,38 @@ for day_folder in day_folders:
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
 
         # separate by stimulus number
-        R_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        R_contours_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in right_area_contours_X:
-            stim_num = data[-1]
-            if stim_num in R_contours_X.keys():
-                R_contours_X[stim_num].append(data[:-1])
+        R_contours_X = dict.fromkeys(stim_vids, [])
+        R_contours_Y = dict.fromkeys(stim_vids, [])
+        R_contours = dict.fromkeys(stim_vids, [])
+        R_circles_X = dict.fromkeys(stim_vids, [])
+        R_circles_Y = dict.fromkeys(stim_vids, [])
+        R_circles = dict.fromkeys(stim_vids, [])
+        L_contours_X = dict.fromkeys(stim_vids, [])
+        L_contours_Y = dict.fromkeys(stim_vids, [])
+        L_contours = dict.fromkeys(stim_vids, [])
+        L_circles_X = dict.fromkeys(stim_vids, [])
+        L_circles_Y = dict.fromkeys(stim_vids, [])
+        L_circles = dict.fromkeys(stim_vids, [])
 
-        R_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        R_contours_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in right_area_contours_Y:
-            stim_num = data[-1]
-            if stim_num in R_contours_Y.keys():
-                R_contours_Y[stim_num].append(data[:-1])
+        R_contours_baseline = dict.fromkeys(stim_vids, [])
+        R_circles_baseline = dict.fromkeys(stim_vids, [])
+        L_contours_baseline = dict.fromkeys(stim_vids, [])
+        L_circles_baseline = dict.fromkeys(stim_vids, [])
 
-        R_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        R_contours_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in right_area_contours:
-            stim_num = data[-1]
-            if stim_num in R_contours.keys():
-                R_contours[stim_num].append(data[:-1])
+        stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
+        stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
+        stim_sorted_data_all = [stim_sorted_data_right, stim_sorted_data_left]
 
-        R_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        R_circles_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in right_area_circles_X:
-            stim_num = data[-1]
-            if stim_num in R_circles_X.keys():
-                R_circles_X[stim_num].append(data[:-1])
+        extracted_data_right = [right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles]
+        extracted_data_left = [left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles]
+        extracted_data_all = [extracted_data_right, extracted_data_left]
 
-        R_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        R_circles_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in right_area_circles_Y:
-            stim_num = data[-1]
-            if stim_num in R_circles_Y.keys():
-                R_circles_Y[stim_num].append(data[:-1])
-
-        R_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        R_circles_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in right_area_circles:
-            stim_num = data[-1]
-            if stim_num in R_circles.keys():
-                R_circles[stim_num].append(data[:-1])
-
-        L_contours_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        L_contours_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in left_area_contours_X:
-            stim_num = data[-1]
-            if stim_num in L_contours_X.keys():
-                L_contours_X[stim_num].append(data[:-1])
-
-        L_contours_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        L_contours_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in left_area_contours_Y:
-            stim_num = data[-1]
-            if stim_num in L_contours_Y.keys():
-                L_contours_Y[stim_num].append(data[:-1])
-
-        L_contours = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        L_contours_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in left_area_contours:
-            stim_num = data[-1]
-            if stim_num in L_contours.keys():
-                L_contours[stim_num].append(data[:-1])
-
-        L_circles_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        L_circles_X_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in left_area_circles_X:
-            stim_num = data[-1]
-            if stim_num in L_circles_X.keys():
-                L_circles_X[stim_num].append(data[:-1])
-
-        L_circles_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        L_circles_Y_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in left_area_circles_Y:
-            stim_num = data[-1]
-            if stim_num in L_circles_Y.keys():
-                L_circles_Y[stim_num].append(data[:-1])
-
-        L_circles = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        L_circles_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-        for data in left_area_circles:
-            stim_num = data[-1]
-            if stim_num in L_circles.keys():
-                L_circles[stim_num].append(data[:-1])
+        for side in range(len(extracted_data_all)):
+            for dataset in range(len(extracted_data_all[side])):
+                for data in extracted_data_all[side][dataset]:
+                    stim_num = data[-1]
+                    if stim_num in stim_sorted_data_all[side][dataset].keys():
+                        stim_sorted_data_all[side][dataset][stim_num].append(data[:-1])
 
         # filter data for outlier points
         all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
@@ -465,14 +416,14 @@ all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circ
 all_positions = [all_trials_position_X_data, all_trials_position_Y_data]
 # currently we are not pairing right and left eye coordinates
 # measure movement from one frame to next
-all_right_contours_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_circles_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_contours_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_circles_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_contours_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_circles_movement_X = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_contours_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_circles_movement_Y = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_contours_movement_X = dict.fromkeys(stim_vids, [])
+all_right_circles_movement_X = dict.fromkeys(stim_vids, [])
+all_right_contours_movement_Y = dict.fromkeys(stim_vids, [])
+all_right_circles_movement_Y = dict.fromkeys(stim_vids, [])
+all_left_contours_movement_X = dict.fromkeys(stim_vids, [])
+all_left_circles_movement_X = dict.fromkeys(stim_vids, [])
+all_left_contours_movement_Y = dict.fromkeys(stim_vids, [])
+all_left_circles_movement_Y = dict.fromkeys(stim_vids, [])
 all_movement_X = [all_right_contours_movement_X, all_right_circles_movement_X, all_left_contours_movement_X, all_left_circles_movement_X]
 all_movement_Y = [all_right_contours_movement_Y, all_right_circles_movement_Y, all_left_contours_movement_Y, all_left_circles_movement_Y]
 all_movements = [all_movement_X, all_movement_Y]
