@@ -493,9 +493,9 @@ for d in range(len(all_positions)):
                         this_trial_movement.append(np.nan)
                         nans_in_a_row = nans_in_a_row + 1
                         continue
-                    #if nans_in_a_row>(1000/downsample_rate_ms):
-                        # if there are nans for more than a second of video time, then toss this whole trial
-                        #break
+                    if nans_in_a_row>(2000/downsample_rate_ms):
+                        # if there are nans for more than 2 seconds of video time, then toss this whole trial
+                        break
                     if i==0:
                         this_trial_movement.append(0)
                         prev = now
@@ -508,7 +508,7 @@ for d in range(len(all_positions)):
                     #print("consecutive nans: " + str(nans_in_a_row))
                 all_movements[d][s][stimuli].append(this_trial_movement)
 
-
+# filter for 
 
 # average pupil diameters
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
