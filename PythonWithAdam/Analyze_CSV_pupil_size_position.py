@@ -310,6 +310,7 @@ new_time_bucket_ms = downsample_rate_ms/original_bucket_size_in_ms
 milliseconds_for_baseline = 2000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_ms)
 
+### BEGIN PUPIL DATA EXTRACTION ###
 for day_folder in day_folders: 
     # for each day...
     day_folder_path = os.path.join(root_folder, day_folder)
@@ -410,73 +411,7 @@ for day_folder in day_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 
-### PUPILS ###
-# position and movement
-all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
-all_positions = [all_trials_position_X_data, all_trials_position_Y_data]
-# currently we are not pairing right and left eye coordinates
-# measure movement from one frame to next
-all_right_contours_movement_X = dict.fromkeys(stim_vids, [])
-all_right_circles_movement_X = dict.fromkeys(stim_vids, [])
-all_right_contours_movement_Y = dict.fromkeys(stim_vids, [])
-all_right_circles_movement_Y = dict.fromkeys(stim_vids, [])
-all_left_contours_movement_X = dict.fromkeys(stim_vids, [])
-all_left_circles_movement_X = dict.fromkeys(stim_vids, [])
-all_left_contours_movement_Y = dict.fromkeys(stim_vids, [])
-all_left_circles_movement_Y = dict.fromkeys(stim_vids, [])
-all_movement_X = [all_right_contours_movement_X, all_right_circles_movement_X, all_left_contours_movement_X, all_left_circles_movement_X]
-all_movement_Y = [all_right_contours_movement_Y, all_right_circles_movement_Y, all_left_contours_movement_Y, all_left_circles_movement_Y]
-all_movements = [all_movement_X, all_movement_Y]
-
-for d in range(len(all_positions)):
-    for s in range(len(all_positions[d])):
-        for stimuli in all_positions[d][s]:
-            for trial in all_positions[d][s][stimuli]:
-                this_trial_movement = []
-                nans_in_a_row = 0
-                prev = np.nan
-                for i in range(len(trial)):
-                    now = trial[i]
-                    #print("now: "+str(now))
-                    #print("prev: "+str(prev))
-                    if np.isnan(now):
-                        # keep the nan to understand where the dropped frames are
-                        this_trial_movement.append(np.nan)
-                        nans_in_a_row = nans_in_a_row + 1
-                        continue
-                    if nans_in_a_row>(2000/downsample_rate_ms):
-                        # if there are nans for more than 2 seconds of video time, then toss this whole trial
-                        break
-                    if i==0:
-                        this_trial_movement.append(0)
-                        prev = now
-                    if not np.isnan(prev):
-                        movement = now - prev
-                        this_trial_movement.append(movement)
-                        prev = now
-                        nans_in_a_row = 0 
-                    #print("movements: " + str(this_trial_movement))
-                    #print("consecutive nans: " + str(nans_in_a_row))
-                all_movements[d][s][stimuli].append(this_trial_movement)
-
-# filter for 
-
-# average pupil diameters
-all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
-all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
-all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
-all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
-# Compute global mean
-for i in range(len(all_right_sizes)):
-    for stimulus in all_right_sizes[i]: 
-        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
-for i in range(len(all_left_sizes)):
-    for stimulus in all_left_sizes[i]: 
-        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
+### EXTRACTION COMPLETE ###
 
 ### NOTES FROM LAB MEETING ###
 # based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
@@ -484,17 +419,11 @@ for i in range(len(all_left_sizes)):
 # if there is too much variability in frame rate, then don't plot that trial
 # if standard dev of diameter is "too big", then don't plot
 
+### EXTRACT STIMULUS INFO ###
 # find average luminance of stimuli vids
-# octo_clip_start for stimuli videos
-# stimuli024 = 169
-# stimuli025 = 173
-# stimuli026 = 248
-# stimuli027 = 180
-# stimuli028 = 247
-# stimuli029 = 314
-luminances = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-luminances_avg = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-luminances_baseline = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+luminances = dict.fromkeys(stim_vids, [])
+luminances_avg = dict.fromkeys(stim_vids, [])
+luminances_baseline = dict.fromkeys(stim_vids, [])
 luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
 ## NEED TO SEPARATE BY STIMULI NUMBER
 for data_path in luminance_data_paths: 
@@ -565,6 +494,151 @@ for image_type in image_type_options:
     plt.show(block=False)
     plt.pause(1)
     plt.close() """
+
+# ---------- #
+### PUPILS ###
+# ---------- #
+### PUPIL POSITION AND MOVEMENT ###
+all_trials_position_right_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
+all_trials_position_left_data = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
+all_positions = [all_trials_position_right_data, all_trials_position_left_data]
+# currently we are not pairing right and left eye coordinates
+# measure movement from one frame to next
+all_right_contours_movement_X = dict.fromkeys(stim_vids, [])
+all_right_circles_movement_X = dict.fromkeys(stim_vids, [])
+all_right_contours_movement_Y = dict.fromkeys(stim_vids, [])
+all_right_circles_movement_Y = dict.fromkeys(stim_vids, [])
+all_left_contours_movement_X = dict.fromkeys(stim_vids, [])
+all_left_circles_movement_X = dict.fromkeys(stim_vids, [])
+all_left_contours_movement_Y = dict.fromkeys(stim_vids, [])
+all_left_circles_movement_Y = dict.fromkeys(stim_vids, [])
+all_movement_right = [all_right_contours_movement_X, all_right_contours_movement_Y, all_right_circles_movement_X, all_right_circles_movement_Y]
+all_movement_left = [all_left_contours_movement_X, all_left_contours_movement_Y, all_left_circles_movement_X, all_left_circles_movement_Y]
+all_movements = [all_movement_right, all_movement_left]
+
+for side in range(len(all_positions)):
+    for c_axis in range(len(all_positions[side])):
+        for stimuli in all_positions[side][c_axis]:
+            for trial in all_positions[side][c_axis][stimuli]:
+                this_trial_movement = []
+                nans_in_a_row = 0
+                prev = np.nan
+                for i in range(len(trial)):
+                    now = trial[i]
+                    #print("now: "+str(now))
+                    #print("prev: "+str(prev))
+                    if np.isnan(now):
+                        # keep the nan to understand where the dropped frames are
+                        this_trial_movement.append(np.nan)
+                        nans_in_a_row = nans_in_a_row + 1
+                        continue
+                    if nans_in_a_row>(2000/downsample_rate_ms):
+                        # if there are nans for more than 2 seconds of video time, then toss this whole trial
+                        break
+                    if i==0:
+                        this_trial_movement.append(0)
+                        prev = now
+                        continue
+                    if not np.isnan(prev):
+                        movement = now - prev
+                        this_trial_movement.append(movement)
+                        prev = now
+                        nans_in_a_row = 0 
+                    #print("movements: " + str(this_trial_movement))
+                    #print("consecutive nans: " + str(nans_in_a_row))
+                # filter out movements too large to be realistic saccades (150 pixels)
+                trial_movement_array = np.array([np.array(this_trial_movement)])
+                trial_movement_array = threshold_to_nan(trial_movement_array, 150, 'upper')
+                trial_movement_array = threshold_to_nan(trial_movement_array, -150, 'lower')
+                all_movements[side][c_axis][stimuli].append(trial_movement_array[0])          
+            # filter for trial movements that are less than 4000 bins long
+            all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
+            
+# plot movement traces
+all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
+all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
+all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
+
+side_names = ['Right', 'Left']
+cType_names = ['Contours', 'Circles']
+for side in range(len(all_movements_plot)):
+    for c_type in range(len(all_movements_plot[side])):
+        for stimuli in all_movements_plot[side][c_type][0]:
+            plot_type_name = side_names[side] + cType_names[c_type]
+            stim_name = stim_float_to_name[stimuli]
+            plot_type_X = all_movements_plot[side][c_type][0][stimuli]
+            plot_N_X = len(plot_type_X)
+            plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
+            plot_N_Y = len(plot_type_Y)
+
+            fig_size = 200
+            figure_name = 'MovementTraces_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_path = os.path.join(pupils_folder, figure_name)
+            figure_title = "Pupil movement of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
+
+            plt.figure(figsize=(14, 14), dpi=fig_size)
+            plt.suptitle(figure_title, fontsize=12, y=0.98)
+
+            plt.subplot(3,1,1)
+            ax = plt.gca()
+            ax.yaxis.set_label_coords(-0.09, -0.5) 
+            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            for trial in plot_type_X:
+                plt.plot(trial, linewidth=0.5, color=[0.5, 0.0, 1.0, 0.007])
+            plt.xlim(-10,2500)
+            #plt.ylim(-1,1)
+
+            plt.subplot(3,1,2)
+            plt.ylabel('Change in pixels', fontsize=11)
+            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            for trial in plot_type_Y:
+                plt.plot(trial, linewidth=0.5, color=[0.0, 1.0, 0.5, 0.007])
+            plt.xlim(-10,2500)
+            #plt.ylim(-1,1)
+
+            plt.subplot(3,1,3)
+            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=9, color='grey', style='italic')
+            plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='-')
+            plt.grid(b=True, which='minor', linestyle='--')
+            plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.0, 0.2, 1])
+            plt.xlim(-10,2500)
+            #plt.ylim(-1.0,1.0)
+            # mark events
+            #for i in range(len(event_labels)):
+            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
+            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            plt.subplots_adjust(hspace=0.5)
+            plt.savefig(figure_path)
+            #plt.show()
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close()
+
+### PUPIL SIZE ###
+# average pupil diameters
+all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
+all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
+all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
+all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
+# Compute global mean
+for i in range(len(all_right_sizes)):
+    for stimulus in all_right_sizes[i]: 
+        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
+for i in range(len(all_left_sizes)):
+    for stimulus in all_left_sizes[i]: 
+        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
 
 ### PLOTTING PUPIL STUFF ###
 # Plot pupil sizes
