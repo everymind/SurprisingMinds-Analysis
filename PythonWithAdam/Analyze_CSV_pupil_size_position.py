@@ -519,6 +519,7 @@ all_movements = [all_movement_right, all_movement_left]
 for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
         for stimuli in all_positions[side][c_axis]:
+            print("Calculating movements for {dataset}".format(dataset=all_positions[side][c_axis][stimuli]))
             for trial in all_positions[side][c_axis][stimuli]:
                 this_trial_movement = []
                 nans_in_a_row = 0
@@ -552,7 +553,9 @@ for side in range(len(all_positions)):
                 trial_movement_array = threshold_to_nan(trial_movement_array, -150, 'lower')
                 all_movements[side][c_axis][stimuli].append(trial_movement_array[0])          
             # filter for trial movements that are less than 4000 bins long
+            print("Unfiltered number of trials for {dataset}: {length}".format(dataset=all_movements[side][c_axis][stimuli], length=len(all_movements[side][c_axis][stimuli])))
             all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
+            print("Filtered number of trials for {dataset}: {length}".format(dataset=all_movements[side][c_axis][stimuli], length=len(all_movements[side][c_axis][stimuli])))
             
 # plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
@@ -570,6 +573,7 @@ for side in range(len(all_movements_plot)):
             plot_N_X = len(plot_type_X)
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
+            plot_luminance = np.array(luminances_avg[stimuli])[0]
 
             fig_size = 200
             figure_name = 'MovementTraces_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
@@ -598,7 +602,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(trial, linewidth=0.5, color=[0.0, 1.0, 0.5, 0.007])
+                plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.2, 0.007])
             plt.xlim(-10,2500)
             #plt.ylim(-1,1)
 
@@ -608,7 +612,7 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='-')
             plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.0, 0.2, 1])
+            plt.plot(plot_luminance, linewidth=1, color=[0.0, 1.0, 0.5, 1])
             plt.xlim(-10,2500)
             #plt.ylim(-1.0,1.0)
             # mark events
@@ -626,10 +630,10 @@ for side in range(len(all_movements_plot)):
 # average pupil diameters
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
 all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
-all_right_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_contours_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_right_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
-all_left_size_circles_means = {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}
+all_right_size_contours_means = dict.fromkeys(stim_vids, [])
+all_left_size_contours_means = dict.fromkeys(stim_vids, [])
+all_right_size_circles_means = dict.fromkeys(stim_vids, [])
+all_left_size_circles_means = dict.fromkeys(stim_vids, [])
 all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
 all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
 # Compute global mean
