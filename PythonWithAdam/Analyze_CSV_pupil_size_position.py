@@ -158,16 +158,15 @@ def list_sub_folders(path_to_root_folder):
             sub_folders.append(os.path.join(path_to_root_folder, folder))
     return sub_folders
 
-def threshold_to_nan(array_of_arrays, threshold, upper_or_lower):
-    for array in array_of_arrays:
-        for index in range(len(array)): 
-            if upper_or_lower=='upper':
-                if np.isnan(array[index])==False and array[index]>threshold:
-                    array[index] = np.nan
-            if upper_or_lower=='lower':
-                if np.isnan(array[index])==False and array[index]<threshold:
-                    array[index] = np.nan
-    return array_of_arrays
+def threshold_to_nan(input_array, threshold, upper_or_lower):
+    for index in range(len(input_array)): 
+        if upper_or_lower=='upper':
+            if np.isnan(input_array[index])==False and input_array[index]>threshold:
+                input_array[index] = np.nan
+        if upper_or_lower=='lower':
+            if np.isnan(input_array[index])==False and input_array[index]<threshold:
+                input_array[index] = np.nan
+    return input_array
 
 def make_luminance_time_buckets(start_timestamp, bucket_size_ms, end_timestamp): 
     start_timestamp = start_timestamp.split('+')[0][:-3]
@@ -280,18 +279,18 @@ day_folders = day_folders[:-1]
 
 stim_vids = (24.0, 25.0, 26.0, 27.0, 28.0, 29.0)
 
-all_right_trials_contours_X = dict.fromkeys(stim_vids, [])
-all_right_trials_contours_Y = dict.fromkeys(stim_vids, [])
-all_right_trials_contours = dict.fromkeys(stim_vids, [])
-all_right_trials_circles_X = dict.fromkeys(stim_vids, [])
-all_right_trials_circles_Y = dict.fromkeys(stim_vids, [])
-all_right_trials_circles = dict.fromkeys(stim_vids, [])
-all_left_trials_contours_X = dict.fromkeys(stim_vids, [])
-all_left_trials_contours_Y = dict.fromkeys(stim_vids, [])
-all_left_trials_contours = dict.fromkeys(stim_vids, [])
-all_left_trials_circles_X = dict.fromkeys(stim_vids, [])
-all_left_trials_circles_Y = dict.fromkeys(stim_vids, [])
-all_left_trials_circles = dict.fromkeys(stim_vids, [])
+all_right_trials_contours_X = {key:[] for key in stim_vids}
+all_right_trials_contours_Y = {key:[] for key in stim_vids}
+all_right_trials_contours = {key:[] for key in stim_vids}
+all_right_trials_circles_X = {key:[] for key in stim_vids}
+all_right_trials_circles_Y = {key:[] for key in stim_vids}
+all_right_trials_circles = {key:[] for key in stim_vids}
+all_left_trials_contours_X = {key:[] for key in stim_vids}
+all_left_trials_contours_Y = {key:[] for key in stim_vids}
+all_left_trials_contours = {key:[] for key in stim_vids}
+all_left_trials_circles_X = {key:[] for key in stim_vids}
+all_left_trials_circles_Y = {key:[] for key in stim_vids}
+all_left_trials_circles = {key:[] for key in stim_vids}
 
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
@@ -329,23 +328,38 @@ for day_folder in day_folders:
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
 
         # separate by stimulus number
-        R_contours_X = dict.fromkeys(stim_vids, [])
-        R_contours_Y = dict.fromkeys(stim_vids, [])
-        R_contours = dict.fromkeys(stim_vids, [])
-        R_circles_X = dict.fromkeys(stim_vids, [])
-        R_circles_Y = dict.fromkeys(stim_vids, [])
-        R_circles = dict.fromkeys(stim_vids, [])
-        L_contours_X = dict.fromkeys(stim_vids, [])
-        L_contours_Y = dict.fromkeys(stim_vids, [])
-        L_contours = dict.fromkeys(stim_vids, [])
-        L_circles_X = dict.fromkeys(stim_vids, [])
-        L_circles_Y = dict.fromkeys(stim_vids, [])
-        L_circles = dict.fromkeys(stim_vids, [])
+        R_contours_X = {key:[] for key in stim_vids}
+        R_contours_Y = {key:[] for key in stim_vids}
+        R_contours = {key:[] for key in stim_vids}
+        R_circles_X = {key:[] for key in stim_vids}
+        R_circles_Y = {key:[] for key in stim_vids}
+        R_circles = {key:[] for key in stim_vids}
+        L_contours_X = {key:[] for key in stim_vids}
+        L_contours_Y = {key:[] for key in stim_vids}
+        L_contours = {key:[] for key in stim_vids}
+        L_circles_X = {key:[] for key in stim_vids}
+        L_circles_Y = {key:[] for key in stim_vids}
+        L_circles = {key:[] for key in stim_vids}
 
-        R_contours_baseline = dict.fromkeys(stim_vids, [])
-        R_circles_baseline = dict.fromkeys(stim_vids, [])
-        L_contours_baseline = dict.fromkeys(stim_vids, [])
-        L_circles_baseline = dict.fromkeys(stim_vids, [])
+        for trial in right_area_contours_X:
+            stim_num = trial[-1]
+            if stim_num in R_contours.keys():
+            try:
+                R_contours_X[stim_num].append(trial[:-1])
+                print(stim_num)
+                print(R_contours_X)
+            except Exception:
+                print("No stimulus number!")
+        
+        for data in right_area_contours_Y:
+            stim_num = data[-1]
+            if stim_num in R_contours_Y.keys():
+                R_contours_Y[stim_num].append(data[:-1])
+
+        for data in right_area_contours:
+            stim_num = data[-1]
+            if stim_num in R_contours.keys():
+                R_contours[stim_num].append(data[:-1])
 
         stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
         stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
@@ -359,6 +373,8 @@ for day_folder in day_folders:
             for dataset in range(len(extracted_data_all[side])):
                 for data in extracted_data_all[side][dataset]:
                     stim_num = data[-1]
+                    print(stim_num)
+                    print(data[:10])
                     if stim_num in stim_sorted_data_all[side][dataset].keys():
                         stim_sorted_data_all[side][dataset][stim_num].append(data[:-1])
 
@@ -366,31 +382,43 @@ for day_folder in day_folders:
         all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
         all_position_Y_data = [R_contours_Y, R_circles_Y, L_contours_Y, L_circles_Y]
         all_size_data = [R_contours, R_circles, L_contours, L_circles]
-        all_size_baselines = [R_contours_baseline, R_circles_baseline, L_contours_baseline, L_circles_baseline]
         # remove:
         # eye positions that are not realistic
         # time buckets with no corresponding frames
         # video pixel limits are (798,599)
         for data_type in all_position_X_data:
             for stimulus in data_type: 
-                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 798, 'upper')
-                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
+                for trial in data_type[stimulus]:
+                    trial = threshold_to_nan(trial, 798, 'upper')
+                    trial = threshold_to_nan(trial, 0, 'lower')
         for data_type in all_position_Y_data:
             for stimulus in data_type: 
-                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 599, 'upper')
-                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
+                for trial in data_type[stimulus]:
+                    trial = threshold_to_nan(trial, 599, 'upper')
+                    trial = threshold_to_nan(trial, 0, 'lower')
         # contours/circles that are too big
         for data_type in all_size_data:
             for stimulus in data_type: 
-                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 15000, 'upper')
-                data_type[stimulus] = threshold_to_nan(data_type[stimulus], 0, 'lower')
+                for trial in data_type[stimulus]:
+                    trial = threshold_to_nan(trial, 15000, 'upper')
+                    trial = threshold_to_nan(trial, 0, 'lower')
 
         # create a baseline for size data
-        for x in range(len(all_size_data)):
-            for stimulus in all_size_data[x]: 
-                for trial in all_size_data[x][stimulus]:
+        R_contours_baseline = {key:[] for key in stim_vids}
+        R_circles_baseline = {key:[] for key in stim_vids}
+        L_contours_baseline = {key:[] for key in stim_vids}
+        L_circles_baseline = {key:[] for key in stim_vids}
+        all_size_baselines = [R_contours_baseline, R_circles_baseline, L_contours_baseline, L_circles_baseline]
+
+        for dataset in range(len(all_size_data)):
+            for stimulus in all_size_data[dataset]: 
+                print("stimulus: {stim}".format(stim=stimulus))
+                print("length of stimulus: {length}".format(length=len(all_size_data[dataset][stimulus])))
+                for trial in all_size_data[dataset][stimulus]:
                     baseline = np.nanmedian(trial[:baseline_no_buckets])
-                    all_size_baselines[x][stimulus].append(baseline)
+                    all_size_baselines[dataset][stimulus].append(baseline)
+                    print("added: {baseline}".format(baseline=baseline))
+                print("stimulus complete: {baselines}".format(baselines=all_size_baselines[dataset][stimulus]))
 
         # append position data to global data structure
         for i in range(len(all_position_X_data)):
@@ -404,7 +432,7 @@ for day_folder in day_folders:
         # normalize and append size data to global data structure
         for i in range(len(all_size_data)):
             for stimulus in all_size_data[i]:
-                for index in range(len(all_size_baselines[i][stimulus])):
+                for index in range(len(all_size_data[i][stimulus])):
                     all_size_data[i][stimulus][index] = (all_size_data[i][stimulus][index]-all_size_baselines[i][stimulus][index])/all_size_baselines[i][stimulus][index]
                     all_trials_size_data[i][stimulus].append(all_size_data[i][stimulus][index])
         print("Day {day} succeeded!".format(day=day_name))
@@ -421,9 +449,9 @@ for day_folder in day_folders:
 
 ### EXTRACT STIMULUS INFO ###
 # find average luminance of stimuli vids
-luminances = dict.fromkeys(stim_vids, [])
-luminances_avg = dict.fromkeys(stim_vids, [])
-luminances_baseline = dict.fromkeys(stim_vids, [])
+luminances = {key:[] for key in stim_vids}
+luminances_avg = {key:[] for key in stim_vids}
+luminances_baseline = {key:[] for key in stim_vids}
 luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
 ## NEED TO SEPARATE BY STIMULI NUMBER
 for data_path in luminance_data_paths: 
@@ -504,14 +532,14 @@ all_trials_position_left_data = [all_left_trials_contours_X, all_left_trials_con
 all_positions = [all_trials_position_right_data, all_trials_position_left_data]
 # currently we are not pairing right and left eye coordinates
 # measure movement from one frame to next
-all_right_contours_movement_X = dict.fromkeys(stim_vids, [])
-all_right_circles_movement_X = dict.fromkeys(stim_vids, [])
-all_right_contours_movement_Y = dict.fromkeys(stim_vids, [])
-all_right_circles_movement_Y = dict.fromkeys(stim_vids, [])
-all_left_contours_movement_X = dict.fromkeys(stim_vids, [])
-all_left_circles_movement_X = dict.fromkeys(stim_vids, [])
-all_left_contours_movement_Y = dict.fromkeys(stim_vids, [])
-all_left_circles_movement_Y = dict.fromkeys(stim_vids, [])
+all_right_contours_movement_X = {key:[] for key in stim_vids}
+all_right_circles_movement_X = {key:[] for key in stim_vids}
+all_right_contours_movement_Y = {key:[] for key in stim_vids}
+all_right_circles_movement_Y = {key:[] for key in stim_vids}
+all_left_contours_movement_X = {key:[] for key in stim_vids}
+all_left_circles_movement_X = {key:[] for key in stim_vids}
+all_left_contours_movement_Y = {key:[] for key in stim_vids}
+all_left_circles_movement_Y = {key:[] for key in stim_vids}
 all_movement_right = [all_right_contours_movement_X, all_right_contours_movement_Y, all_right_circles_movement_X, all_right_circles_movement_Y]
 all_movement_left = [all_left_contours_movement_X, all_left_contours_movement_Y, all_left_circles_movement_X, all_left_circles_movement_Y]
 all_movements = [all_movement_right, all_movement_left]
@@ -630,10 +658,10 @@ for side in range(len(all_movements_plot)):
 # average pupil diameters
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
 all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
-all_right_size_contours_means = dict.fromkeys(stim_vids, [])
-all_left_size_contours_means = dict.fromkeys(stim_vids, [])
-all_right_size_circles_means = dict.fromkeys(stim_vids, [])
-all_left_size_circles_means = dict.fromkeys(stim_vids, [])
+all_right_size_contours_means = {key:[] for key in stim_vids}
+all_left_size_contours_means = {key:[] for key in stim_vids}
+all_right_size_circles_means = {key:[] for key in stim_vids}
+all_left_size_circles_means = {key:[] for key in stim_vids}
 all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
 all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
 # Compute global mean
