@@ -222,7 +222,10 @@ def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_si
             key_index = key_index + 1
         avg_luminance_by_timebucket.append(this_trial)
         index = index + 1
-    avg_lum_by_tb_thresholded = threshold_to_nan(avg_luminance_by_timebucket, 0, 'lower')
+    avg_lum_by_tb_thresholded = []
+    for lum_array in avg_luminance_by_timebucket:
+        lum_array_thresholded = threshold_to_nan(lum_array, 0, 'lower')
+        avg_lum_by_tb_thresholded.append(lum_array_thresholded)
     avg_lum_by_tb_thresh_array = np.array(avg_lum_by_tb_thresholded)
     avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
     return avg_lum_final
@@ -341,26 +344,6 @@ for day_folder in day_folders:
         L_circles_Y = {key:[] for key in stim_vids}
         L_circles = {key:[] for key in stim_vids}
 
-        for trial in right_area_contours_X:
-            stim_num = trial[-1]
-            if stim_num in R_contours.keys():
-            try:
-                R_contours_X[stim_num].append(trial[:-1])
-                print(stim_num)
-                print(R_contours_X)
-            except Exception:
-                print("No stimulus number!")
-        
-        for data in right_area_contours_Y:
-            stim_num = data[-1]
-            if stim_num in R_contours_Y.keys():
-                R_contours_Y[stim_num].append(data[:-1])
-
-        for data in right_area_contours:
-            stim_num = data[-1]
-            if stim_num in R_contours.keys():
-                R_contours[stim_num].append(data[:-1])
-
         stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
         stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
         stim_sorted_data_all = [stim_sorted_data_right, stim_sorted_data_left]
@@ -371,12 +354,10 @@ for day_folder in day_folders:
 
         for side in range(len(extracted_data_all)):
             for dataset in range(len(extracted_data_all[side])):
-                for data in extracted_data_all[side][dataset]:
-                    stim_num = data[-1]
-                    print(stim_num)
-                    print(data[:10])
+                for trial in extracted_data_all[side][dataset]:
+                    stim_num = trial[-1]
                     if stim_num in stim_sorted_data_all[side][dataset].keys():
-                        stim_sorted_data_all[side][dataset][stim_num].append(data[:-1])
+                        stim_sorted_data_all[side][dataset][stim_num].append(trial[:-1])
 
         # filter data for outlier points
         all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
@@ -412,13 +393,9 @@ for day_folder in day_folders:
 
         for dataset in range(len(all_size_data)):
             for stimulus in all_size_data[dataset]: 
-                print("stimulus: {stim}".format(stim=stimulus))
-                print("length of stimulus: {length}".format(length=len(all_size_data[dataset][stimulus])))
                 for trial in all_size_data[dataset][stimulus]:
                     baseline = np.nanmedian(trial[:baseline_no_buckets])
                     all_size_baselines[dataset][stimulus].append(baseline)
-                    print("added: {baseline}".format(baseline=baseline))
-                print("stimulus complete: {baselines}".format(baselines=all_size_baselines[dataset][stimulus]))
 
         # append position data to global data structure
         for i in range(len(all_position_X_data)):
@@ -547,7 +524,6 @@ all_movements = [all_movement_right, all_movement_left]
 for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
         for stimuli in all_positions[side][c_axis]:
-            print("Calculating movements for {dataset}".format(dataset=all_positions[side][c_axis][stimuli]))
             for trial in all_positions[side][c_axis][stimuli]:
                 this_trial_movement = []
                 nans_in_a_row = 0
@@ -576,14 +552,12 @@ for side in range(len(all_positions)):
                     #print("movements: " + str(this_trial_movement))
                     #print("consecutive nans: " + str(nans_in_a_row))
                 # filter out movements too large to be realistic saccades (150 pixels)
-                trial_movement_array = np.array([np.array(this_trial_movement)])
+                trial_movement_array = np.array(this_trial_movement)
                 trial_movement_array = threshold_to_nan(trial_movement_array, 150, 'upper')
                 trial_movement_array = threshold_to_nan(trial_movement_array, -150, 'lower')
-                all_movements[side][c_axis][stimuli].append(trial_movement_array[0])          
+                all_movements[side][c_axis][stimuli].append(trial_movement_array)          
             # filter for trial movements that are less than 4000 bins long
-            print("Unfiltered number of trials for {dataset}: {length}".format(dataset=all_movements[side][c_axis][stimuli], length=len(all_movements[side][c_axis][stimuli])))
             all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
-            print("Filtered number of trials for {dataset}: {length}".format(dataset=all_movements[side][c_axis][stimuli], length=len(all_movements[side][c_axis][stimuli])))
             
 # plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
