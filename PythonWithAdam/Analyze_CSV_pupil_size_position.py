@@ -589,32 +589,95 @@ for side in range(len(all_movements_plot)):
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
+            #plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='--')
+            #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
                 plt.plot(trial, linewidth=0.5, color=[0.5, 0.0, 1.0, 0.007])
             plt.xlim(-10,2500)
-            #plt.ylim(-1,1)
+            plt.ylim(-100,100)
 
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
             plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
+            #plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='--')
+            #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
                 plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.2, 0.007])
             plt.xlim(-10,2500)
-            #plt.ylim(-1,1)
+            plt.ylim(-100,100)
 
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
-            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
+            #plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='--')
+            #plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_luminance, linewidth=1, color=[0.0, 1.0, 0.5, 1])
+            plt.xlim(-10,2500)
+            #plt.ylim(-1.0,1.0)
+            # mark events
+            #for i in range(len(event_labels)):
+            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
+            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            plt.subplots_adjust(hspace=0.5)
+            plt.savefig(figure_path)
+            #plt.show()
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close()
+
+# plot MOTION traces (abs val of movement traces)
+for side in range(len(all_movements_plot)):
+    for c_type in range(len(all_movements_plot[side])):
+        for stimuli in all_movements_plot[side][c_type][0]:
+            plot_type_name = side_names[side] + cType_names[c_type]
+            stim_name = stim_float_to_name[stimuli]
+            plot_type_X = all_movements_plot[side][c_type][0][stimuli]
+            plot_N_X = len(plot_type_X)
+            plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
+            plot_N_Y = len(plot_type_Y)
+            plot_luminance = np.array(luminances_avg[stimuli])[0]
+
+            fig_size = 200
+            figure_name = 'MotionTraces_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_path = os.path.join(pupils_folder, figure_name)
+            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
+
+            plt.figure(figsize=(14, 14), dpi=fig_size)
+            plt.suptitle(figure_title, fontsize=12, y=0.98)
+
+            plt.subplot(3,1,1)
+            ax = plt.gca()
+            ax.yaxis.set_label_coords(-0.09, -0.5) 
+            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
+            #plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='--')
+            #plt.grid(b=True, which='minor', linestyle='--')
+            for trial in plot_type_X:
+                plt.plot(abs(trial), linewidth=0.5, color=[0.5, 0.0, 1.0, 0.007])
+            plt.xlim(-10,2500)
+            plt.ylim(-5,100)
+
+            plt.subplot(3,1,2)
+            plt.ylabel('Change in pixels', fontsize=11)
+            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
+            #plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='--')
+            #plt.grid(b=True, which='minor', linestyle='--')
+            for trial in plot_type_Y:
+                plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.007])
+            plt.xlim(-10,2500)
+            plt.ylim(-5,100)
+
+            plt.subplot(3,1,3)
+            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
+            #plt.minorticks_on()
+            plt.grid(b=True, which='major', linestyle='--')
+            #plt.grid(b=True, which='minor', linestyle='--')
+            plt.plot(plot_luminance, linewidth=1, color=[0.0, 1.0, 0.0, 1])
             plt.xlim(-10,2500)
             #plt.ylim(-1.0,1.0)
             # mark events
