@@ -8,6 +8,7 @@ import math
 import sys
 import itertools
 import matplotlib.animation as animation
+from collections import defaultdict
 
 ### FUNCTIONS ###
 def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -521,9 +522,36 @@ all_movement_right = [all_right_contours_movement_X, all_right_contours_movement
 all_movement_left = [all_left_contours_movement_X, all_left_contours_movement_Y, all_left_circles_movement_X, all_left_circles_movement_Y]
 all_movements = [all_movement_right, all_movement_left]
 
+all_right_contours_X_peaks = {key:[] for key in stim_vids}
+all_right_circles_X_peaks = {key:[] for key in stim_vids}
+all_right_contours_Y_peaks = {key:[] for key in stim_vids}
+all_right_circles_Y_peaks = {key:[] for key in stim_vids}
+all_left_contours_X_peaks = {key:[] for key in stim_vids}
+all_left_circles_X_peaks = {key:[] for key in stim_vids}
+all_left_contours_Y_peaks = {key:[] for key in stim_vids}
+all_left_circles_Y_peaks = {key:[] for key in stim_vids}
+all_peaks_right = [all_right_contours_X_peaks, all_right_contours_Y_peaks, all_right_circles_X_peaks, all_right_circles_Y_peaks]
+all_peaks_left = [all_left_contours_X_peaks, all_left_contours_Y_peaks, all_left_circles_X_peaks, all_left_circles_Y_peaks]
+all_peaks = [all_peaks_right, all_peaks_left]
+
+all_right_contours_X_saccades = {key:{} for key in stim_vids}
+all_right_circles_X_saccades = {key:{} for key in stim_vids}
+all_right_contours_Y_saccades = {key:{} for key in stim_vids}
+all_right_circles_Y_saccades = {key:{} for key in stim_vids}
+all_left_contours_X_saccades = {key:{} for key in stim_vids}
+all_left_circles_X_saccades = {key:{} for key in stim_vids}
+all_left_contours_Y_saccades = {key:{} for key in stim_vids}
+all_left_circles_Y_saccades = {key:{} for key in stim_vids}
+all_saccades_right = [all_right_contours_X_saccades, all_right_contours_Y_saccades, all_right_circles_X_saccades, all_right_circles_Y_saccades]
+all_saccades_left = [all_left_contours_X_saccades, all_left_contours_Y_saccades, all_left_circles_X_saccades, all_left_circles_Y_saccades]
+all_saccades = [all_saccades_right, all_saccades_left]
+
+side_names = ['Right', 'Left']
+cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
 for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
         for stimuli in all_positions[side][c_axis]:
+            print('Calculating movements for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
             for trial in all_positions[side][c_axis][stimuli]:
                 this_trial_movement = []
                 nans_in_a_row = 0
@@ -555,16 +583,53 @@ for side in range(len(all_positions)):
                 trial_movement_array = np.array(this_trial_movement)
                 trial_movement_array = threshold_to_nan(trial_movement_array, 150, 'upper')
                 trial_movement_array = threshold_to_nan(trial_movement_array, -150, 'lower')
-                all_movements[side][c_axis][stimuli].append(trial_movement_array)          
+                all_movements[side][c_axis][stimuli].append(trial_movement_array)  
             # filter for trial movements that are less than 4000 bins long
             all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
+            # find peaks (start, end, and max of saccade)
+            saccade_thresholds = [10, 15, 20, 30, 40] #pixels
+            all_saccades[side][c_axis][stimuli] = {key:{} for key in saccade_thresholds}
+            for threshold in saccade_thresholds:
+                for trial_array in all_movements[side][c_axis][stimuli]: 
+                    trial_list = trial_array.tolist()
+                    # find all time bins when pupil movement exceeds threshold
+                    peak_indices = [trial_list.index(x) for x in trial_list if abs(x)>=saccade_threshold]
+                    all_peaks[side][c_axis][stimuli].append(peak_indices)
+                # find the time bins when number of subjects with a saccade is at least half of the sample
+                this_stim_peaks = all_peaks[side][c_axis][stimuli]
+                this_stim_saccades = []
+                for trial_peaks in this_stim_peaks: 
+                    peaks_dict = {}
+                    peaks_dict = defaultdict(lambda:0, peaks_dict)
+                    # add up all of the time bins with peaks
+                    for peak in trial_peaks:
+                        peaks_dict[peak] = peaks_dict[peak] + 1
+                    # NEED TO CREATE A WINDOW OF TIME BINS
+                    # window = 0.5 seconds or 500 ms
+                    # if more than half of subjects for this stimulus had movement >20 pixels within this window, call this a saccade
+                    peak_window = 500/downsample_rate_ms
+                    for peak_time in peaks_dict.keys():
+                        start = peak_time - (peak_window/2)
+                        end = peak_time + (peak_window/2)
+                        count = 0
+                        for time_bucket in peaks_dict.keys():
+                            if start<=time_bucket<=end:
+                                count = count + peaks_dict[time_bucket]
+                        if count>10:
+                            print('peak time: {b}, count = {c}'.format(b=peak_time, c=count))
+                            if count>(len(this_stim_peaks)/4):
+                                print(peak_time)
+                                this_stim_saccades.append(peak_time)
+                all_saccades[side][c_axis][stimuli][threshold].append(this_stim_saccades)
+
+
+
             
 # plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
 
-side_names = ['Right', 'Left']
 cType_names = ['Contours', 'Circles']
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
@@ -593,7 +658,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(trial, linewidth=0.5, color=[0.5, 0.0, 1.0, 0.007])
+                plt.plot(trial, linewidth=0.5, color=[0.5, 0.0, 1.0, 0.01])
             plt.xlim(-10,2500)
             plt.ylim(-100,100)
 
@@ -604,7 +669,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.2, 0.007])
+                plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.2, 0.01])
             plt.xlim(-10,2500)
             plt.ylim(-100,100)
 
@@ -614,7 +679,7 @@ for side in range(len(all_movements_plot)):
             #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_luminance, linewidth=1, color=[0.0, 1.0, 0.5, 1])
+            plt.plot(plot_luminance, linewidth=0.75, color=[0.3, 1.0, 0.3, 1])
             plt.xlim(-10,2500)
             #plt.ylim(-1.0,1.0)
             # mark events
@@ -656,7 +721,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(abs(trial), linewidth=0.5, color=[0.5, 0.0, 1.0, 0.007])
+                plt.plot(abs(trial), linewidth=0.5, color=[0.5, 0.0, 1.0, 0.01])
             plt.xlim(-10,2500)
             plt.ylim(-5,100)
 
@@ -667,7 +732,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.007])
+                plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.01])
             plt.xlim(-10,2500)
             plt.ylim(-5,100)
 
@@ -773,6 +838,9 @@ for stim_type in stimuli:
             plt.show(block=False)
             plt.pause(1)
             plt.close()
+
+### POOL ACROSS STIMULI FOR OCTOPUS CLIP ###
+
 
 ##################################################
 
