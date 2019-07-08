@@ -579,25 +579,44 @@ for side in range(len(all_positions)):
                         nans_in_a_row = 0 
                     #print("movements: " + str(this_trial_movement))
                     #print("consecutive nans: " + str(nans_in_a_row))
-                # filter out movements too large to be realistic saccades (150 pixels)
+                # filter out movements too large to be realistic saccades (120 pixels)
                 trial_movement_array = np.array(this_trial_movement)
-                trial_movement_array = threshold_to_nan(trial_movement_array, 150, 'upper')
-                trial_movement_array = threshold_to_nan(trial_movement_array, -150, 'lower')
+                trial_movement_array = threshold_to_nan(trial_movement_array, 120, 'upper')
+                trial_movement_array = threshold_to_nan(trial_movement_array, -120, 'lower')
                 all_movements[side][c_axis][stimuli].append(trial_movement_array)  
             # filter for trial movements that are less than 4000 bins long
             all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
+
+# sum the pixel motion per time_bucket
+for side in range(len(all_movements)):
+    for c_axis in range(len(all_movements[side])):
+        for stimuli in all_movements[side][c_axis]:
+            print('Calculating peaks for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
+            # for each frame, sum the abs(movements) on that frame
+            total_peaks_this_stim = np.zeros(len(all_movements[side][c_axis][stimuli][0]))
+            for trial in all_movements[side][c_axis][stimuli]:
+                for t in range(len(trial)):
+                    if not np.isnan(trial[t]):
+                        total_peaks_this_stim[t] = total_peaks_this_stim[t] + abs(trial[t])
+            all_peaks[side][c_axis][stimuli] = total_peaks_this_stim
+            
+# filter through the peaks to find saccades
+for side in range(len(all_peaks)):
+    for c_axis in range(len(all_peaks[side])):
+        for stimuli in all_peaks[side][c_axis]:
             # find peaks (start, end, and max of saccade)
             saccade_thresholds = [10, 15, 20, 30, 40] #pixels
-            all_saccades[side][c_axis][stimuli] = {key:{} for key in saccade_thresholds}
-            for threshold in saccade_thresholds:
+            count_thresholds = [40, 30, 20, 20, 10]
+            all_saccades[side][c_axis][stimuli] = {key:[] for key in saccade_thresholds}
+            for t in range(len(saccade_thresholds)):
+                print('Saccade Threshold: {s}, Count Threshold: {c}'.format(s=saccade_thresholds[t], c=count_thresholds[t]))
                 for trial_array in all_movements[side][c_axis][stimuli]: 
                     trial_list = trial_array.tolist()
                     # find all time bins when pupil movement exceeds threshold
-                    peak_indices = [trial_list.index(x) for x in trial_list if abs(x)>=saccade_threshold]
+                    peak_indices = [trial_list.index(x) for x in trial_list if abs(x)>=saccade_thresholds[t]]
                     all_peaks[side][c_axis][stimuli].append(peak_indices)
                 # find the time bins when number of subjects with a saccade is at least half of the sample
                 this_stim_peaks = all_peaks[side][c_axis][stimuli]
-                this_stim_saccades = []
                 for trial_peaks in this_stim_peaks: 
                     peaks_dict = {}
                     peaks_dict = defaultdict(lambda:0, peaks_dict)
@@ -606,7 +625,6 @@ for side in range(len(all_positions)):
                         peaks_dict[peak] = peaks_dict[peak] + 1
                     # NEED TO CREATE A WINDOW OF TIME BINS
                     # window = 0.5 seconds or 500 ms
-                    # if more than half of subjects for this stimulus had movement >20 pixels within this window, call this a saccade
                     peak_window = 500/downsample_rate_ms
                     for peak_time in peaks_dict.keys():
                         start = peak_time - (peak_window/2)
@@ -615,20 +633,18 @@ for side in range(len(all_positions)):
                         for time_bucket in peaks_dict.keys():
                             if start<=time_bucket<=end:
                                 count = count + peaks_dict[time_bucket]
-                        if count>10:
+                        if count>count_thresholds[t]: # if, at this time bucket, enough subjects had movements over the threshold, call this a saccade
                             print('peak time: {b}, count = {c}'.format(b=peak_time, c=count))
-                            if count>(len(this_stim_peaks)/4):
-                                print(peak_time)
-                                this_stim_saccades.append(peak_time)
-                all_saccades[side][c_axis][stimuli][threshold].append(this_stim_saccades)
-
-
-
-            
+                            all_saccades[side][c_axis][stimuli][saccade_thresholds[t]].append(peak_time)
+  
 # plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
+
+all_saccades_right_plot = [(all_right_contours_X_saccades, all_right_contours_Y_saccades), (all_right_circles_X_saccades, all_right_circles_Y_saccades)]
+all_saccades_left_plot = [(all_left_contours_X_saccades, all_left_contours_Y_saccades), (all_left_circles_X_saccades, all_left_circles_Y_saccades)]
+all_saccades_plot = [all_saccades_right_plot, all_saccades_left_plot]
 
 cType_names = ['Contours', 'Circles']
 for side in range(len(all_movements_plot)):
@@ -638,8 +654,10 @@ for side in range(len(all_movements_plot)):
             stim_name = stim_float_to_name[stimuli]
             plot_type_X = all_movements_plot[side][c_type][0][stimuli]
             plot_N_X = len(plot_type_X)
+            saccades_X = all_saccades[side][c_type][0][stimuli][10]
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
+            saccades_Y = all_saccades[side][c_type][1][stimuli][10]
             plot_luminance = np.array(luminances_avg[stimuli])[0]
 
             fig_size = 200
