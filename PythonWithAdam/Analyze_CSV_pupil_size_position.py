@@ -9,6 +9,7 @@ import sys
 import itertools
 import matplotlib.animation as animation
 from collections import defaultdict
+from scipy.signal import savgol_filter
 
 ### FUNCTIONS ###
 def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -524,6 +525,8 @@ all_movements = [all_movement_right, all_movement_left]
 
 side_names = ['Right', 'Left']
 cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
+
+### calculate movement ###
 for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
         for stimuli in all_positions[side][c_axis]:
@@ -557,8 +560,8 @@ for side in range(len(all_positions)):
                     #print("consecutive nans: " + str(nans_in_a_row))
                 # filter out movements too large to be realistic saccades (120 pixels)
                 trial_movement_array = np.array(this_trial_movement)
-                trial_movement_array = threshold_to_nan(trial_movement_array, 120, 'upper')
-                trial_movement_array = threshold_to_nan(trial_movement_array, -120, 'lower')
+                trial_movement_array = threshold_to_nan(trial_movement_array, 100, 'upper')
+                trial_movement_array = threshold_to_nan(trial_movement_array, -100, 'lower')
                 all_movements[side][c_axis][stimuli].append(trial_movement_array)  
             # filter for trial movements that are less than 4000 bins long
             all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
@@ -587,14 +590,20 @@ for side in range(len(all_movements)):
                 for t in range(len(trial)):
                     if np.isnan(trial[t]):
                         nan_count_this_stim[t] = nan_count_this_stim[t] + 1
-                    elif not np.isnan(trial[t]):
+                    if not np.isnan(trial[t]):
                         total_motion_this_stim[t] = total_motion_this_stim[t] + abs(trial[t])
             avg_motion_this_stim = np.zeros(len(all_movements[side][c_axis][stimuli][0]))
             for f in range(len(total_motion_this_stim)):
                 valid_subjects_this_tbucket = len(all_movements[side][c_axis][stimuli]) - nan_count_this_stim[f]
                 avg_motion_this_stim[f] = total_motion_this_stim[f]/valid_subjects_this_tbucket
-            all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
+            # smooth the average motion
+            window = 25 # time buckets
+            # apply savitzky-golay filter to smooth
+            avg_motion_smoothed = savgol_filter(avg_motion_this_stim, window, 3)
+            all_avg_motion[side][c_axis][stimuli] = avg_motion_smoothed
 
+""" ### ------------------------------ ###
+### MARK START AND END OF SACCADES ###
 all_right_contours_X_saccades = {key:{} for key in stim_vids}
 all_right_circles_X_saccades = {key:{} for key in stim_vids}
 all_right_contours_Y_saccades = {key:{} for key in stim_vids}
@@ -611,32 +620,24 @@ all_saccades = [all_saccades_right, all_saccades_left]
 for side in range(len(all_avg_motion)):
     for c_axis in range(len(all_avg_motion[side])):
         for stimuli in all_avg_motion[side][c_axis]:
-            saccade_thresholds = [3, 4, 5] # avg pixel movement = total pixels of movement/number of subjects
+            # threshold according to slope of avg_motion curve
+            slope_thresholds = [1, 4, 5] 
             all_saccades[side][c_axis][stimuli] = {key:[] for key in saccade_thresholds}
             for threshold in saccade_thresholds:
                 trial_list = all_avg_motion[side][c_axis][stimuli].tolist()
                 # find all time bins when pupil movement exceeds threshold
                 saccade_indices = [trial_list.index(x) for x in trial_list if abs(x)>=saccade_thresholds[t]]
                 
+### ------------------------------ ### """
 
-                # NEED TO CREATE A WINDOW OF TIME BINS
-                # window = 0.5 seconds or 500 ms
-                saccade_window = 500/downsample_rate_ms
-                for saccade_time in saccade_indices:
-                    start = saccade_time - (saccade_window/2)
-                    end = saccade_time + (saccade_window/2)
-                    count = 0
-                    for time_bucket in saccades_dict.keys():
-                        if start<=time_bucket<=end:
-                            count = count + saccades_dict[time_bucket]
-                    if count>count_thresholds[t]: # if, at this time bucket, enough subjects had movements over the threshold, call this a saccade
-                        print('peak time: {b}, count = {c}'.format(b=saccade_time, c=count))
-                        all_saccades[side][c_axis][stimuli][saccade_thresholds[t]].append(saccade_time)
-  
 # plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
+
+all_avg_motion_right_plot = [(all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion), (all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion)]
+all_avg_motion_left_plot = [(all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion), (all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion)]
+all_avg_motion_plot = [all_avg_motion_right_plot, all_avg_motion_left_plot]
 
 all_saccades_right_plot = [(all_right_contours_X_saccades, all_right_contours_Y_saccades), (all_right_circles_X_saccades, all_right_circles_Y_saccades)]
 all_saccades_left_plot = [(all_left_contours_X_saccades, all_left_contours_Y_saccades), (all_left_circles_X_saccades, all_left_circles_Y_saccades)]
@@ -650,10 +651,8 @@ for side in range(len(all_movements_plot)):
             stim_name = stim_float_to_name[stimuli]
             plot_type_X = all_movements_plot[side][c_type][0][stimuli]
             plot_N_X = len(plot_type_X)
-            saccades_X = all_saccades[side][c_type][0][stimuli][10]
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
-            saccades_Y = all_saccades[side][c_type][1][stimuli][10]
             plot_luminance = np.array(luminances_avg[stimuli])[0]
 
             fig_size = 200
@@ -672,9 +671,9 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(trial, linewidth=0.5, color=[0.5, 0.0, 1.0, 0.01])
+                plt.plot(trial, linewidth=0.5, color=[0.3, 0.0, 1.0, 0.01])
             plt.xlim(-10,2500)
-            plt.ylim(-100,100)
+            plt.ylim(-80,80)
 
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
@@ -683,9 +682,9 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.2, 0.01])
+                plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.3, 0.01])
             plt.xlim(-10,2500)
-            plt.ylim(-100,100)
+            plt.ylim(-80,80)
 
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
@@ -714,8 +713,10 @@ for side in range(len(all_movements_plot)):
             plot_type_name = side_names[side] + cType_names[c_type]
             stim_name = stim_float_to_name[stimuli]
             plot_type_X = all_movements_plot[side][c_type][0][stimuli]
+            plot_type_X_avg = all_avg_motion_plot[side][c_type][0][stimuli]
             plot_N_X = len(plot_type_X)
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
+            plot_type_Y_avg = all_avg_motion_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
             plot_luminance = np.array(luminances_avg[stimuli])[0]
 
@@ -735,9 +736,10 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(abs(trial), linewidth=0.5, color=[0.5, 0.0, 1.0, 0.01])
+                plt.plot(abs(trial), linewidth=0.5, color=[0.2, 0.0, 1.0, 0.005])
+            plt.plot(plot_type_X_avg, linewidth=1, color=[0.8, 0.0, 1.0, 1])
             plt.xlim(-10,2500)
-            plt.ylim(-5,100)
+            plt.ylim(-5,80)
 
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
@@ -746,9 +748,10 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.01])
+                plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.005])
+            plt.plot(plot_type_Y_avg, linewidth=1, color=[1.0, 0.0, 0.8, 1])
             plt.xlim(-10,2500)
-            plt.ylim(-5,100)
+            plt.ylim(-5,80)
 
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
@@ -756,7 +759,7 @@ for side in range(len(all_movements_plot)):
             #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             #plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_luminance, linewidth=1, color=[0.0, 1.0, 0.0, 1])
+            plt.plot(plot_luminance, linewidth=1, color=[0.3, 1.0, 0.4, 1])
             plt.xlim(-10,2500)
             #plt.ylim(-1.0,1.0)
             # mark events
@@ -854,216 +857,5 @@ for stim_type in stimuli:
             plt.close()
 
 ### POOL ACROSS STIMULI FOR OCTOPUS CLIP ###
-
-
-##################################################
-
-### -------------------------- ###
-### UNDER CONSTRUCTION!!!!!!!! ###
-### -------------------------- ###
-### LINEAR REGRESSION ANALYSIS ###
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import r2_score
-from mpl_toolkits.mplot3d import Axes3D  
-
-# offset, to account for latency of pupillary response. best latency = 20 time bucket delay
-latency = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
-X_test_all = []
-X_test_frames_all = []
-model_linX_prediction_all = []
-model_linXframes_prediction_all = []
-model_Xdof2_prediction_all = []
-r2_lum_training_scores = []
-r2_lum_test_scores = []
-r2_lumFrames_training_scores = []
-r2_lumFrames_test_scores = []
-r2_Xdof2_training_scores = []
-r2_Xdof2_test_scores = []
-offsets_ms = []
-for offset_frames in latency: 
-    print(str(offset_frames))
-    offset_ms = int(offset_frames*downsample_rate_ms)
-    offsets_ms.append(offset_ms)
-    print(offsets_ms)
-    start = 0
-    end = 480
-    all_left_circles_mean_trimmed = all_left_circles_mean[(start+offset_frames):(end+offset_frames)]
-    avg_lum_base_trimmed = avg_lum_base_array[start:end]
-    # Build linear regression model using Avg Luminance as predictor
-    # Split data into predictors X and output Y
-    X = avg_lum_base_trimmed.reshape(-1,1)
-    y = all_left_circles_mean_trimmed
-    # divide dataset into training and test portions
-    # training data - first 100 frames
-    train_start = 0
-    train_end = 99
-    # test data - frame 101 to end
-    test_start = 100
-    test_end = len(X)
-    X_training = X[train_start:train_end]
-    X_test = X[test_start:test_end]
-    y_training = y[train_start:train_end]
-    y_test = y[test_start:test_end]
-    # add frame number as a predictor
-    relative_frame_numbers_training = np.arange(len(X_training))
-    relative_frame_numbers_test = np.arange(len(X_test))
-    X_frames_training = np.empty((len(X_training), 2))
-    for i in range(len(X_training)):
-        X_frames_training[i] = [X_training[i], relative_frame_numbers_training[i]]
-    X_frames_test = np.empty((len(X_test), 2))
-    for i in range(len(X_test)):
-        X_test_frames[i] = [X_test[i], relative_frame_numbers_test[i]]
-
-    # Initialise and fit model
-    # linear: just luminance values
-    model_linX = LinearRegression().fit(X_training, y_training)
-    # multiple linear: luminance values + frame number
-    model_linXframes = LinearRegression().fit(X_training_frames, y_training)
-    # quadratic
-    X_dof2_training = PolynomialFeatures(degree=2, include_bias=False).fit_transform(X_training)
-    X_dof2_test = PolynomialFeatures(degree=2, include_bias=False).fit_transform(X_test)
-    # Initialise and fit model
-    model_X_dof2 = LinearRegression().fit(X_dof2_training,y_training)
-
-    # Print Coefficients
-    print(f'beta_0 = {model_linX.intercept_}')
-    print(f'beta = {model_linX.coef_}')
-    print(f'beta_0_frames = {model_linXframes.intercept_}')
-    print(f'betas_frames = {model_linXframes.coef_}')
-    print(f'beta_0_X_dof2 = {model_X_dof2.intercept_}')
-    print(f'betas_X_dof2 = {model_X_dof2.coef_}')
-
-    # predicted response
-    model_linX_prediction = model_linX.predict(X_test)
-    model_linX_prediction_all.append(model_linX_prediction)
-    model_linXframes_prediction = model_linXframes.predict(X_frames_test)
-    model_linXframes_prediction_all.append(model_linXframes_prediction)
-    model_Xdof2_prediction = model_X_dof2.predict(X_dof2_test)
-    model_Xdof2_prediction_all.append(model_Xdof2_prediction)
-
-    #r^2 (coefficient of determination) regression score function.
-    r2_lum_training = model_linX.score(X_training,y_training)
-    r2_lum_training_scores.append(r2_lum_training)
-    r2_lum_test = model_linX.score(X_test,y_test)
-    r2_lum_test_scores.append(r2_lum_test)
-
-    r2_lumFrames_training = model_linXframes.score(X_frames_training,y_training)
-    r2_lumFrames_training_scores.append(r2_lumFrames_training)
-    r2_lumFrames_test = model_linXframes.score(X_frames_test,y_test)
-    r2_lumFrames_test_scores.append(r2_lumFrames_test)
-
-    r2_Xdof2_training = model_X_dof2.score(X_dof2_training,y_training)
-    r2_Xdof2_training_scores.append(r2_Xdof2_training)
-    r2_Xdof2_test = model_X_dof2.score(X_dof2_test,y_test)
-    r2_Xdof2_test_scores.append(r2_Xdof2_test)
-
-    print(f'linear model (luminance) = {r2_lum_training}')
-    print(f'multiple linear model (luminance + frame number) = {r2_lumFrames_training}')
-    print(f'polynomial model, luminance, 2 dof = {r2_Xdof2_training}')
-
-# plot R^2 scores for each offset
-y_pos = np.arange(len(offsets_ms))
-training_scores = [r2_lum_training_scores, r2_lumFrames_training_scores, r2_Xdof2_training_scores]
-test_scores = [r2_lum_test_scores, r2_lumFrames_test_scores, r2_Xdof2_test_scores]
-y_labels = ['$R^2 scores$, luminance', '$R^2 scores$, luminance+frames', '$R^2 scores$, DoF=2', '$R^2 scores$, DoF=3']
-
-#for i in range(len(scores)): 
-i = 0
-r2_scores_plot_title = 'Comparison of goodness-of-fit for different latencies (ms) \nTraining data: first 100 frames'
-plt.figure(dpi=200)
-plt.suptitle(r2_scores_plot_title, fontsize=10, y=0.98)
-bars = plt.bar(y_pos, training_scores[i], color='red', align='center', alpha=0.5)
-plt.ylim(0,1)
-plt.xticks(y_pos, offsets_ms)
-plt.ylabel(y_labels[i])
-for rect in bars:
-    height = rect.get_height()
-    plt.text(rect.get_x() + rect.get_width()/2.0, height, '%.4f' % height, ha='center', va='bottom', fontsize=6, rotation=60)
-plt.legend()
-plt.tight_layout()
-plt.show()
-
-# plot the best model
-# index of best latency
-best_index = 0
-# linear
-figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms[best_index]) + 'ms_' + todays_datetime + '.png'
-figure2d_path = os.path.join(linReg_folder, figure2d_name)
-figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms[best_index]) + "ms to account for latency of pupillary response"
-plt.figure(dpi=200)
-plt.suptitle(figure2d_title, fontsize=10, y=0.98)
-
-plt.scatter(X_test, y_test)
-plt.plot(X_test, model_linX_prediction[best_index], 'yellow')
-plt.plot(X_test, model_Xdof2_prediction[best_index], '.r')
-plt.plot(X_test, model_Xdof3_prediction[best_index], 'lime')
-plt.ylim(-0.25,0.4)
-plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
-plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
-plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum_scores[best_index]) + "\n$R^2$ score, polynomial (DOF=2, red) = " + str(r2_Xdof2_scores[best_index]) + "\n$R^2$ score, polynomial (DOF=3, green) = " + str(r2_Xdof3_scores[best_index]), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-plt.savefig(figure2d_path)
-plt.show(block=False)
-plt.pause(1)
-plt.close()
-
-# multiple linear
-figure2d_name = 'LinearReg2d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
-figure2d_path = os.path.join(linReg_folder, figure2d_name)
-figure2d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
-plt.figure(dpi=200)
-plt.suptitle(figure2d_title, fontsize=10, y=0.98)
-
-plt.scatter(relative_frame_numbers, X)
-plt.plot(X_frames, model_linXframes, 'yellow')
-plt.plot(X_frames, model_Xframes_dof2, '.r')
-plt.plot(X_frames, model_Xframes_dof3, 'lime')
-plt.ylim(-0.25,0.4)
-plt.xlabel("Average Percent Change from Baseline of Luminance of Stimuli")
-plt.ylabel("Average Percent Change from Baseline of Pupil Size (left eye)")
-plt.text(-0.2,0.3, '$R^2$ score, linear (luminance, yellow) = ' + str(r2_lum) + "\n$R^2$ score, linear (luminance + frame number, red) = " + str(r2_lumFrames) + "\n$R^2$ score, polynomial (DOF=2, green) = " + str(r2_dof2), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-plt.savefig(figure2d_path)
-plt.show(block=False)
-plt.pause(1)
-plt.close()
-
-# visualize this in 3d
-figure3d_name = 'LinearReg3d_AvgLum-LeftCirclesMean_offset' + str(offset_ms) + 'ms_' + todays_datetime + '.png'
-figure3d_path = os.path.join(linReg_folder, figure3d_name)
-figure3d_title = "Average Luminance of Stimuli vs Average Pupil Size (left eye) \nAverage Pupil Size offset by " + str(offset_ms) + "ms to account for latency of pupillary response"
-plt.figure(dpi=200)
-plt.suptitle(figure3d_title, fontsize=10, y=0.98)
-fig = plt.figure(figsize=(8,8))
-ax = fig.add_subplot(111, projection='3d')
-ax.scatter(X, X_frames, model_linXframes_prediction)
-ax.scatter(X, X_dof2, y)
-ax.view_init(elev=40., azim=-45)
-ax.set_xlabel('Avg Luminance')
-ax.set_ylabel('$(Avg Lum)^2$')
-ax.set_zlabel('Avg pupil size')
-plt.savefig(figure3d_path)
-plt.show(block=False)
-plt.pause(1)
-plt.close
-
-### END OF CONSTRUCTION ###
-### ------------------- ###
-
-# event locations in time - NEED TO THINK ABOUT HOW TO DO THIS 
-milliseconds_until_octo_fully_decamoud = 6575
-milliseconds_until_octopus_inks = 11500
-milliseconds_until_octopus_disappears = 11675
-milliseconds_until_camera_out_of_ink_cloud = 13000
-milliseconds_until_thankyou_screen = 15225
-event_labels = ['Octopus video clip starts', 'Octopus fully decamouflaged', 'Octopus begins inking', 'Octopus disappears from camera view', 'Camera exits ink cloud', 'Thank you screen']
-tb_octo_decamoud = milliseconds_until_octo_fully_decamoud/downsample_rate_ms
-tb_octo_inks = milliseconds_until_octopus_inks/downsample_rate_ms
-tb_octo_disappears = milliseconds_until_octopus_disappears/downsample_rate_ms
-tb_camera_out_of_ink_cloud = milliseconds_until_camera_out_of_ink_cloud/downsample_rate_ms
-tb_thankyou_screen = milliseconds_until_thankyou_screen/downsample_rate_ms
-event_locations = np.array([0, tb_octo_decamoud, tb_octo_inks, tb_octo_disappears, tb_camera_out_of_ink_cloud, tb_thankyou_screen])
-
-
 
 #FIN
