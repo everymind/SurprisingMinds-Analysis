@@ -10,6 +10,8 @@ import itertools
 import matplotlib.animation as animation
 from collections import defaultdict
 from scipy.signal import savgol_filter
+from itertools import groupby
+from operator import itemgetter
 
 ### FUNCTIONS ###
 def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -231,6 +233,44 @@ def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_si
     avg_lum_by_tb_thresh_array = np.array(avg_lum_by_tb_thresholded)
     avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
     return avg_lum_final
+
+def find_windowed_peaks(time_bucket_dict, window):
+    windowed_peaks = {}
+    key_list = []
+    for ptime in time_bucket_dict.keys():
+        key_list.append(ptime)
+    key_list.sort()
+    for k,g in groupby(enumerate(key_list), lambda ix: ix[0] - ix[1]):
+        consecutive_ptimes = list(map(itemgetter(1), g))
+        #print(consecutive_ptimes)
+        if len(consecutive_ptimes)<=window:
+            max_val = 0
+            max_time = 0
+            for time in consecutive_ptimes:
+                if time_bucket_dict[time]>max_val:
+                    max_time = time
+                    max_val = time_bucket_dict[time]
+            windowed_peaks[max_time] = max_val
+        elif len(consecutive_ptimes)>window:
+            cycles = int(np.floor(len(consecutive_ptimes)/window))
+            for i in range(cycles-1):
+                if i==cycles-1:
+                    max_val = 0
+                    max_time = 0
+                    for time in consecutive_ptimes[(i*window):]:
+                        if time_bucket_dict[time]>max_val:
+                            max_time = time
+                            max_val = time_bucket_dict[time]
+                    windowed_peaks[max_time] = max_val
+                else:
+                    max_val = 0
+                    max_time = 0
+                    for time in consecutive_ptimes[(i*window):(i*window)-1]:
+                        if time_bucket_dict[time]>max_val:
+                            max_time = time
+                            max_val = time_bucket_dict[time]
+                    windowed_peaks[max_time] = max_val
+    return windowed_peaks
 
 ### NEED TO WRITE THESE FUNCTIONS
 ### WRITE A SACCADE DETECTOR
@@ -597,51 +637,78 @@ for side in range(len(all_movements)):
                 valid_subjects_this_tbucket = len(all_movements[side][c_axis][stimuli]) - nan_count_this_stim[f]
                 avg_motion_this_stim[f] = total_motion_this_stim[f]/valid_subjects_this_tbucket
             # smooth the average motion
-            window = 25 # time buckets
+            smoothing_window = 25 # time buckets
             # apply savitzky-golay filter to smooth
-            avg_motion_smoothed = savgol_filter(avg_motion_this_stim, window, 3)
-            all_avg_motion[side][c_axis][stimuli] = avg_motion_smoothed
+            avg_motion_smoothed = savgol_filter(avg_motion_this_stim, smoothing_window, 3)
+            all_avg_motion[side][c_axis][stimuli].append([avg_motion_smoothed])
+            # find peaks in average motion
+            
 
-""" ### ------------------------------ ###
-### MARK START AND END OF SACCADES ###
-all_right_contours_X_saccades = {key:{} for key in stim_vids}
-all_right_circles_X_saccades = {key:{} for key in stim_vids}
-all_right_contours_Y_saccades = {key:{} for key in stim_vids}
-all_right_circles_Y_saccades = {key:{} for key in stim_vids}
-all_left_contours_X_saccades = {key:{} for key in stim_vids}
-all_left_circles_X_saccades = {key:{} for key in stim_vids}
-all_left_contours_Y_saccades = {key:{} for key in stim_vids}
-all_left_circles_Y_saccades = {key:{} for key in stim_vids}
-all_saccades_right = [all_right_contours_X_saccades, all_right_contours_Y_saccades, all_right_circles_X_saccades, all_right_circles_Y_saccades]
-all_saccades_left = [all_left_contours_X_saccades, all_left_contours_Y_saccades, all_left_circles_X_saccades, all_left_circles_Y_saccades]
-all_saccades = [all_saccades_right, all_saccades_left]
 
-# filter through the avg_motion to find saccades
-for side in range(len(all_avg_motion)):
-    for c_axis in range(len(all_avg_motion[side])):
-        for stimuli in all_avg_motion[side][c_axis]:
-            # threshold according to slope of avg_motion curve
-            slope_thresholds = [1, 4, 5] 
-            all_saccades[side][c_axis][stimuli] = {key:[] for key in saccade_thresholds}
+
+### ------------------------------ ###
+### MARK PEAKS (SACCADES) ###
+all_right_contours_X_peaks = {key:{} for key in stim_vids}
+all_right_circles_X_peaks = {key:{} for key in stim_vids}
+all_right_contours_Y_peaks = {key:{} for key in stim_vids}
+all_right_circles_Y_peaks = {key:{} for key in stim_vids}
+all_left_contours_X_peaks = {key:{} for key in stim_vids}
+all_left_circles_X_peaks = {key:{} for key in stim_vids}
+all_left_contours_Y_peaks = {key:{} for key in stim_vids}
+all_left_circles_Y_peaks = {key:{} for key in stim_vids}
+all_peaks_right = [all_right_contours_X_peaks, all_right_contours_Y_peaks, all_right_circles_X_peaks, all_right_circles_Y_peaks]
+all_peaks_left = [all_left_contours_X_peaks, all_left_contours_Y_peaks, all_left_circles_X_peaks, all_left_circles_Y_peaks]
+all_peaks = [all_peaks_right, all_peaks_left]
+
+# filter through the movement to find peaks in individual traces
+for side in range(len(all_movements)):
+    for c_axis in range(len(all_movements[side])):
+        for stim in all_movements[side][c_axis]:
+            saccade_thresholds = [10, 20, 30] # pixels
+            all_peaks[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
             for threshold in saccade_thresholds:
-                trial_list = all_avg_motion[side][c_axis][stimuli].tolist()
-                # find all time bins when pupil movement exceeds threshold
-                saccade_indices = [trial_list.index(x) for x in trial_list if abs(x)>=saccade_thresholds[t]]
+                print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=threshold, side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
+                all_trials_peaks = []
+                for trial in range(len(all_movements[side][c_axis][stim])):
+                    all_trials_peaks.append([])
+                    this_trial = all_movements[side][c_axis][stim][trial]
+                    for time_bucket in range(len(this_trial)):
+                        # find timebuckets where abs(movement)>threshold
+                        if abs(this_trial[time_bucket])>=threshold:
+                            all_trials_peaks[trial].append(time_bucket)
+                # count number of subjects who had peaks in the same timebuckets
+                trial_peaks_totals = {}
+                trial_peaks_totals = defaultdict(lambda:0, trial_peaks_totals)
+                for trial in all_trials_peaks:
+                    for tbucket in trial:
+                        trial_peaks_totals[tbucket] = trial_peaks_totals[tbucket] + 1
+                # filter for timebuckets when "enough" subjects had peaks
+                peak_tbuckets_filtered = {}
+                this_stim_N = len(all_movements[side][c_axis][stim])
+                # combine counts of peaks within time windows
+                peaks_window = 50 # timebuckets
+                for t in trial_peaks_totals.keys():
+                    start = t-(peaks_window/2)
+                    end = t+(peaks_window/2)
+                    center = t
+                    count = 0
+                    for key in trial_peaks_totals.keys():
+                        if start<=key<=end:
+                            count = count + trial_peaks_totals[key]
+                    count_threshold = this_stim_N/2
+                    if count>=count_threshold:
+                        #print(t, count)
+                        peak_tbuckets_filtered[center] = count
+                peak_tbuckets_windowed = find_windowed_peaks(peak_tbuckets_filtered, peaks_window)
+                all_peaks[side][c_axis][stim][threshold] = {tbucket:total for tbucket,total in peak_tbuckets_windowed.items()}
                 
-### ------------------------------ ### """
+### ------------------------------ ###
 
+plotting_peaks_window = 50 # MAKE SURE THIS ==peaks_window!!
 # plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
-
-all_avg_motion_right_plot = [(all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion), (all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion)]
-all_avg_motion_left_plot = [(all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion), (all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion)]
-all_avg_motion_plot = [all_avg_motion_right_plot, all_avg_motion_left_plot]
-
-all_saccades_right_plot = [(all_right_contours_X_saccades, all_right_contours_Y_saccades), (all_right_circles_X_saccades, all_right_circles_Y_saccades)]
-all_saccades_left_plot = [(all_left_contours_X_saccades, all_left_contours_Y_saccades), (all_left_circles_X_saccades, all_left_circles_Y_saccades)]
-all_saccades_plot = [all_saccades_right_plot, all_saccades_left_plot]
 
 cType_names = ['Contours', 'Circles']
 for side in range(len(all_movements_plot)):
@@ -706,6 +773,14 @@ for side in range(len(all_movements_plot)):
             plt.pause(1)
             plt.close()
 
+all_avg_motion_right_plot = [(all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion), (all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion)]
+all_avg_motion_left_plot = [(all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion), (all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion)]
+all_avg_motion_plot = [all_avg_motion_right_plot, all_avg_motion_left_plot]
+
+all_peaks_right_plot = [(all_right_contours_X_peaks, all_right_contours_Y_peaks), (all_right_circles_X_peaks, all_right_circles_Y_peaks)]
+all_peaks_left_plot = [(all_left_contours_X_peaks, all_left_contours_Y_peaks), (all_left_circles_X_peaks, all_left_circles_Y_peaks)]
+all_peaks_plot = [all_peaks_right_plot, all_peaks_left_plot]
+
 # plot MOTION traces (abs val of movement traces)
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
@@ -714,14 +789,16 @@ for side in range(len(all_movements_plot)):
             stim_name = stim_float_to_name[stimuli]
             plot_type_X = all_movements_plot[side][c_type][0][stimuli]
             plot_type_X_avg = all_avg_motion_plot[side][c_type][0][stimuli]
+            plot_type_X_peaks = all_peaks_plot[side][c_type][0][stimuli]
             plot_N_X = len(plot_type_X)
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
             plot_type_Y_avg = all_avg_motion_plot[side][c_type][1][stimuli]
+            plot_type_Y_peaks = all_peaks_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
             plot_luminance = np.array(luminances_avg[stimuli])[0]
 
             fig_size = 200
-            figure_name = 'MotionTraces_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_name = 'MotionTraces-Peaks_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
             figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
 
@@ -738,8 +815,12 @@ for side in range(len(all_movements_plot)):
             for trial in plot_type_X:
                 plt.plot(abs(trial), linewidth=0.5, color=[0.2, 0.0, 1.0, 0.005])
             plt.plot(plot_type_X_avg, linewidth=1, color=[0.8, 0.0, 1.0, 1])
+            for threshold in plot_type_X_peaks.keys():
+                for key,val in plot_type_X_peaks[threshold].items():
+                    plt.plot(key, threshold, '+', color=[0.0, 0.0, 0.0, 1])
+                    #plt.text(key, val+10, str(key)+','+str(val), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
             plt.xlim(-10,2500)
-            plt.ylim(-5,80)
+            plt.ylim(-5,60)
 
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
@@ -750,8 +831,12 @@ for side in range(len(all_movements_plot)):
             for trial in plot_type_Y:
                 plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.005])
             plt.plot(plot_type_Y_avg, linewidth=1, color=[1.0, 0.0, 0.8, 1])
+            for threshold in plot_type_Y_peaks.keys():
+                for key,val in plot_type_Y_peaks[threshold].items():
+                    plt.plot(key, threshold, '+', color=[0.0, 0.0, 0.0, 1])
+                    #plt.text(key, val, str(val), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
             plt.xlim(-10,2500)
-            plt.ylim(-5,80)
+            plt.ylim(-5,60)
 
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
