@@ -643,9 +643,6 @@ for side in range(len(all_movements)):
             all_avg_motion[side][c_axis][stimuli].append([avg_motion_smoothed])
             # find peaks in average motion
             
-
-
-
 ### ------------------------------ ###
 ### MARK PEAKS (SACCADES) ###
 all_right_contours_X_peaks = {key:{} for key in stim_vids}
@@ -664,7 +661,7 @@ all_peaks = [all_peaks_right, all_peaks_left]
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stim in all_movements[side][c_axis]:
-            saccade_thresholds = [10, 20, 30] # pixels
+            saccade_thresholds = [5, 10, 20, 30, 40, 50] # pixels
             all_peaks[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
             for threshold in saccade_thresholds:
                 print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=threshold, side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
@@ -798,9 +795,9 @@ for side in range(len(all_movements_plot)):
             plot_luminance = np.array(luminances_avg[stimuli])[0]
 
             fig_size = 200
-            figure_name = 'MotionTraces-Peaks_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_name = 'MotionTraces-Peaks'+str(plotting_peaks_window)'_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
+            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeaks plotted with + at height of pixel movement threshold, peak finding window: " + str(plotting_peaks_window) + "\nPlotted on " + todays_datetime
 
             plt.figure(figsize=(14, 14), dpi=fig_size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
