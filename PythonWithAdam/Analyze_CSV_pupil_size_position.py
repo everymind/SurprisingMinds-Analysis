@@ -750,7 +750,7 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(trial, linewidth=0.5, color=[0.86, 0.27, 1.0, 0.01])
+                plt.plot(trial, linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
             plt.xlim(-10,2500)
             plt.ylim(-80,80)
             # y-axis
@@ -760,7 +760,7 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(trial, linewidth=0.5, color=[0.25, 0.25, 1.0, 0.01])
+                plt.plot(trial, linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
             plt.xlim(-10,2500)
             plt.ylim(-80,80)
             # luminance
@@ -820,7 +820,7 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.01])
+                plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
             plt.plot(plot_type_X_avg, linewidth=1, color=[0.4, 1.0, 0.27, 1])
             for peak in plot_type_X_avg_peaks:
                 plt.plot(peak, plot_type_X_avg[peak], 'x')
@@ -834,7 +834,7 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.01])
+                plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
             plt.plot(plot_type_Y_avg, linewidth=1, color=[1.0, 1.0, 0.25, 1])
             for peak in plot_type_Y_avg_peaks:
                 plt.plot(peak, plot_type_Y_avg[peak], 'x')
@@ -891,10 +891,10 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
-                plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.01])
+                plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
             for threshold in plot_type_X_peaks.keys():
                 for key in plot_type_X_peaks[threshold].keys():
-                    plt.plot(key, threshold, '1', color=[0.4, 1.0, 0.27, 1])
+                    plt.plot(key, threshold, '1', color=[0.4, 1.0, 0.27, 0.2])
             plt.xlim(-10,2500)
             plt.ylim(-5,60)
             # y-axis
@@ -904,10 +904,10 @@ for side in range(len(all_movements_plot)):
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
-                plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.01])
+                plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
             for threshold in plot_type_Y_peaks.keys():
                 for key in plot_type_Y_peaks[threshold].keys():
-                    plt.plot(key, threshold, '1', color=[1.0, 1.0, 0.25, 1])
+                    plt.plot(key, threshold, '1', color=[1.0, 1.0, 0.25, 0.2])
             plt.xlim(-10,2500)
             plt.ylim(-5,60)
             # luminance
@@ -978,7 +978,7 @@ for stim_type in stim_vids:
         plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=9, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.86, 0.27, 1.0, 0.01])
+        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.86, 0.27, 1.0, 0.005])
         plt.plot(plot_means_right, linewidth=1.5, color=[0.4, 1.0, 0.27, 0.6])
         plt.xlim(-10,2500)
         plt.ylim(-1,1)
@@ -988,7 +988,7 @@ for stim_type in stim_vids:
         plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=9, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.25, 0.25, 1.0, 0.01])
+        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.25, 0.25, 1.0, 0.005])
         plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 1.0, 0.25, 0.6])
         plt.xlim(-10,2500)
         plt.ylim(-1,1)
