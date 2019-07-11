@@ -461,6 +461,7 @@ all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all
 activation_count = []
 analysed_count = []
 # downsample = collect data from every 40ms or other multiples of 20
+### WHAT THE FUCK IS HAPPENING WITH THE TIME BUCKETS?? ### 
 downsampled_bucket_size_ms = 20
 original_bucket_size_in_ms = 4
 no_of_time_buckets = 20000
