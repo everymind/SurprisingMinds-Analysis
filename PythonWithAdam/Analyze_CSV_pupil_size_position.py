@@ -12,6 +12,7 @@ from collections import defaultdict
 from scipy.signal import savgol_filter
 from itertools import groupby
 from operator import itemgetter
+from scipy.signal import find_peaks
 
 ### FUNCTIONS ###
 def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -172,6 +173,14 @@ def threshold_to_nan(input_array, threshold, upper_or_lower):
                 input_array[index] = np.nan
     return input_array
 
+def filter_to_nan(list_of_dicts, upper_threshold, lower_threshold):
+    for dictionary in list_of_dicts:
+        for key in dictionary:
+            for trial in dictionary[key]:
+                trial = threshold_to_nan(trial, upper_threshold, 'upper')
+                trial = threshold_to_nan(trial, lower_threshold, 'lower')
+    return list_of_dicts
+
 def make_luminance_time_buckets(start_timestamp, bucket_size_ms, end_timestamp): 
     start_timestamp = start_timestamp.split('+')[0][:-3]
     end_timestamp = end_timestamp.split('+')[0][:-3]
@@ -234,7 +243,7 @@ def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_si
     avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
     return avg_lum_final
 
-def find_windowed_peaks(time_bucket_dict, window):
+def find_windowed_peaks(time_bucket_dict, window, threshold):
     windowed_peaks = {}
     key_list = []
     for ptime in time_bucket_dict.keys():
@@ -244,33 +253,131 @@ def find_windowed_peaks(time_bucket_dict, window):
         consecutive_ptimes = list(map(itemgetter(1), g))
         #print(consecutive_ptimes)
         if len(consecutive_ptimes)<=window:
-            max_val = 0
-            max_time = 0
+            max_val = threshold
+            this_group_count = 0
             for time in consecutive_ptimes:
-                if time_bucket_dict[time]>max_val:
-                    max_time = time
-                    max_val = time_bucket_dict[time]
-            windowed_peaks[max_time] = max_val
-        elif len(consecutive_ptimes)>window:
-            cycles = int(np.floor(len(consecutive_ptimes)/window))
-            for i in range(cycles-1):
-                if i==cycles-1:
-                    max_val = 0
-                    max_time = 0
-                    for time in consecutive_ptimes[(i*window):]:
-                        if time_bucket_dict[time]>max_val:
-                            max_time = time
-                            max_val = time_bucket_dict[time]
-                    windowed_peaks[max_time] = max_val
-                else:
-                    max_val = 0
-                    max_time = 0
-                    for time in consecutive_ptimes[(i*window):(i*window)-1]:
-                        if time_bucket_dict[time]>max_val:
-                            max_time = time
-                            max_val = time_bucket_dict[time]
-                    windowed_peaks[max_time] = max_val
+                this_group_count = this_group_count + time_bucket_dict[time]
+            if this_group_count>max_val:
+                max_time = np.median(consecutive_ptimes)
+                windowed_peaks[int(max_time)] = this_group_count
+        else:
+            max_val = threshold
+            max_times = {}
+            for time in consecutive_ptimes:
+                center = time
+                start = int(center-(window/2))
+                end = int(center+(window/2))
+                this_group_count = 0
+                for t in range(int(start),int(end)):
+                    this_group_count = this_group_count + time_bucket_dict.get(t,0)
+                if this_group_count>max_val:
+                    if not max_times:
+                        max_times[center] = this_group_count
+                        max_val = this_group_count
+                    else:
+                        overlap = [x for x in max_times.keys() if start<x<end]
+                        filtered_overlap = {}
+                        for o in overlap:
+                            temp_val = max_times.pop(o)
+                            if temp_val>this_group_count:
+                                filtered_overlap[o] = [temp_val]
+                        if not filtered_overlap:
+                            max_times[center] = this_group_count
+                            max_val = this_group_count
+                        else:
+                            for f in filtered_overlap.items():
+                                max_times[f[0]] = f[1]
+            for max_time in max_times.keys():
+                windowed_peaks[max_time] = max_times[max_time]
     return windowed_peaks
+
+def calc_mvmnt_from_pos(list_of_positon_arrays, nans_threshold, movement_threshold_upper, movement_threshold_lower):
+    this_stim_movements = []
+    for trial in list_of_positon_arrays:
+        trial_movements_min_len = len(trial)
+        this_trial_movement = []
+        nans_in_a_row = 0
+        prev = np.nan
+        for i in range(len(trial)):
+            now = trial[i]
+            #print("now: "+str(now))
+            #print("prev: "+str(prev))
+            if np.isnan(now):
+                # keep the nan to understand where the dropped frames are
+                this_trial_movement.append(np.nan)
+                nans_in_a_row = nans_in_a_row + 1
+                continue
+            if nans_in_a_row>(nans_threshold):
+                break
+            if i==0:
+                this_trial_movement.append(0)
+                prev = now
+                continue
+            if not np.isnan(prev):
+                movement = now - prev
+                this_trial_movement.append(movement)
+                prev = now
+                nans_in_a_row = 0 
+            #print("movements: " + str(this_trial_movement))
+            #print("consecutive nans: " + str(nans_in_a_row))
+        # filter out movements too large to be realistic saccades (120 pixels)
+        trial_movement_array = np.array(this_trial_movement)
+        trial_movement_array = threshold_to_nan(trial_movement_array, movement_threshold_upper, 'upper')
+        trial_movement_array = threshold_to_nan(trial_movement_array, movement_threshold_lower, 'lower')
+        this_stim_movements.append(trial_movement_array)  
+    # filter for trial movements that are less than 4000 bins long
+    output = [x for x in this_stim_movements if len(x)>=trial_movements_min_len]
+    return output
+
+def calc_avg_motion_and_peaks(list_of_movement_arrays, window):
+    total_motion = np.zeros(len(list_of_movement_arrays[0]))
+    nan_count = np.zeros(len(list_of_movement_arrays[0]))
+    # for each frame, sum the abs(movements) on that frame
+    for trial in list_of_movement_arrays:
+        for t in range(len(trial)):
+            if np.isnan(trial[t]):
+                nan_count[t] = nan_count[t] + 1
+            if not np.isnan(trial[t]):
+                total_motion[t] = total_motion[t] + abs(trial[t])
+    avg_motion = np.zeros(len(list_of_movement_arrays[0]))
+    for f in range(len(total_motion)):
+        valid_subjects_this_tbucket = len(list_of_movement_arrays) - nan_count[f]
+        avg_motion[f] = total_motion[f]/valid_subjects_this_tbucket
+    # smooth the average motion
+    # smoothing window must be odd!
+    # apply savitzky-golay filter to smooth
+    avg_motion_smoothed = savgol_filter(avg_motion, window, 3)
+    # find peaks in average motion
+    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,15), prominence=3)
+    return avg_motion_smoothed, peaks
+
+def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshold, window_size, windowed_count_threshold):
+    all_trials_peaks = []
+    for trial in range(len(list_of_movement_arrays)):
+        all_trials_peaks.append([])
+        this_trial = list_of_movement_arrays[trial]
+        for time_bucket in range(len(this_trial)):
+            # find timebuckets where abs(movement)>threshold
+            if abs(this_trial[time_bucket])>=saccade_threshold:
+                all_trials_peaks[trial].append(time_bucket)
+    # count number of subjects who had peaks in the same timebuckets
+    trial_peaks_totals = {}
+    trial_peaks_totals = defaultdict(lambda:0, trial_peaks_totals)
+    for trial in all_trials_peaks:
+        for tbucket in trial:
+            trial_peaks_totals[tbucket] = trial_peaks_totals[tbucket] + 1
+    # filter for timebuckets when "enough" subjects had peaks
+    peak_tbuckets_filtered = {}
+    # combine counts of peaks within time windows
+    for key in trial_peaks_totals.keys():
+        count = trial_peaks_totals[key]
+        if count>=raw_count_threshold:
+            #print(t, count)
+            peak_tbuckets_filtered[key] = count
+    # combine counts of peaks within time windows
+    peak_tbuckets_windowed = find_windowed_peaks(peak_tbuckets_filtered, window_size, windowed_count_threshold)
+    saccades = {tbucket:total for tbucket,total in peak_tbuckets_windowed.items()}
+    return saccades
 
 ### NEED TO WRITE THESE FUNCTIONS
 ### WRITE A SACCADE DETECTOR
@@ -279,6 +386,26 @@ def find_windowed_peaks(time_bucket_dict, window):
 # make a crude linear calibration
 ### what is the distance between eyes and monitor in the exhibit??
 
+# set up log file to store all printed messages
+log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+log_file = os.path.join(current_working_directory, log_filename)
+
+class Logger(object):
+    def __init__(self):
+        self.terminal = sys.stdout
+        self.log = open(log_file, "a")
+
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass    
+
+sys.stdout = Logger()
 
 ### BEGIN ANALYSIS ###
 # grab today's date
@@ -289,18 +416,11 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 current_working_directory = os.getcwd()
 stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
-
-# set up log file to store all printed messages
-log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
-log_file = os.path.join(current_working_directory, log_filename)
-sys.stdout = open(log_file, "w")
-
 # set up folders
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")
 engagement_folder = os.path.join(plots_folder, "engagement")
 linReg_folder = os.path.join(plots_folder, "linReg")
-
 # Create plots folder (and sub-folders) if it (they) does (do) not exist
 if not os.path.exists(plots_folder):
     #print("Creating plots folder.")
@@ -314,16 +434,16 @@ if not os.path.exists(engagement_folder):
 if not os.path.exists(linReg_folder):
     #print("Creating engagement count folder.")
     os.makedirs(linReg_folder)
-
 # consolidate csv files from multiple days into one data structure
 day_folders = list_sub_folders(root_folder)
 # first day was a debugging session, so skip it
 day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
-
+# sort data by stimulus
 stim_vids = (24.0, 25.0, 26.0, 27.0, 28.0, 29.0)
-
+stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
 all_right_trials_contours_X = {key:[] for key in stim_vids}
 all_right_trials_contours_Y = {key:[] for key in stim_vids}
 all_right_trials_contours = {key:[] for key in stim_vids}
@@ -336,16 +456,11 @@ all_left_trials_contours = {key:[] for key in stim_vids}
 all_left_trials_circles_X = {key:[] for key in stim_vids}
 all_left_trials_circles_Y = {key:[] for key in stim_vids}
 all_left_trials_circles = {key:[] for key in stim_vids}
-
-stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
-stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
-
 all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
 all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circles_Y, all_left_trials_contours_Y, all_left_trials_circles_Y]
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
 activation_count = []
 analysed_count = []
-
 # downsample = collect data from every 40ms or other multiples of 20
 downsample_rate_ms = 20
 original_bucket_size_in_ms = 4
@@ -409,22 +524,10 @@ for day_folder in day_folders:
         # eye positions that are not realistic
         # time buckets with no corresponding frames
         # video pixel limits are (798,599)
-        for data_type in all_position_X_data:
-            for stimulus in data_type: 
-                for trial in data_type[stimulus]:
-                    trial = threshold_to_nan(trial, 798, 'upper')
-                    trial = threshold_to_nan(trial, 0, 'lower')
-        for data_type in all_position_Y_data:
-            for stimulus in data_type: 
-                for trial in data_type[stimulus]:
-                    trial = threshold_to_nan(trial, 599, 'upper')
-                    trial = threshold_to_nan(trial, 0, 'lower')
+        all_position_X_data = filter_to_nan(all_position_X_data, 798, 0)
+        all_position_Y_data = filter_to_nan(all_position_Y_data, 599, 0)
         # contours/circles that are too big
-        for data_type in all_size_data:
-            for stimulus in data_type: 
-                for trial in data_type[stimulus]:
-                    trial = threshold_to_nan(trial, 15000, 'upper')
-                    trial = threshold_to_nan(trial, 0, 'lower')
+        all_size_data = filter_to_nan(all_size_data, 15000, 0)
 
         # create a baseline for size data
         R_contours_baseline = {key:[] for key in stim_vids}
@@ -466,6 +569,10 @@ for day_folder in day_folders:
 # if there is too much variability in frame rate, then don't plot that trial
 # if standard dev of diameter is "too big", then don't plot
 
+### SOME GLOBAL VARIABLES ###
+smoothing_window = 35 # time buckets, must be odd!
+fig_size = 200 # dpi
+
 ### EXTRACT STIMULUS INFO ###
 # find average luminance of stimuli vids
 luminances = {key:[] for key in stim_vids}
@@ -479,6 +586,7 @@ for data_path in luminance_data_paths:
     stimulus_type = data_path.split("_")[-3]
     stimulus_num = stim_name_to_float[stimulus_type]
     luminances[stimulus_num].append(luminance_values)
+# build average then smooth
 for stimulus in luminances: 
     luminance_array = np.array(luminances[stimulus])
     average_luminance = build_timebucket_avg_luminance(luminance_array, downsample_rate_ms, no_of_time_buckets)
@@ -486,7 +594,8 @@ for stimulus in luminances:
     baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
     avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
     avg_lum_base_array = np.array(avg_lum_baselined)
-    luminances_baseline[stimulus].append(average_luminance)
+    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window, 3)
+    luminances_baseline[stimulus].append(avg_lum_smoothed)
 
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
@@ -520,27 +629,6 @@ image_type_options = ['.png', '.pdf']
 # time of the day
 # month of the year
 # language chosen
-""" ## PLOT EXHIBIT ENGAGEMENT ##
-for image_type in image_type_options:
-    figure_name = 'TotalExhibitActivation_' + todays_datetime + image_type
-    figure_path = os.path.join(engagement_folder, figure_name)
-    figure_title = "Total number of exhibit activations per day (Grand Total: " + str(total_activation) + ") \n Total good trials from right eye camera (red): " + str(total_good_trials_right) + "\n Total good trials from left eye camera (green): " + str(total_good_trials_left) + "\nPlotted on " + todays_datetime
-    plt.figure(figsize=(27, 9), dpi=200)
-    plt.suptitle(figure_title, fontsize=12, y=0.98)
-
-    plt.ylabel('Number of activations', fontsize=11)
-    plt.xlabel('Days, Total days activated: ' + str(total_days_activated), fontsize=11)
-    #plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='-')
-    plt.grid(b=True, which='minor', linestyle='--')
-    plt.plot(activation_array, color=[0.0, 0.0, 1.0])
-    plt.plot(analysed_array_right, color=[1.0, 0.0, 0.0, 0.4])
-    plt.plot(analysed_array_left, color=[0.0, 1.0, 0.0, 0.4])
-
-    plt.savefig(figure_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close() """
 
 # ---------- #
 ### PUPILS ###
@@ -571,40 +659,9 @@ for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
         for stimuli in all_positions[side][c_axis]:
             print('Calculating movements for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
-            for trial in all_positions[side][c_axis][stimuli]:
-                this_trial_movement = []
-                nans_in_a_row = 0
-                prev = np.nan
-                for i in range(len(trial)):
-                    now = trial[i]
-                    #print("now: "+str(now))
-                    #print("prev: "+str(prev))
-                    if np.isnan(now):
-                        # keep the nan to understand where the dropped frames are
-                        this_trial_movement.append(np.nan)
-                        nans_in_a_row = nans_in_a_row + 1
-                        continue
-                    if nans_in_a_row>(2000/downsample_rate_ms):
-                        # if there are nans for more than 2 seconds of video time, then toss this whole trial
-                        break
-                    if i==0:
-                        this_trial_movement.append(0)
-                        prev = now
-                        continue
-                    if not np.isnan(prev):
-                        movement = now - prev
-                        this_trial_movement.append(movement)
-                        prev = now
-                        nans_in_a_row = 0 
-                    #print("movements: " + str(this_trial_movement))
-                    #print("consecutive nans: " + str(nans_in_a_row))
-                # filter out movements too large to be realistic saccades (120 pixels)
-                trial_movement_array = np.array(this_trial_movement)
-                trial_movement_array = threshold_to_nan(trial_movement_array, 100, 'upper')
-                trial_movement_array = threshold_to_nan(trial_movement_array, -100, 'lower')
-                all_movements[side][c_axis][stimuli].append(trial_movement_array)  
-            # filter for trial movements that are less than 4000 bins long
-            all_movements[side][c_axis][stimuli] = [x for x in all_movements[side][c_axis][stimuli] if len(x)>=4000]
+            # if there are nans (dropped frames) for more than 2 seconds of video time, then toss that trial
+            dropped_frames_threshold = 2000/downsample_rate_ms
+            all_movements[side][c_axis][stimuli] = calc_mvmnt_from_pos(all_positions[side][c_axis][stimuli], dropped_frames_threshold, 100, -100)
 
 all_right_contours_X_avg_motion = {key:[] for key in stim_vids}
 all_right_circles_X_avg_motion = {key:[] for key in stim_vids}
@@ -618,31 +675,27 @@ all_avg_motion_right = [all_right_contours_X_avg_motion, all_right_contours_Y_av
 all_avg_motion_left = [all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion, all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion]
 all_avg_motion = [all_avg_motion_right, all_avg_motion_left]
 
+all_RcontoursX_avg_motion_peaks = {key:[] for key in stim_vids}
+all_RcirclesX_avg_motion_peaks = {key:[] for key in stim_vids}
+all_RcontoursY_avg_motion_peaks = {key:[] for key in stim_vids}
+all_RcirclesY_avg_motion_peaks = {key:[] for key in stim_vids}
+all_LcontoursX_avg_motion_peaks = {key:[] for key in stim_vids}
+all_LcirclesX_avg_motion_peaks = {key:[] for key in stim_vids}
+all_LcontoursY_avg_motion_peaks = {key:[] for key in stim_vids}
+all_LcirclesY_avg_motion_peaks = {key:[] for key in stim_vids}
+all_avg_motion_right_peaks = [all_RcontoursX_avg_motion_peaks, all_RcontoursY_avg_motion_peaks, all_RcirclesX_avg_motion_peaks, all_RcirclesY_avg_motion_peaks]
+all_avg_motion_left_peaks = [all_LcontoursX_avg_motion_peaks, all_LcontoursY_avg_motion_peaks, all_LcirclesX_avg_motion_peaks, all_LcirclesY_avg_motion_peaks]
+all_avg_motion_peaks = [all_avg_motion_right_peaks, all_avg_motion_left_peaks]
+
 # find average pixel motion per time_bucket for each stimulus
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stimuli in all_movements[side][c_axis]:
             print('Calculating average motion for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
-            # for each frame, sum the abs(movements) on that frame
-            total_motion_this_stim = np.zeros(len(all_movements[side][c_axis][stimuli][0]))
-            nan_count_this_stim = np.zeros(len(all_movements[side][c_axis][stimuli][0]))
-            for trial in all_movements[side][c_axis][stimuli]:
-                for t in range(len(trial)):
-                    if np.isnan(trial[t]):
-                        nan_count_this_stim[t] = nan_count_this_stim[t] + 1
-                    if not np.isnan(trial[t]):
-                        total_motion_this_stim[t] = total_motion_this_stim[t] + abs(trial[t])
-            avg_motion_this_stim = np.zeros(len(all_movements[side][c_axis][stimuli][0]))
-            for f in range(len(total_motion_this_stim)):
-                valid_subjects_this_tbucket = len(all_movements[side][c_axis][stimuli]) - nan_count_this_stim[f]
-                avg_motion_this_stim[f] = total_motion_this_stim[f]/valid_subjects_this_tbucket
-            # smooth the average motion
-            smoothing_window = 25 # time buckets
-            # apply savitzky-golay filter to smooth
-            avg_motion_smoothed = savgol_filter(avg_motion_this_stim, smoothing_window, 3)
-            all_avg_motion[side][c_axis][stimuli].append([avg_motion_smoothed])
-            # find peaks in average motion
-            
+            avg_motion_this_stim, peaks_this_stim = calc_avg_motion_and_peaks(all_movements[side][c_axis][stimuli], smoothing_window)
+            all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
+            all_avg_motion_peaks[side][c_axis][stimuli] = peaks_this_stim
+
 ### ------------------------------ ###
 ### MARK PEAKS (SACCADES) ###
 all_right_contours_X_peaks = {key:{} for key in stim_vids}
@@ -657,57 +710,31 @@ all_peaks_right = [all_right_contours_X_peaks, all_right_contours_Y_peaks, all_r
 all_peaks_left = [all_left_contours_X_peaks, all_left_contours_Y_peaks, all_left_circles_X_peaks, all_left_circles_Y_peaks]
 all_peaks = [all_peaks_right, all_peaks_left]
 
-# filter through the movement to find peaks in individual traces
+# filter through the movement to find saccades in individual traces
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stim in all_movements[side][c_axis]:
-            saccade_thresholds = [5, 10, 20, 30, 40, 50] # pixels
+            saccade_thresholds = [5, 10, 20, 30, 40, 50, 60] # pixels
             all_peaks[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
-            for threshold in saccade_thresholds:
-                print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=threshold, side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
-                all_trials_peaks = []
-                for trial in range(len(all_movements[side][c_axis][stim])):
-                    all_trials_peaks.append([])
-                    this_trial = all_movements[side][c_axis][stim][trial]
-                    for time_bucket in range(len(this_trial)):
-                        # find timebuckets where abs(movement)>threshold
-                        if abs(this_trial[time_bucket])>=threshold:
-                            all_trials_peaks[trial].append(time_bucket)
-                # count number of subjects who had peaks in the same timebuckets
-                trial_peaks_totals = {}
-                trial_peaks_totals = defaultdict(lambda:0, trial_peaks_totals)
-                for trial in all_trials_peaks:
-                    for tbucket in trial:
-                        trial_peaks_totals[tbucket] = trial_peaks_totals[tbucket] + 1
-                # filter for timebuckets when "enough" subjects had peaks
-                peak_tbuckets_filtered = {}
-                this_stim_N = len(all_movements[side][c_axis][stim])
-                # combine counts of peaks within time windows
+            this_stim_N = len(all_movements[side][c_axis][stim])
+            count_threshold = this_stim_N/10
+            windowed_count_thresholds = [this_stim_N/2,this_stim_N/3,this_stim_N/4,this_stim_N/6,this_stim_N/8,this_stim_N/10,this_stim_N/20]
+            for thresh in range(len(saccade_thresholds)):
+                print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
                 peaks_window = 50 # timebuckets
-                for t in trial_peaks_totals.keys():
-                    start = t-(peaks_window/2)
-                    end = t+(peaks_window/2)
-                    center = t
-                    count = 0
-                    for key in trial_peaks_totals.keys():
-                        if start<=key<=end:
-                            count = count + trial_peaks_totals[key]
-                    count_threshold = this_stim_N/2
-                    if count>=count_threshold:
-                        #print(t, count)
-                        peak_tbuckets_filtered[center] = count
-                peak_tbuckets_windowed = find_windowed_peaks(peak_tbuckets_filtered, peaks_window)
-                all_peaks[side][c_axis][stim][threshold] = {tbucket:total for tbucket,total in peak_tbuckets_windowed.items()}
-                
+                s_thresh = saccade_thresholds[thresh]
+                w_thresh = windowed_count_thresholds[thresh]
+                all_peaks[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, peaks_window, w_thresh)
+
 ### ------------------------------ ###
 
 plotting_peaks_window = 50 # MAKE SURE THIS ==peaks_window!!
-# plot movement traces
+cType_names = ['Contours', 'Circles']
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
 
-cType_names = ['Contours', 'Circles']
+# plot movement traces
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
         for stimuli in all_movements_plot[side][c_type][0]:
@@ -718,65 +745,54 @@ for side in range(len(all_movements_plot)):
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
             plot_luminance = np.array(luminances_avg[stimuli])[0]
-
-            fig_size = 200
+            # fig name and path
             figure_name = 'MovementTraces_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
             figure_title = "Pupil movement of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
-
+            # draw fig
             plt.figure(figsize=(14, 14), dpi=fig_size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
-
+            # x-axis
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
-            #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
-            #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
                 plt.plot(trial, linewidth=0.5, color=[0.3, 0.0, 1.0, 0.01])
             plt.xlim(-10,2500)
             plt.ylim(-80,80)
-
+            # y-axis
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
             plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
-            #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
-            #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
                 plt.plot(trial, linewidth=0.5, color=[1.0, 0.0, 0.3, 0.01])
             plt.xlim(-10,2500)
             plt.ylim(-80,80)
-
+            # luminance
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
             plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
-            #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
-            #plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_luminance, linewidth=0.75, color=[0.3, 1.0, 0.3, 1])
             plt.xlim(-10,2500)
-            #plt.ylim(-1.0,1.0)
-            # mark events
-            #for i in range(len(event_labels)):
-            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
-            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
-            #plt.show()
             plt.show(block=False)
             plt.pause(1)
             plt.close()
 
+# next plots
 all_avg_motion_right_plot = [(all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion), (all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion)]
 all_avg_motion_left_plot = [(all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion), (all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion)]
 all_avg_motion_plot = [all_avg_motion_right_plot, all_avg_motion_left_plot]
 
-all_peaks_right_plot = [(all_right_contours_X_peaks, all_right_contours_Y_peaks), (all_right_circles_X_peaks, all_right_circles_Y_peaks)]
-all_peaks_left_plot = [(all_left_contours_X_peaks, all_left_contours_Y_peaks), (all_left_circles_X_peaks, all_left_circles_Y_peaks)]
-all_peaks_plot = [all_peaks_right_plot, all_peaks_left_plot]
+all_avg_motion_right_peaks_plot = [(all_RcontoursX_avg_motion_peaks, all_RcontoursY_avg_motion_peaks), (all_RcirclesX_avg_motion_peaks, all_RcirclesY_avg_motion_peaks)]
+all_avg_motion_left_peaks_plot = [(all_LcontoursX_avg_motion_peaks, all_LcontoursY_avg_motion_peaks), (all_LcirclesX_avg_motion_peaks, all_LcirclesY_avg_motion_peaks)]
+all_avg_motion_peaks_plot = [all_avg_motion_right_peaks_plot, all_avg_motion_left_peaks_plot]
 
 # plot MOTION traces (abs val of movement traces)
 for side in range(len(all_movements_plot)):
@@ -786,71 +802,120 @@ for side in range(len(all_movements_plot)):
             stim_name = stim_float_to_name[stimuli]
             plot_type_X = all_movements_plot[side][c_type][0][stimuli]
             plot_type_X_avg = all_avg_motion_plot[side][c_type][0][stimuli]
-            plot_type_X_peaks = all_peaks_plot[side][c_type][0][stimuli]
+            plot_type_X_avg_peaks = all_avg_motion_peaks_plot[side][c_type][0][stimuli]
             plot_N_X = len(plot_type_X)
             plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
             plot_type_Y_avg = all_avg_motion_plot[side][c_type][1][stimuli]
-            plot_type_Y_peaks = all_peaks_plot[side][c_type][1][stimuli]
+            plot_type_Y_avg_peaks = all_avg_motion_peaks_plot[side][c_type][1][stimuli]
             plot_N_Y = len(plot_type_Y)
             plot_luminance = np.array(luminances_avg[stimuli])[0]
-
-            fig_size = 200
-            figure_name = 'MotionTraces-Peaks'+str(plotting_peaks_window)'_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            # fig name and path
+            figure_name = 'MotionTraces-AvgMotionPeaks' + str(plotting_peaks_window) + '_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeaks plotted with + at height of pixel movement threshold, peak finding window: " + str(plotting_peaks_window) + "\nPlotted on " + todays_datetime
-
+            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeak finding window: " + str(plotting_peaks_window) + "\nPlotted on " + todays_datetime
+            # draw fig
             plt.figure(figsize=(14, 14), dpi=fig_size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
-
+            # x-axis
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
-            #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
-            #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_X:
                 plt.plot(abs(trial), linewidth=0.5, color=[0.2, 0.0, 1.0, 0.005])
             plt.plot(plot_type_X_avg, linewidth=1, color=[0.8, 0.0, 1.0, 1])
-            for threshold in plot_type_X_peaks.keys():
-                for key,val in plot_type_X_peaks[threshold].items():
-                    plt.plot(key, threshold, '+', color=[0.0, 0.0, 0.0, 1])
-                    #plt.text(key, val+10, str(key)+','+str(val), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            for peak in plot_type_X_avg_peaks:
+                plt.plot(peak, plot_type_X_avg[peak], 'x')
+                plt.text(peak-20, plot_type_X_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
             plt.xlim(-10,2500)
-            plt.ylim(-5,60)
-
+            plt.ylim(-5,40)
+            # y-axis
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
             plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
-            #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
-            #plt.grid(b=True, which='minor', linestyle='--')
             for trial in plot_type_Y:
                 plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.005])
             plt.plot(plot_type_Y_avg, linewidth=1, color=[1.0, 0.0, 0.8, 1])
-            for threshold in plot_type_Y_peaks.keys():
-                for key,val in plot_type_Y_peaks[threshold].items():
-                    plt.plot(key, threshold, '+', color=[0.0, 0.0, 0.0, 1])
-                    #plt.text(key, val, str(val), fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            for peak in plot_type_Y_avg_peaks:
+                plt.plot(peak, plot_type_Y_avg[peak], 'x')
+                plt.text(peak-20, plot_type_Y_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
             plt.xlim(-10,2500)
-            plt.ylim(-5,60)
-
+            plt.ylim(-5,40)
+            # luminance
             plt.subplot(3,1,3)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
             plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
-            #plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
-            #plt.grid(b=True, which='minor', linestyle='--')
             plt.plot(plot_luminance, linewidth=1, color=[0.3, 1.0, 0.4, 1])
             plt.xlim(-10,2500)
-            #plt.ylim(-1.0,1.0)
-            # mark events
-            #for i in range(len(event_labels)):
-            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
-            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
+            # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
-            #plt.show()
+            plt.show(block=False)
+            plt.pause(1)
+            plt.close()
+
+# plot peaks/saccades
+all_peaks_right_plot = [(all_right_contours_X_peaks, all_right_contours_Y_peaks), (all_right_circles_X_peaks, all_right_circles_Y_peaks)]
+all_peaks_left_plot = [(all_left_contours_X_peaks, all_left_contours_Y_peaks), (all_left_circles_X_peaks, all_left_circles_Y_peaks)]
+all_peaks_plot = [all_peaks_right_plot, all_peaks_left_plot]
+
+for side in range(len(all_movements_plot)):
+    for c_type in range(len(all_movements_plot[side])):
+        for stimuli in all_movements_plot[side][c_type][0]:
+            plot_type_name = side_names[side] + cType_names[c_type]
+            stim_name = stim_float_to_name[stimuli]
+            plot_type_X = all_movements_plot[side][c_type][0][stimuli]
+            plot_type_X_peaks = all_peaks_plot[side][c_type][0][stimuli]
+            plot_N_X = len(plot_type_X)
+            plot_type_Y = all_movements_plot[side][c_type][1][stimuli]
+            plot_type_Y_peaks = all_peaks_plot[side][c_type][1][stimuli]
+            plot_N_Y = len(plot_type_Y)
+            plot_luminance = np.array(luminances_avg[stimuli])[0]
+            # fig name and path
+            figure_name = 'MotionTraces-Peaks' + str(plotting_peaks_window) + '_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_path = os.path.join(pupils_folder, figure_name)
+            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeaks plotted with + at height of pixel movement threshold, peak finding window: " + str(plotting_peaks_window) + "\nPlotted on " + todays_datetime
+            # begin drawing fig
+            plt.figure(figsize=(14, 14), dpi=fig_size)
+            plt.suptitle(figure_title, fontsize=12, y=0.98)
+            # x-axis
+            plt.subplot(3,1,1)
+            ax = plt.gca()
+            ax.yaxis.set_label_coords(-0.09, -0.5) 
+            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
+            plt.grid(b=True, which='major', linestyle='--')
+            for trial in plot_type_X:
+                plt.plot(abs(trial), linewidth=0.5, color=[0.2, 0.0, 1.0, 0.005])
+            for threshold in plot_type_X_peaks.keys():
+                for key in plot_type_X_peaks[threshold].keys():
+                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 0.0, 1])
+            plt.xlim(-10,2500)
+            plt.ylim(-5,60)
+            # y-axis
+            plt.subplot(3,1,2)
+            plt.ylabel('Change in pixels', fontsize=11)
+            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
+            plt.grid(b=True, which='major', linestyle='--')
+            for trial in plot_type_Y:
+                plt.plot(abs(trial), linewidth=0.5, color=[1.0, 0.0, 0.2, 0.005])
+            for threshold in plot_type_Y_peaks.keys():
+                for key in plot_type_Y_peaks[threshold].keys():
+                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 0.0, 1])
+            plt.xlim(-10,2500)
+            plt.ylim(-5,60)
+            # luminance
+            plt.subplot(3,1,3)
+            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
+            plt.grid(b=True, which='major', linestyle='--')
+            plt.plot(plot_luminance, linewidth=1, color=[0.3, 1.0, 0.4, 1])
+            plt.xlim(-10,2500)
+            # save and display
+            plt.subplots_adjust(hspace=0.5)
+            plt.savefig(figure_path)
             plt.show(block=False)
             plt.pause(1)
             plt.close()
@@ -868,10 +933,14 @@ all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means
 # Compute global mean
 for i in range(len(all_right_sizes)):
     for stimulus in all_right_sizes[i]: 
-        all_right_size_means[i][stimulus].append(np.nanmean(all_right_sizes[i][stimulus], 0))
+        avg_right_pupil_size = np.nanmean(all_right_sizes[i][stimulus], 0)
+        avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window, 3)
+        all_right_size_means[i][stimulus].append(avg_right_pupil_size_smoothed)
 for i in range(len(all_left_sizes)):
     for stimulus in all_left_sizes[i]: 
-        all_left_size_means[i][stimulus].append(np.nanmean(all_left_sizes[i][stimulus], 0))
+        avg_left_pupil_size = np.nanmean(all_left_sizes[i][stimulus], 0)
+        avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window, 3)
+        all_left_size_means[i][stimulus].append(avg_left_pupil_size_smoothed)
 
 ### PLOTTING PUPIL STUFF ###
 # Plot pupil sizes
@@ -888,55 +957,47 @@ for stim_type in stimuli:
         plot_luminance = np.array(luminances_avg[stim_type])[0]
         plot_type_name = plot_types[i]
         stim_name = stim_float_to_name[stim_type]
-        dpi_sizes = [200]
-        for size in dpi_sizes: 
-            figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(size) + '.png' 
-            figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
-            plt.figure(figsize=(14, 14), dpi=size)
-            plt.suptitle(figure_title, fontsize=12, y=0.98)
-
-            plt.subplot(3,1,1)
-            ax = plt.gca()
-            ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.0, 0.0, 1.0, 0.01])
-            plt.plot(plot_means_right, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            plt.xlim(-10,2500)
-            plt.ylim(-1,1)
-            
-            plt.subplot(3,1,2)
-            plt.ylabel('Percentage from baseline', fontsize=11)
-            plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.0, 1.0, 0.0, 0.01])
-            plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.0, 0.0, 0.4])
-            plt.xlim(-10,2500)
-            plt.ylim(-1,1)
-            
-            plt.subplot(3,1,3)
-            plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
-            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=9, color='grey', style='italic')
-            plt.minorticks_on()
-            plt.grid(b=True, which='major', linestyle='-')
-            plt.grid(b=True, which='minor', linestyle='--')
-            plt.plot(plot_luminance, linewidth=2, color=[1.0, 0.0, 1.0, 1])
-            plt.xlim(-10,2500)
-            #plt.ylim(-1.0,1.0)
-            # mark events
-            #for i in range(len(event_labels)):
-            #    plt.plot((event_locations[i],event_locations[i]), (0.25,2.2-((i-1)/5)), 'k-', linewidth=1)
-            #    plt.text(event_locations[i]+1,2.2-((i-1)/5), event_labels[i], fontsize='x-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.35'))
-            plt.subplots_adjust(hspace=0.5)
-            plt.savefig(figure_path)
-            plt.show(block=False)
-            plt.pause(1)
-            plt.close()
+        # fig name and path
+        figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(dpi_size) + '.png' 
+        figure_path = os.path.join(pupils_folder, figure_name)
+        figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
+        # draw fig
+        plt.figure(figsize=(14, 14), dpi=fig_size)
+        plt.suptitle(figure_title, fontsize=12, y=0.98)
+        # subplot: Right eye sizes
+        plt.subplot(3,1,1)
+        ax = plt.gca()
+        ax.yaxis.set_label_coords(-0.09, -0.5) 
+        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=9, color='grey', style='italic')
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.86, 0.27, 1.0, 0.01])
+        plt.plot(plot_means_right, linewidth=1.5, color=[0.4, 1.0, 0.27, 0.4])
+        plt.xlim(-10,2500)
+        plt.ylim(-1,1)
+        # subplot: Left eye sizes
+        plt.subplot(3,1,2)
+        plt.ylabel('Percentage from baseline', fontsize=11)
+        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=9, color='grey', style='italic')
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.25, 0.25, 1.0, 0.01])
+        plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 1.0, 0.25, 0.4])
+        plt.xlim(-10,2500)
+        plt.ylim(-1,1)
+        # subplot: Average luminance of stimuli video
+        plt.subplot(3,1,3)
+        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsample_rate_ms) + 'ms)', fontsize=11)
+        plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=9, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='-')
+        plt.grid(b=True, which='minor', linestyle='--')
+        plt.plot(plot_luminance, linewidth=2, color=[1.0, 0.13, 0.4, 1])
+        plt.xlim(-10,2500)
+        # save and display
+        plt.subplots_adjust(hspace=0.5)
+        plt.savefig(figure_path)
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
 
 ### POOL ACROSS STIMULI FOR OCTOPUS CLIP ###
 
