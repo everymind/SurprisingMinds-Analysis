@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WorkflowBuilder Version="2.3.0">
-  <Workflow xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:q3="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q4="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns:q1="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns="https://horizongir.org/bonsai">
+  <Workflow xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q1="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:q3="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q4="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
     <Nodes>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="Concat" />
@@ -50,7 +50,7 @@
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
             <Expression xsi:type="q1:CsvWriter">
-              <q1:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame\2018-02-12_10-30-18_stimuli024_world_LuminancePerFrame.csv</q1:FileName>
+              <q1:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame\2018-08-12_11-44-48_stimuli025_world_LuminancePerFrame.csv</q1:FileName>
               <q1:Append>false</q1:Append>
               <q1:Overwrite>false</q1:Overwrite>
               <q1:Suffix>None</q1:Suffix>
@@ -61,7 +61,7 @@
               <Combinator xsi:type="Zip" />
             </Expression>
             <Expression xsi:type="q1:CsvReader">
-              <q1:FileName>C:\Users\taunsquared\Desktop\temp\2018-02-12_10-30-18\2018-02-12_10-30-18_stimuli024_world.csv</q1:FileName>
+              <q1:FileName>C:\Users\taunsquared\Desktop\temp\2018-08-12_11-44-48\2018-08-12_11-44-48_stimuli025_world.csv</q1:FileName>
               <q1:SkipRows>0</q1:SkipRows>
             </Expression>
             <Expression xsi:type="MemberSelector">
@@ -94,7 +94,7 @@ def process(value):
             </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="q4:FileCapture">
-                <q4:FileName>C:\Users\taunsquared\Desktop\temp\2018-02-12_10-30-18\2018-02-12_10-30-18_stimuli024_world.avi</q4:FileName>
+                <q4:FileName>C:\Users\taunsquared\Desktop\temp\2018-08-12_11-44-48\2018-08-12_11-44-48_stimuli025_world.avi</q4:FileName>
                 <q4:PlaybackRate>0</q4:PlaybackRate>
                 <q4:StartPosition>0</q4:StartPosition>
                 <q4:PositionUnits>Frames</q4:PositionUnits>
