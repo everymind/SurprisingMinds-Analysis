@@ -561,13 +561,6 @@ for day_folder in day_folders:
         print("Day {day} failed!".format(day=day_name))
 
 ### EXTRACTION COMPLETE ###
-
-### NOTES FROM LAB MEETING ###
-# based on standard dev of movement, if "eye" doesn't move enough, don't plot that trial
-## during tracking, save luminance of "darkest circle"
-# if there is too much variability in frame rate, then don't plot that trial
-# if standard dev of diameter is "too big", then don't plot
-
 ### SOME GLOBAL VARIABLES ###
 smoothing_window = 35 # in time buckets, must be odd! for savgol_filter
 fig_size = 200 # dpi
