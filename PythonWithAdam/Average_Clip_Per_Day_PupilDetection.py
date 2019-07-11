@@ -11,7 +11,6 @@ import sys
 import math
 
 ### FUNCTIONS ###
-
 def unpack_to_temp(path_to_zipped, path_to_temp):
     try:
         # copy zip file to current working directory
@@ -129,8 +128,8 @@ def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_wind
             return key
 
 def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timestamps, align_frame, csv_path):
-### NEED TO OVERHAUL THIS FUNCTION AAAAARARRRRRRRGGGGHHHHHHH!
-### row = timestamp, not frame #
+    ### NEED TO OVERHAUL THIS FUNCTION AAAAARARRRRRRRGGGGHHHHHHH!
+    ### row = timestamp, not frame #
     # Open eye video and world video
     video = cv2.VideoCapture(video_path)
     # Jump to specific frame (position) for alignment purposes 
@@ -281,7 +280,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
     cv2.destroyAllWindows()
 
 def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images):
-# Save images from trial clip to folder
+    # Save images from trial clip to folder
     #print("Saving averaged frames from {eye}...".format(eye=which_eye))
     for f in range(no_of_seconds):
 
@@ -297,48 +296,44 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
 
-
 ### -------------------------------------------- ###
 ### LET THE ANALYSIS BEGIN!! ###
-
 ### log everything in a text file
-# grab today's date
-now = datetime.datetime.now()
-# create log file named according to today's date
 current_working_directory = os.getcwd()
-log_filename = "pupil-finding_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
-log_file = os.path.join(current_working_directory, log_filename)
-# set up log file to store all printed messages
-sys.stdout = open(log_file, "w")
+class Logger(object):
+    def __init__(self):
+        # grab today's date
+        now = datetime.datetime.now()
+        todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+        log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_file = os.path.join(current_working_directory, log_filename)
+        self.terminal = sys.stdout
+        self.log = open(log_file, "a")
 
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
+
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass    
+sys.stdout = Logger()
 ### ------------------------------------------- ###
 # list all folders in Synology drive
-
-# when working from Synology NAS drive
 data_drive = r"\\Diskstation\SurprisingMinds"
-# when working from local drive, lab computer
-#data_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Documents\SurprisingMinds\fromSynology"
-# when working from laptop
-#data_drive = r"C:\Users\taunsquared\Documents\thesis\SurprisingMindsAutomated"
-
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
 zipped_names = [item[:-4] for item in zipped_data]
-
 # figure out which days have already been analysed
 # when working from local drive, lab computer
 analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 # when working from laptop
 #analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
-
 analysed_folders = sorted(os.listdir(analysed_drive))
 already_analysed = [item for item in zipped_names if item in analysed_folders]
-
-# create dictionary of octopus clip start frames
-octo_clip_start = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
-seconds_until_octo_appears = 6.5
-
 # unzip each folder, do the analysis
 for item in zipped_data:
 
