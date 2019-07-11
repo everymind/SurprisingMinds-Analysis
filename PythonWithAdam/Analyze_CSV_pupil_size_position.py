@@ -434,8 +434,11 @@ if not os.path.exists(linReg_folder):
 day_folders = list_sub_folders(root_folder)
 # first day was a debugging session, so skip it
 day_folders = day_folders[1:]
+### --------------------------------------------- ###
+### REMOVE THIS LINE WHEN PUPIL FINDING IS DONE!! ###
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
+### --------------------------------------------- ###
 # sort data by stimulus
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
@@ -589,7 +592,7 @@ for stimulus in luminances:
     # build average
     average_luminance = build_timebucket_avg_luminance(luminance_array, downsampled_bucket_size_ms, no_of_time_buckets)
     # smooth average
-    avg_lum_smoothed = savgol_filter(average_luminance, smoothing_window-20, 3)
+    avg_lum_smoothed = savgol_filter(average_luminance, smoothing_window-30, 3)
     luminances_avg[stimulus] = avg_lum_smoothed
     # find peaks
     lum_peaks, _ = find_peaks(avg_lum_smoothed, height=200000, prominence=5000)
