@@ -387,11 +387,14 @@ def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshol
 ### what is the distance between eyes and monitor in the exhibit??
 
 # set up log file to store all printed messages
-log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
-log_file = os.path.join(current_working_directory, log_filename)
-
+current_working_directory = os.getcwd()
 class Logger(object):
     def __init__(self):
+        # grab today's date
+        now = datetime.datetime.now()
+        todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+        log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_file = os.path.join(current_working_directory, log_filename)
         self.terminal = sys.stdout
         self.log = open(log_file, "a")
 
@@ -404,17 +407,12 @@ class Logger(object):
         #this handles the flush command by doing nothing.
         #you might want to specify some extra behavior here.
         pass    
-
 sys.stdout = Logger()
 
 ### BEGIN ANALYSIS ###
-# grab today's date
-now = datetime.datetime.now()
-todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
-current_working_directory = os.getcwd()
 stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
 # set up folders
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
@@ -441,7 +439,7 @@ day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
 # sort data by stimulus
-stim_vids = (24.0, 25.0, 26.0, 27.0, 28.0, 29.0)
+stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
 all_right_trials_contours_X = {key:[] for key in stim_vids}
@@ -572,7 +570,7 @@ for day_folder in day_folders:
 ### SOME GLOBAL VARIABLES ###
 smoothing_window = 35 # time buckets, must be odd!
 fig_size = 200 # dpi
-
+image_type_options = ['.png', '.pdf']
 ### EXTRACT STIMULUS INFO ###
 # find average luminance of stimuli vids
 luminances = {key:[] for key in stim_vids}
@@ -607,7 +605,7 @@ if not os.path.exists(engagement_data_folder):
 csv_file = os.path.join(engagement_data_folder, engagement_count_filename)
 np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
 
-# Plot activation count - IMPROVE AXIS LABELS
+# Plot activation count
 total_activation = sum(count[0] for count in activation_count)
 total_days_activated = len(activation_count)
 good_trials_right = [count[0] for count in analysed_count]
@@ -620,16 +618,12 @@ print("Total number of good left eye camera trials: {good_total}".format(good_to
 activation_array = np.array(activation_count)
 analysed_array_right = np.array(good_trials_right)
 analysed_array_left = np.array(good_trials_left)
-# do da plot
-image_type_options = ['.png', '.pdf']
-
 ### NEED BETTER PLOTS FOR EXHIBIT ENGAGEMENT
 # activation based on: 
 # day of the week
 # time of the day
 # month of the year
 # language chosen
-
 # ---------- #
 ### PUPILS ###
 # ---------- #
@@ -945,8 +939,7 @@ for i in range(len(all_left_sizes)):
 ### PLOTTING PUPIL STUFF ###
 # Plot pupil sizes
 plot_types = ["contours", "circles"]
-stimuli = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
-for stim_type in stimuli: 
+for stim_type in stim_vids: 
     for i in range(len(all_right_sizes)): 
         plot_type_right = np.array(all_right_sizes[i][stim_type])
         plot_N_right = len(all_right_sizes[i][stim_type])
