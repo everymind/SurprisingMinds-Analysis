@@ -571,6 +571,7 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 # find average luminance of stimuli vids
 luminances = {key:[] for key in stim_vids}
 luminances_avg = {key:[] for key in stim_vids}
+luminances_baseline = {key:[] for key in stim_vids}
 luminances_peaks = {key:[] for key in stim_vids}
 luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
 ## NEED TO SEPARATE BY STIMULI NUMBER
@@ -585,11 +586,17 @@ for stimulus in luminances:
     luminance_array = np.array(luminances[stimulus])
     # build average
     average_luminance = build_timebucket_avg_luminance(luminance_array, downsampled_bucket_size_ms, no_of_time_buckets)
+    luminances_avg[stimulus] = average_luminance
+    # baseline average
+    baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
+    avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
+    avg_lum_base_array = np.array(avg_lum_baselined)
+    luminances_baseline[stimulus] = avg_lum_base_array
     # smooth average
-    avg_lum_smoothed = savgol_filter(average_luminance, smoothing_window-30, 3)
+    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window-30, 3)
     luminances_avg[stimulus] = avg_lum_smoothed
     # find peaks
-    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=200000, prominence=5000)
+    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=200000, prominence=50000)
     luminances_peaks[stimulus] = lum_peaks
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
