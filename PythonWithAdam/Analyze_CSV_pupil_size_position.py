@@ -15,16 +15,151 @@ from operator import itemgetter
 from scipy.signal import find_peaks
 
 ### FUNCTIONS ###
-def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
+def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
     if (new_bucket_size % original_bucket_size == 0):
         new_sample_rate = int(new_bucket_size/original_bucket_size)
+        max_no_of_buckets = int(max_no_of_buckets)
         #print("New bucket window = {size}, need to average every {sample_rate} buckets".format(size=new_bucket_size, sample_rate=new_sample_rate))
-        downsampled_no_of_buckets = math.ceil(max_no_of_buckets/new_sample_rate)
-        #print("Downsampled number of buckets = {number}".format(number=downsampled_no_of_buckets))
         # List all csv trial files
         trial_files = glob.glob(day_folder_path + os.sep + which_eye + "*.csv")
         num_trials = len(trial_files)
         good_trials = num_trials
+        # contours
+        data_contours_X = np.empty((num_trials, max_no_of_buckets+1))
+        data_contours_X[:] = -6
+        data_contours_Y = np.empty((num_trials, max_no_of_buckets+1))
+        data_contours_Y[:] = -6
+        data_contours = np.empty((num_trials, max_no_of_buckets+1))
+        data_contours[:] = -6
+        # circles
+        data_circles_X = np.empty((num_trials, max_no_of_buckets+1))
+        data_circles_X[:] = -6
+        data_circles_Y = np.empty((num_trials, max_no_of_buckets+1))
+        data_circles_Y[:] = -6
+        data_circles = np.empty((num_trials, max_no_of_buckets+1))
+        data_circles[:] = -6
+
+        index = 0
+        for trial_file in trial_files:
+            trial_name = trial_file.split(os.sep)[-1]
+            trial_stimulus = trial_name.split("_")[1]
+            trial_stim_number = np.float(trial_stimulus[-2:])
+            trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
+            # if there are too many -5 rows (frames) in a row, don't analyse this trial
+            bad_frame_count = []
+            for frame in trial:
+                if frame[0]==-5:
+                    bad_frame_count.append(1)
+                else:
+                    bad_frame_count.append(0)
+            clusters =  [(x[0], len(list(x[1]))) for x in itertools.groupby(bad_frame_count)]
+            longest_cluster = 0
+            for cluster in clusters:
+                if cluster[0] == 1 and cluster[1]>longest_cluster:
+                    longest_cluster = cluster[1]
+            #print("For trial {name}, the longest cluster is {length}".format(name=trial_name, length=longest_cluster))
+            if longest_cluster<100:
+                no_of_samples = math.ceil(len(trial)/new_sample_rate)
+                this_trial_contours_X = []
+                this_trial_contours_Y = []
+                this_trial_contours = []
+                this_trial_circles_X = []
+                this_trial_circles_Y = []
+                this_trial_circles = []
+                # loop through the trial at given sample rate
+                for sample in range(no_of_samples):
+                    start = sample * new_sample_rate
+                    end = (sample * new_sample_rate) + (new_sample_rate - 1)
+                    this_slice = trial[start:end]
+                    for line in this_slice:
+                        if (line<0).any():
+                            line[:] = np.nan
+                        if (line>15000).any():
+                            line[:] = np.nan
+                    # extract pupil sizes and locations from valid time buckets
+                    this_slice_contours_X = []
+                    this_slice_contours_Y = []
+                    this_slice_contours = []
+                    this_slice_circles_X = []
+                    this_slice_circles_Y = []
+                    this_slice_circles = []
+                    for frame in this_slice:
+                        # contour x,y
+                        ## DON'T PAIR X-Y YET
+                        this_slice_contours_X.append(frame[0])
+                        this_slice_contours_Y.append(frame[1])
+                        # contour area
+                        this_slice_contours.append(frame[2])
+                        # circles x,y
+                        ## DON'T PAIR X-Y YET
+                        this_slice_circles_X.append(frame[3])
+                        this_slice_circles_Y.append(frame[4])
+                        # circles area
+                        this_slice_circles.append(frame[5])
+                    # average the pupil size and movement in this sample slice
+                    this_slice_avg_contour_X = np.nanmean(this_slice_contours_X)
+                    this_slice_avg_contour_Y = np.nanmean(this_slice_contours_Y)
+                    this_slice_avg_contour = np.nanmean(this_slice_contours) 
+                    this_slice_avg_circle_X = np.nanmean(this_slice_circles_X)
+                    this_slice_avg_circle_Y = np.nanmean(this_slice_circles_Y)       
+                    this_slice_avg_circle = np.nanmean(this_slice_circles)
+                    # append to list of downsampled pupil sizes and movements
+                    this_trial_contours_X.append(this_slice_avg_contour_X)
+                    this_trial_contours_Y.append(this_slice_avg_contour_Y)
+                    this_trial_contours.append(this_slice_avg_contour)
+                    this_trial_circles_X.append(this_slice_avg_circle_X)
+                    this_trial_circles_Y.append(this_slice_avg_circle_Y)
+                    this_trial_circles.append(this_slice_avg_circle)
+                # Find count of bad measurements
+                bad_count_contours_X = sum(np.isnan(this_trial_contours_X))
+                bad_count_contours_Y = sum(np.isnan(this_trial_contours_Y))
+                bad_count_contours = sum(np.isnan(this_trial_contours))
+                bad_count_circles_X = sum(np.isnan(this_trial_circles_X))
+                bad_count_circles_Y = sum(np.isnan(this_trial_circles_Y))
+                bad_count_circles = sum(np.isnan(this_trial_circles))
+                # if more than half of the trial is NaN, then throw away this trial
+                # otherwise, if it's a good enough trial...
+                bad_threshold = no_of_samples/2
+                if (bad_count_contours_X<bad_threshold): 
+                    this_chunk_length = len(this_trial_contours_X)
+                    data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
+                    data_contours_X[index][-1] = trial_stim_number
+                if (bad_count_contours_Y<bad_threshold): 
+                    this_chunk_length = len(this_trial_contours_Y)
+                    data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
+                    data_contours_Y[index][-1] = trial_stim_number
+                if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold): 
+                    this_chunk_length = len(this_trial_contours)
+                    data_contours[index][0:this_chunk_length] = this_trial_contours
+                    data_contours[index][-1] = trial_stim_number
+                if (bad_count_circles_X<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles_X)
+                    data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
+                    data_circles_X[index][-1] = trial_stim_number
+                if (bad_count_circles_Y<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles_Y)
+                    data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
+                    data_circles_Y[index][-1] = trial_stim_number
+                if (bad_count_circles<bad_threshold): 
+                    this_chunk_length = len(this_trial_circles)
+                    data_circles[index][0:this_chunk_length] = this_trial_circles
+                    data_circles[index][-1] = trial_stim_number
+                index = index + 1
+            else:
+                #print("Discarding trial {name}".format(name=trial_name))
+                index = index + 1
+                good_trials = good_trials - 1
+        return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
+    else: 
+        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
+
+""" 
+def load_daily_stims(day_folder_path, max_no_of_buckets, bucket_size): 
+    # List all world camera csv files
+    stim_files = glob.glob(day_folder_path + os.sep + "*world.csv")
+    num_trials = len(stim_files)
+    
+
         # contours
         data_contours_X = np.empty((num_trials, downsampled_no_of_buckets+1))
         data_contours_X[:] = -6
@@ -153,6 +288,7 @@ def load_daily_pupil_areas(which_eye, day_folder_path, max_no_of_buckets, origin
         return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
+ """
 
 def list_sub_folders(path_to_root_folder):
     # List all sub folders
@@ -206,14 +342,14 @@ def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_wind
         if key <= timestamp_to_check <= (key + time_window):
             return key
 
-def build_timebucket_avg_luminance(timestamps_and_luminance_array, new_bucket_size_ms, max_no_of_timebuckets):
-    bucket_window = datetime.timedelta(milliseconds=new_bucket_size_ms)
+def build_timebucket_avg_luminance(timestamps_and_luminance_array, bucket_size_ms, max_no_of_timebuckets):
+    bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
     avg_luminance_by_timebucket = []
     index = 0
     for trial in timestamps_and_luminance_array:
         first_timestamp = trial[0][0]
         end_timestamp = trial[-1][0]
-        this_trial_timebuckets = make_luminance_time_buckets(first_timestamp, new_bucket_size_ms, end_timestamp)
+        this_trial_timebuckets = make_luminance_time_buckets(first_timestamp, bucket_size_ms, end_timestamp)
         this_trial = np.empty(max_no_of_timebuckets)
         this_trial[:] = np.nan
         for frame in trial:
@@ -347,7 +483,7 @@ def calc_avg_motion_and_peaks(list_of_movement_arrays, window):
     # apply savitzky-golay filter to smooth
     avg_motion_smoothed = savgol_filter(avg_motion, window, 3)
     # find peaks in average motion
-    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,15), prominence=3)
+    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,15), prominence=1)
     return avg_motion_smoothed, peaks
 
 def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshold, window_size, windowed_count_threshold):
@@ -460,13 +596,16 @@ all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circ
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
 activation_count = []
 analysed_count = []
+stimuli_timebuckets = {key:[] for key in stim_vids}
 # downsample = collect data from every 40ms or other multiples of 20
 ### WHAT THE FUCK IS HAPPENING WITH THE TIME BUCKETS?? ### 
-downsampled_bucket_size_ms = 20
+downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
-no_of_time_buckets = 20000
+max_length_of_stim_vid = 60000 # milliseconds
+no_of_time_buckets = max_length_of_stim_vid/original_bucket_size_in_ms
+downsampled_no_of_time_buckets = max_length_of_stim_vid/downsampled_bucket_size_ms
 new_time_bucket_sample_rate = downsampled_bucket_size_ms/original_bucket_size_in_ms
-milliseconds_for_baseline = 2000
+milliseconds_for_baseline = 3000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
 
 ### BEGIN PUPIL DATA EXTRACTION ###
@@ -480,13 +619,13 @@ for day_folder in day_folders:
     day_name = day_folder.split("_")[-1]
     try: 
         ## EXTRACT PUPIL SIZE AND POSITION
-        right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupil_areas("right", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-        left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupil_areas("left", csv_folder, no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+        right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupils("right", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+        left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupils("left", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
 
         analysed_count.append((num_good_right_trials, num_good_left_trials))
         activation_count.append((num_right_activations, num_left_activations))
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
-
+        ### EXTRACT TIME BINNED STIM VIDEOS ###
         # separate by stimulus number
         R_contours_X = {key:[] for key in stim_vids}
         R_contours_Y = {key:[] for key in stim_vids}
@@ -714,7 +853,7 @@ for side in range(len(all_movements)):
             all_peaks[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
             this_stim_N = len(all_movements[side][c_axis][stim])
             count_threshold = this_stim_N/10
-            windowed_count_thresholds = [this_stim_N/2,this_stim_N/3,this_stim_N/4,this_stim_N/6,this_stim_N/8,this_stim_N/10,this_stim_N/20]
+            windowed_count_thresholds = [this_stim_N/3,this_stim_N/4,this_stim_N/8,this_stim_N/16,this_stim_N/32,this_stim_N/64,this_stim_N/128]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
                 peaks_window = 50 # timebuckets
@@ -778,7 +917,7 @@ for side in range(len(all_movements_plot)):
             plt.plot(plot_luminance, linewidth=0.75, color=[1.0, 0.13, 0.4, 1])
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+50000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+                plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
             plt.xlim(-10,2500)
             # save and display
             plt.subplots_adjust(hspace=0.5)
@@ -856,7 +995,7 @@ for side in range(len(all_movements_plot)):
             plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.13, 0.4, 1])
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+50000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+                plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
             plt.xlim(-10,2500)
             # save and display
             plt.subplots_adjust(hspace=0.5)
@@ -901,7 +1040,7 @@ for side in range(len(all_movements_plot)):
                 plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
             for threshold in plot_type_X_peaks.keys():
                 for key in plot_type_X_peaks[threshold].keys():
-                    plt.plot(key, threshold, '1', color=[0.4, 1.0, 0.27, 0.2])
+                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 0.0, 0.5])
             plt.xlim(-10,2500)
             plt.ylim(-5,60)
             # y-axis
@@ -914,7 +1053,7 @@ for side in range(len(all_movements_plot)):
                 plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
             for threshold in plot_type_Y_peaks.keys():
                 for key in plot_type_Y_peaks[threshold].keys():
-                    plt.plot(key, threshold, '1', color=[1.0, 1.0, 0.25, 0.2])
+                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, 0.5])
             plt.xlim(-10,2500)
             plt.ylim(-5,60)
             # luminance
@@ -925,7 +1064,7 @@ for side in range(len(all_movements_plot)):
             plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.13, 0.4, 1])
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+50000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+                plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
             plt.xlim(-10,2500)
             # save and display
             plt.subplots_adjust(hspace=0.5)
@@ -944,18 +1083,28 @@ all_right_size_circles_means = {key:[] for key in stim_vids}
 all_left_size_circles_means = {key:[] for key in stim_vids}
 all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
 all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
+# find peaks in pupil diameter sizes
+all_right_size_contours_peaks = {key:[] for key in stim_vids}
+all_left_size_contours_peaks = {key:[] for key in stim_vids}
+all_right_size_circles_peaks = {key:[] for key in stim_vids}
+all_left_size_circles_peaks = {key:[] for key in stim_vids}
+all_right_size_peaks = [all_right_size_contours_peaks, all_right_size_circles_peaks]
+all_left_size_peaks = [all_left_size_contours_peaks, all_left_size_circles_peaks]
 # Compute global mean
 for i in range(len(all_right_sizes)):
     for stimulus in all_right_sizes[i]: 
         avg_right_pupil_size = np.nanmean(all_right_sizes[i][stimulus], 0)
         avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window, 3)
-        all_right_size_means[i][stimulus].append(avg_right_pupil_size_smoothed)
+        all_right_size_means[i][stimulus] = avg_right_pupil_size_smoothed
+        avg_right_pupil_size_peaks, _ = find_peaks(avg_right_pupil_size_smoothed, prominence=0.125)
+        all_right_size_peaks[i][stimulus] = avg_right_pupil_size_peaks
 for i in range(len(all_left_sizes)):
     for stimulus in all_left_sizes[i]: 
         avg_left_pupil_size = np.nanmean(all_left_sizes[i][stimulus], 0)
         avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window, 3)
-        all_left_size_means[i][stimulus].append(avg_left_pupil_size_smoothed)
-
+        all_left_size_means[i][stimulus] = avg_left_pupil_size_smoothed
+        avg_left_pupil_size_peaks, _ = find_peaks(avg_left_pupil_size_smoothed, prominence=0.125)
+        all_left_size_peaks[i][stimulus] = avg_left_pupil_size_peaks
 ### PLOTTING PUPIL STUFF ###
 # Plot pupil sizes
 plot_types = ["contours", "circles"]
@@ -965,8 +1114,10 @@ for stim_type in stim_vids:
         plot_N_right = len(all_right_sizes[i][stim_type])
         plot_type_left = np.array(all_left_sizes[i][stim_type])
         plot_N_left = len(all_left_sizes[i][stim_type])
-        plot_means_right = np.array(all_right_size_means[i][stim_type])[0]
-        plot_means_left = np.array(all_left_size_means[i][stim_type])[0]
+        plot_means_right = all_right_size_means[i][stim_type]
+        plot_means_right_peaks = all_right_size_peaks[i][stim_type]
+        plot_means_left = all_left_size_means[i][stim_type]
+        plot_means_left_peaks = all_left_size_peaks[i][stim_type]
         plot_luminance = luminances_avg[stim_type]
         plot_luminance_peaks = luminances_peaks[stimuli]
         plot_type_name = plot_types[i]
@@ -987,6 +1138,9 @@ for stim_type in stim_vids:
         plt.grid(b=True, which='major', linestyle='--')
         plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.86, 0.27, 1.0, 0.005])
         plt.plot(plot_means_right, linewidth=1.5, color=[0.4, 1.0, 0.27, 0.6])
+        for peak in plot_means_right_peaks:
+            plt.plot(peak, plot_means_right[peak], 'x')
+            plt.text(peak-25, plot_means_right[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         plt.xlim(-10,2500)
         plt.ylim(-1,1)
         # subplot: Left eye sizes
@@ -997,6 +1151,9 @@ for stim_type in stim_vids:
         plt.grid(b=True, which='major', linestyle='--')
         plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.25, 0.25, 1.0, 0.005])
         plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 1.0, 0.25, 0.6])
+        for peak in plot_means_left_peaks:
+            plt.plot(peak, plot_means_left[peak], 'x')
+            plt.text(peak-25, plot_means_left[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         plt.xlim(-10,2500)
         plt.ylim(-1,1)
         # subplot: Average luminance of stimuli video
