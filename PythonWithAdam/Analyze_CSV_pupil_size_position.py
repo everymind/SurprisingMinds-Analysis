@@ -485,7 +485,7 @@ def calc_avg_motion_and_peaks(list_of_movement_arrays, window):
     # apply savitzky-golay filter to smooth
     avg_motion_smoothed = savgol_filter(avg_motion, window, 3)
     # find peaks in average motion
-    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,15), prominence=1)
+    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,10), prominence=1)
     return avg_motion_smoothed, peaks
 
 def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshold, window_size, windowed_count_threshold):
@@ -893,33 +893,35 @@ for side in range(len(all_movements_plot)):
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
+            plt.ylabel('Change in pixels', fontsize=11)
+            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
                 plt.plot(trial, linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
-            plt.xlim(-10,1200)
+            plt.xlim(-10,1300)
             plt.ylim(-80,80)
             # y-axis
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
-            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
+            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
                 plt.plot(trial, linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
-            plt.xlim(-10,1200)
+            plt.xlim(-10,1300)
             plt.ylim(-80,80)
             # luminance
             plt.subplot(3,1,3)
+            plt.ylabel('Percent change in luminance', fontsize=11)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=10, color='grey', style='italic')
             plt.grid(b=True, which='major', linestyle='--')
             plt.plot(plot_luminance, linewidth=0.75, color=[1.0, 0.13, 0.4, 1])
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,1200)
+                plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            plt.xlim(-10,1300)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -963,7 +965,8 @@ for side in range(len(all_movements_plot)):
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
+            plt.ylabel('Change in pixels', fontsize=11)
+            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
@@ -971,13 +974,13 @@ for side in range(len(all_movements_plot)):
             plt.plot(plot_type_X_avg, linewidth=1, color=[0.4, 1.0, 0.27, 1])
             for peak in plot_type_X_avg_peaks:
                 plt.plot(peak, plot_type_X_avg[peak], 'x')
-                plt.text(peak-20, plot_type_X_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,1200)
+                plt.text(peak-15, plot_type_X_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            plt.xlim(-10,1300)
             plt.ylim(-5,40)
             # y-axis
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
-            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
+            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
@@ -985,19 +988,20 @@ for side in range(len(all_movements_plot)):
             plt.plot(plot_type_Y_avg, linewidth=1, color=[1.0, 1.0, 0.25, 1])
             for peak in plot_type_Y_avg_peaks:
                 plt.plot(peak, plot_type_Y_avg[peak], 'x')
-                plt.text(peak-20, plot_type_Y_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,1200)
+                plt.text(peak-15, plot_type_Y_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            plt.xlim(-10,1300)
             plt.ylim(-5,40)
             # luminance
             plt.subplot(3,1,3)
+            plt.ylabel('Percent change in luminance', fontsize=11)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=10, color='grey', style='italic')
             plt.grid(b=True, which='major', linestyle='--')
             plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.13, 0.4, 1])
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,1200)
+                plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            plt.xlim(-10,1300)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -1034,7 +1038,8 @@ for side in range(len(all_movements_plot)):
             plt.subplot(3,1,1)
             ax = plt.gca()
             ax.yaxis.set_label_coords(-0.09, -0.5) 
-            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=9, color='grey', style='italic')
+            plt.ylabel('Change in pixels', fontsize=11)
+            plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
@@ -1042,12 +1047,12 @@ for side in range(len(all_movements_plot)):
             for threshold in plot_type_X_peaks.keys():
                 for key in plot_type_X_peaks[threshold].keys():
                     plt.plot(key, threshold, '1', color=[0.0, 0.0, 0.0, 0.5])
-            plt.xlim(-10,1200)
+            plt.xlim(-10,1300)
             plt.ylim(-5,60)
             # y-axis
             plt.subplot(3,1,2)
             plt.ylabel('Change in pixels', fontsize=11)
-            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=9, color='grey', style='italic')
+            plt.title('Pupil movement in the Y-axis; N = ' + str(plot_N_Y), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
@@ -1055,18 +1060,19 @@ for side in range(len(all_movements_plot)):
             for threshold in plot_type_Y_peaks.keys():
                 for key in plot_type_Y_peaks[threshold].keys():
                     plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, 0.5])
-            plt.xlim(-10,1200)
+            plt.xlim(-10,1300)
             plt.ylim(-5,60)
             # luminance
             plt.subplot(3,1,3)
+            plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
             plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=9, color='grey', style='italic')
+            plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stimuli])), fontsize=10, color='grey', style='italic')
             plt.grid(b=True, which='major', linestyle='--')
             plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.13, 0.4, 1])
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,1200)
+                plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            plt.xlim(-10,1300)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -1134,39 +1140,41 @@ for stim_type in stim_vids:
         plt.subplot(3,1,1)
         ax = plt.gca()
         ax.yaxis.set_label_coords(-0.09, -0.5) 
-        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=9, color='grey', style='italic')
+        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='--')
         plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.86, 0.27, 1.0, 0.005])
         plt.plot(plot_means_right, linewidth=1.5, color=[0.4, 1.0, 0.27, 0.6])
         for peak in plot_means_right_peaks:
             plt.plot(peak, plot_means_right[peak], 'x')
-            plt.text(peak-25, plot_means_right[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,1200)
+            plt.text(peak-15, plot_means_right[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.xlim(-10,1300)
         plt.ylim(-1,1)
         # subplot: Left eye sizes
         plt.subplot(3,1,2)
-        plt.ylabel('Percentage from baseline', fontsize=11)
-        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=9, color='grey', style='italic')
+        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='--')
         plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.25, 0.25, 1.0, 0.005])
         plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 1.0, 0.25, 0.6])
         for peak in plot_means_left_peaks:
             plt.plot(peak, plot_means_left[peak], 'x')
-            plt.text(peak-25, plot_means_left[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,1200)
+            plt.text(peak-15, plot_means_left[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.xlim(-10,1300)
         plt.ylim(-1,1)
         # subplot: Average luminance of stimuli video
         plt.subplot(3,1,3)
+        plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
         plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-        plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=9, color='grey', style='italic')
+        plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=10, color='grey', style='italic')
         plt.grid(b=True, which='major', linestyle='--')
         plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.13, 0.4, 1])
         for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-25, plot_luminance[peak]+50000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,1200)
+                plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.xlim(-10,1300)
         # save and display
         plt.subplots_adjust(hspace=0.5)
         plt.savefig(figure_path)
