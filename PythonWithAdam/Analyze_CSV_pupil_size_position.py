@@ -153,6 +153,7 @@ def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bu
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
+
 """ 
 def load_daily_stims(day_folder_path, max_no_of_buckets, bucket_size): 
     # List all world camera csv files
@@ -344,6 +345,7 @@ def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_wind
 
 def build_timebucket_avg_luminance(timestamps_and_luminance_array, bucket_size_ms, max_no_of_timebuckets):
     bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
+    max_no_of_timebuckets = int(max_no_of_timebuckets)
     avg_luminance_by_timebucket = []
     index = 0
     for trial in timestamps_and_luminance_array:
@@ -598,7 +600,6 @@ activation_count = []
 analysed_count = []
 stimuli_timebuckets = {key:[] for key in stim_vids}
 # downsample = collect data from every 40ms or other multiples of 20
-### WHAT THE FUCK IS HAPPENING WITH THE TIME BUCKETS?? ### 
 downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
 max_length_of_stim_vid = 60000 # milliseconds
@@ -897,7 +898,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_X:
                 plt.plot(trial, linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             plt.ylim(-80,80)
             # y-axis
             plt.subplot(3,1,2)
@@ -907,7 +908,7 @@ for side in range(len(all_movements_plot)):
             plt.grid(b=True, which='major', linestyle='--')
             for trial in plot_type_Y:
                 plt.plot(trial, linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             plt.ylim(-80,80)
             # luminance
             plt.subplot(3,1,3)
@@ -918,7 +919,7 @@ for side in range(len(all_movements_plot)):
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
                 plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -971,7 +972,7 @@ for side in range(len(all_movements_plot)):
             for peak in plot_type_X_avg_peaks:
                 plt.plot(peak, plot_type_X_avg[peak], 'x')
                 plt.text(peak-20, plot_type_X_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             plt.ylim(-5,40)
             # y-axis
             plt.subplot(3,1,2)
@@ -985,7 +986,7 @@ for side in range(len(all_movements_plot)):
             for peak in plot_type_Y_avg_peaks:
                 plt.plot(peak, plot_type_Y_avg[peak], 'x')
                 plt.text(peak-20, plot_type_Y_avg[peak]+5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             plt.ylim(-5,40)
             # luminance
             plt.subplot(3,1,3)
@@ -996,7 +997,7 @@ for side in range(len(all_movements_plot)):
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
                 plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -1041,7 +1042,7 @@ for side in range(len(all_movements_plot)):
             for threshold in plot_type_X_peaks.keys():
                 for key in plot_type_X_peaks[threshold].keys():
                     plt.plot(key, threshold, '1', color=[0.0, 0.0, 0.0, 0.5])
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             plt.ylim(-5,60)
             # y-axis
             plt.subplot(3,1,2)
@@ -1054,7 +1055,7 @@ for side in range(len(all_movements_plot)):
             for threshold in plot_type_Y_peaks.keys():
                 for key in plot_type_Y_peaks[threshold].keys():
                     plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, 0.5])
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             plt.ylim(-5,60)
             # luminance
             plt.subplot(3,1,3)
@@ -1065,7 +1066,7 @@ for side in range(len(all_movements_plot)):
             for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
                 plt.text(peak-25, plot_luminance[peak]+100000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-            plt.xlim(-10,2500)
+            plt.xlim(-10,1200)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -1141,7 +1142,7 @@ for stim_type in stim_vids:
         for peak in plot_means_right_peaks:
             plt.plot(peak, plot_means_right[peak], 'x')
             plt.text(peak-25, plot_means_right[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,2500)
+        plt.xlim(-10,1200)
         plt.ylim(-1,1)
         # subplot: Left eye sizes
         plt.subplot(3,1,2)
@@ -1154,7 +1155,7 @@ for stim_type in stim_vids:
         for peak in plot_means_left_peaks:
             plt.plot(peak, plot_means_left[peak], 'x')
             plt.text(peak-25, plot_means_left[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,2500)
+        plt.xlim(-10,1200)
         plt.ylim(-1,1)
         # subplot: Average luminance of stimuli video
         plt.subplot(3,1,3)
@@ -1165,7 +1166,7 @@ for stim_type in stim_vids:
         for peak in plot_luminance_peaks:
                 plt.plot(peak, plot_luminance[peak], 'x')
                 plt.text(peak-25, plot_luminance[peak]+50000, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,2500)
+        plt.xlim(-10,1200)
         # save and display
         plt.subplots_adjust(hspace=0.5)
         plt.savefig(figure_path)
