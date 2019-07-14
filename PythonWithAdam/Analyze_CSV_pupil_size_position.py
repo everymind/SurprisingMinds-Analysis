@@ -485,7 +485,7 @@ def calc_avg_motion_and_peaks(list_of_movement_arrays, window):
     # apply savitzky-golay filter to smooth
     avg_motion_smoothed = savgol_filter(avg_motion, window, 3)
     # find peaks in average motion
-    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,10), prominence=1)
+    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,10), prominence=0.75)
     return avg_motion_smoothed, peaks
 
 def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshold, window_size, windowed_count_threshold):
@@ -703,7 +703,7 @@ for day_folder in day_folders:
 
 ### EXTRACTION COMPLETE ###
 ### SOME GLOBAL VARIABLES ###
-smoothing_window = 35 # in time buckets, must be odd! for savgol_filter
+smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
 fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
@@ -722,7 +722,8 @@ for data_path in luminance_data_paths:
     stimulus_num = stim_name_to_float[stimulus_type]
     luminances[stimulus_num].append(luminance_values)
 # build average then smooth
-for stimulus in luminances: 
+for stimulus in luminances:
+    print('Calculating average, smoothed luminance and peaks for stimuli {s}'.format(s=stimulus)) 
     luminance_array = np.array(luminances[stimulus])
     # build average
     average_luminance = build_timebucket_avg_luminance(luminance_array, downsampled_bucket_size_ms, no_of_time_buckets)
@@ -733,10 +734,10 @@ for stimulus in luminances:
     avg_lum_base_array = np.array(avg_lum_baselined)
     luminances_baseline[stimulus] = avg_lum_base_array
     # smooth average
-    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window-30, 3)
+    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window-20, 3)
     luminances_avg[stimulus] = avg_lum_smoothed
     # find peaks
-    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=200000, prominence=50000)
+    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=-1, prominence=0.25)
     luminances_peaks[stimulus] = lum_peaks
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
@@ -850,11 +851,11 @@ all_peaks = [all_peaks_right, all_peaks_left]
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stim in all_movements[side][c_axis]:
-            saccade_thresholds = [5, 10, 20, 30, 40, 50, 60] # pixels
+            saccade_thresholds = [2.5, 5, 10, 20, 30, 40, 50, 60] # pixels
             all_peaks[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
             this_stim_N = len(all_movements[side][c_axis][stim])
             count_threshold = this_stim_N/10
-            windowed_count_thresholds = [this_stim_N/3,this_stim_N/4,this_stim_N/8,this_stim_N/16,this_stim_N/32,this_stim_N/64,this_stim_N/128]
+            windowed_count_thresholds = [this_stim_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
                 peaks_window = 50 # timebuckets
@@ -891,8 +892,6 @@ for side in range(len(all_movements_plot)):
             plt.suptitle(figure_title, fontsize=12, y=0.98)
             # x-axis
             plt.subplot(3,1,1)
-            ax = plt.gca()
-            ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.ylabel('Change in pixels', fontsize=11)
             plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
@@ -963,8 +962,6 @@ for side in range(len(all_movements_plot)):
             plt.suptitle(figure_title, fontsize=12, y=0.98)
             # x-axis
             plt.subplot(3,1,1)
-            ax = plt.gca()
-            ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.ylabel('Change in pixels', fontsize=11)
             plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
@@ -1002,6 +999,7 @@ for side in range(len(all_movements_plot)):
                 plt.plot(peak, plot_luminance[peak], 'x')
                 plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
             plt.xlim(-10,1300)
+            plt.ylim(-1,7)
             # save and display
             plt.subplots_adjust(hspace=0.5)
             plt.savefig(figure_path)
@@ -1036,8 +1034,6 @@ for side in range(len(all_movements_plot)):
             plt.suptitle(figure_title, fontsize=12, y=0.98)
             # x-axis
             plt.subplot(3,1,1)
-            ax = plt.gca()
-            ax.yaxis.set_label_coords(-0.09, -0.5) 
             plt.ylabel('Change in pixels', fontsize=11)
             plt.title('Pupil movement in the X-axis; N = ' + str(plot_N_X), fontsize=10, color='grey', style='italic')
             plt.minorticks_on()
@@ -1046,7 +1042,8 @@ for side in range(len(all_movements_plot)):
                 plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
             for threshold in plot_type_X_peaks.keys():
                 for key in plot_type_X_peaks[threshold].keys():
-                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 0.0, 0.5])
+                    alpha = key/100
+                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, alpha])
             plt.xlim(-10,1300)
             plt.ylim(-5,60)
             # y-axis
@@ -1059,7 +1056,8 @@ for side in range(len(all_movements_plot)):
                 plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
             for threshold in plot_type_Y_peaks.keys():
                 for key in plot_type_Y_peaks[threshold].keys():
-                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, 0.5])
+                    alpha = key/100
+                    plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, alpha])
             plt.xlim(-10,1300)
             plt.ylim(-5,60)
             # luminance
@@ -1138,8 +1136,6 @@ for stim_type in stim_vids:
         plt.suptitle(figure_title, fontsize=12, y=0.98)
         # subplot: Right eye sizes
         plt.subplot(3,1,1)
-        ax = plt.gca()
-        ax.yaxis.set_label_coords(-0.09, -0.5) 
         plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
         plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
         plt.minorticks_on()
