@@ -734,10 +734,10 @@ for stimulus in luminances:
     avg_lum_base_array = np.array(avg_lum_baselined)
     luminances_baseline[stimulus] = avg_lum_base_array
     # smooth average
-    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window-20, 3)
+    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window-10, 3)
     luminances_avg[stimulus] = avg_lum_smoothed
     # find peaks
-    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=-1, prominence=0.25)
+    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=-1, prominence=0.1)
     luminances_peaks[stimulus] = lum_peaks
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
@@ -858,14 +858,14 @@ for side in range(len(all_movements)):
             windowed_count_thresholds = [this_stim_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
-                peaks_window = 50 # timebuckets
+                peaks_window = 40 # timebuckets
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
                 all_peaks[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, peaks_window, w_thresh)
 
 ### ------------------------------ ###
 
-plotting_peaks_window = 50 # MAKE SURE THIS ==peaks_window!!
+plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
 cType_names = ['Contours', 'Circles']
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
@@ -1044,10 +1044,9 @@ for side in range(len(all_movements_plot)):
             for trial in plot_type_X:
                 plt.plot(abs(trial), linewidth=0.5, color=[0.86, 0.27, 1.0, 0.005])
             for threshold in plot_type_X_peaks.keys():
-                alpha = threshold/100
                 for key in plot_type_X_peaks[threshold].keys():
                     if key<1250:
-                        plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, alpha])
+                        plt.plot(key, threshold, '1', color=[0.4, 1.0, 0.27, 1.0])
             plt.xlim(-10,1250)
             plt.ylim(-5,60)
             # y-axis
@@ -1059,10 +1058,9 @@ for side in range(len(all_movements_plot)):
             for trial in plot_type_Y:
                 plt.plot(abs(trial), linewidth=0.5, color=[0.25, 0.25, 1.0, 0.005])
             for threshold in plot_type_Y_peaks.keys():
-                alpha = threshold/100
                 for key in plot_type_Y_peaks[threshold].keys():
                     if key<1250:
-                        plt.plot(key, threshold, '1', color=[0.0, 0.0, 1.0, alpha])
+                        plt.plot(key, threshold, '1', color=[1.0, 1.0, 0.25, 1.0])
             plt.xlim(-10,1250)
             plt.ylim(-5,60)
             # luminance
@@ -1104,15 +1102,17 @@ all_left_size_peaks = [all_left_size_contours_peaks, all_left_size_circles_peaks
 # Compute global mean
 for i in range(len(all_right_sizes)):
     for stimulus in all_right_sizes[i]: 
+        print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
         avg_right_pupil_size = np.nanmean(all_right_sizes[i][stimulus], 0)
-        avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window, 3)
+        avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window-10, 3)
         all_right_size_means[i][stimulus] = avg_right_pupil_size_smoothed
         avg_right_pupil_size_peaks, _ = find_peaks(avg_right_pupil_size_smoothed, prominence=0.125)
         all_right_size_peaks[i][stimulus] = avg_right_pupil_size_peaks
 for i in range(len(all_left_sizes)):
     for stimulus in all_left_sizes[i]: 
+        print('Calculating average pupil sizes for left camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
         avg_left_pupil_size = np.nanmean(all_left_sizes[i][stimulus], 0)
-        avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window, 3)
+        avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window-10, 3)
         all_left_size_means[i][stimulus] = avg_left_pupil_size_smoothed
         avg_left_pupil_size_peaks, _ = find_peaks(avg_left_pupil_size_smoothed, prominence=0.125)
         all_left_size_peaks[i][stimulus] = avg_left_pupil_size_peaks
@@ -1146,11 +1146,12 @@ for stim_type in stim_vids:
         plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[0.86, 0.27, 1.0, 0.005])
-        plt.plot(plot_means_right, linewidth=1.5, color=[0.4, 1.0, 0.27, 0.6])
+        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[1.0, 0.98, 0.0, 0.005])
+        plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
         for peak in plot_means_right_peaks:
-            plt.plot(peak, plot_means_right[peak], 'x')
-            plt.text(peak-15, plot_means_right[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            if peak<1250:
+                plt.plot(peak, plot_means_right[peak], 'x')
+                plt.text(peak-15, plot_means_right[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         plt.xlim(-10,1250)
         plt.ylim(-1,1)
         # subplot: Left eye sizes
@@ -1159,11 +1160,12 @@ for stim_type in stim_vids:
         plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
         plt.minorticks_on()
         plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.25, 0.25, 1.0, 0.005])
-        plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 1.0, 0.25, 0.6])
+        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.012, 0.7, 1.0, 0.005])
+        plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
         for peak in plot_means_left_peaks:
-            plt.plot(peak, plot_means_left[peak], 'x')
-            plt.text(peak-15, plot_means_left[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            if peak<1250:
+                plt.plot(peak, plot_means_left[peak], 'x')
+                plt.text(peak-15, plot_means_left[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         plt.xlim(-10,1250)
         plt.ylim(-1,1)
         # subplot: Average luminance of stimuli video
@@ -1172,10 +1174,10 @@ for stim_type in stim_vids:
         plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
         plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=10, color='grey', style='italic')
         plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_luminance, linewidth=1, color=[1.0, 0.13, 0.4, 1])
+        plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
         for peak in plot_luminance_peaks:
-                plt.plot(peak, plot_luminance[peak], 'x')
-                plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+            plt.plot(peak, plot_luminance[peak], 'x')
+            plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         plt.xlim(-10,1250)
         plt.ylim(-1,7)
         # save and display
@@ -1195,6 +1197,6 @@ for stim, octo_start_frame in octo_clip_start_frame.items():
     octo_clip_start_ms[stim] = (octo_start_frame/30)*1000
 octo_clip_start_tbucket = {}
 for stim, octo_start_ms in octo_clip_start_ms.items():
-    octo_clip_start_tbucket[stim] = octo_start_ms/new_time_bucket_sample_rate
+    octo_clip_start_tbucket[stim] = octo_start_ms/downsampled_bucket_size_ms
 
 #FIN
