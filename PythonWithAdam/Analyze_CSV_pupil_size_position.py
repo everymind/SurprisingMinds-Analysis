@@ -13,6 +13,7 @@ from scipy.signal import savgol_filter
 from itertools import groupby
 from operator import itemgetter
 from scipy.signal import find_peaks
+import csv
 
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -153,6 +154,7 @@ def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bu
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
+<<<<<<< HEAD
 def load_daily_world_vids(day_folder_path, vid_height, vid_width, max_no_of_buckets, original_bucket_size, new_bucket_size): 
     if (new_bucket_size % original_bucket_size == 0):
         new_sample_rate = int(new_bucket_size/original_bucket_size)
@@ -268,13 +270,43 @@ def load_daily_world_vids(day_folder_path, vid_height, vid_width, max_no_of_buck
                     data_circles[index][0:this_chunk_length] = this_trial_circles
                     data_circles[index][-1] = trial_stim_number
                 index = index + 1
+=======
+### for debugging 
+test_world_folder = r'C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\SurprisingMinds_2018-10-25\Analysis\world'
+
+###
+world_folder_path = test_world_folder
+
+def load_daily_avg_world(world_folder_path, max_no_of_buckets, bucket_size): 
+    # List all world camera csv files
+    stim_files = glob.glob(world_folder_path + os.sep + "*Avg-World-Vid-tbuckets.csv")
+    for stim_file in stim_files: 
+        stim_name = stim_file.split(os.sep)[-1]
+        stim_type = stim_name.split('_')[1]
+        stim_number = np.float(stim_type)
+        with open(stim_file) as f:
+            csvReader = csv.reader(f)
+            for row in csvReader:
+                print(row)
+        
+        for trial_file in trial_files:
+            trial_name = trial_file.split(os.sep)[-1]
+            trial_stimulus = trial_name.split("_")[1]
+            trial_stim_number = np.float(trial_stimulus[-2:])
+            trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
+            
+>>>>>>> 69a7282c4134c16343b112f36b30e21da6124401
             else:
                 #print("Discarding trial {name}".format(name=trial_name))
                 index = index + 1
                 good_trials = good_trials - 1
         return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
+<<<<<<< HEAD
         print("New bucket size must be a multiple of {bucket}".format(bucket=original_bucket_size))
+=======
+        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
+>>>>>>> 69a7282c4134c16343b112f36b30e21da6124401
 
 def list_sub_folders(path_to_root_folder):
     # List all sub folders
@@ -600,7 +632,11 @@ for day_folder in day_folders:
     day_folder_path = os.path.join(root_folder, day_folder)
     analysis_folder = os.path.join(day_folder_path, "Analysis")
     csv_folder = os.path.join(analysis_folder, "csv")
+<<<<<<< HEAD
     npy_folder = os.path.join(analysis_folder, "npy")
+=======
+    world_folder = os.path.join(analysis_folder, "world")
+>>>>>>> 69a7282c4134c16343b112f36b30e21da6124401
 
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
@@ -613,6 +649,11 @@ for day_folder in day_folders:
         activation_count.append((num_right_activations, num_left_activations))
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
         ### EXTRACT TIME BINNED STIM VIDEOS ###
+        # unravel and display average frame
+        for stim in avg_world_vids.keys():
+
+        unraveled_frame = np.reshape(foo,(unravel_height,unravel_width))
+        imgplot = plt.imshow(unraveled_frame, cmap='gray')
         # separate by stimulus number
         R_contours_X = {key:[] for key in stim_vids}
         R_contours_Y = {key:[] for key in stim_vids}

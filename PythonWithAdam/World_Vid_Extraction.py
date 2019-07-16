@@ -283,7 +283,6 @@ for item in zipped_data:
                 current_trial = current_trial + 1
 
         # report progress
-        world_video.release()
         cv2.destroyAllWindows()
         print("Finished {day}".format(day=day_zipped[:-4]))
 
