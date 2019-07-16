@@ -9,6 +9,7 @@ import shutil
 import fnmatch
 import sys
 import math
+import csv
 
 ### FUNCTIONS ###
 def unpack_to_temp(path_to_zipped, path_to_temp):
@@ -328,6 +329,7 @@ def time_bucket_world_vid(video_path, video_timestamps, csv_path, bucket_size_ms
             gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
             # flatten the frame into a list
             flattened_gray = gray.ravel()
+            flattened_gray = flattened_gray.astype(None)
             # append to dictionary stim_buckets
             stim_buckets[current_key] = flattened_gray
     time_chunks = []
@@ -336,14 +338,17 @@ def time_bucket_world_vid(video_path, video_timestamps, csv_path, bucket_size_ms
     time_chunks = sorted(time_chunks)
     frames = []
     # append original video dimensions, for reshaping flattened frame arrays later
-    frames.append((vid_height, vid_width))
+    frames.append([vid_height, vid_width])
     for time in time_chunks:
         flattened_frame = stim_buckets[time]
-        frames.append(flattened_frame)
+        if not np.isnan(flattened_frame[0]):
+            frames.append([time_chunks.index(time), flattened_frame])
     # save world vid frame data to numpy binary file
     padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.csv"
     csv_file = os.path.join(csv_path, padded_filename)
-    np.savetxt(csv_file, frames, fmt='%.2f', delimiter=',')
+    with open(csv_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(frames)
     # release video capture
     world_vid.release()
 
