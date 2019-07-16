@@ -336,21 +336,45 @@ def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_s
     for key in stim_buckets.keys():
         time_chunks.append(key)
     time_chunks = sorted(time_chunks)
+    vid_length_tbuckets = len(time_chunks)
     frames = []
-    # append original video dimensions, for reshaping flattened frame arrays later
-    frames.append([vid_height, vid_width])
     for time in time_chunks:
         flattened_frame = stim_buckets[time]
         if not np.isnan(flattened_frame[0]):
             frames.append([time_chunks.index(time), flattened_frame])
-    # save world vid frame data to numpy binary file
-    padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.csv"
-    csv_file = os.path.join(world_csv_path, padded_filename)
-    with open(csv_file, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(frames)
     # release video capture
     world_vid.release()
+    return vid_height, vid_width, vid_length_tbuckets, frames
+
+def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_world_vid_dict):
+    this_trial_stim_vid = {}
+    for row in this_trial_world_vid_frames:
+        tbucket_num = row[0]
+        flattened_frame = row[1]
+        this_trial_stim_vid[tbucket_num] = flattened_frame
+    for tbucket in this_trial_stim_vid.keys():
+        if tbucket in day_world_vid_dict[this_trial_stim_num]:
+            day_world_vid_dict[this_trial_stim_num][tbucket][0] = day_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
+            day_world_vid_dict[this_trial_stim_num][tbucket][1] = day_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
+        else: 
+            day_world_vid_dict[this_trial_stim_num][tbucket] = [1, this_trial_stim_vid[tbucket]]
+
+def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_height, vid_width):
+    for stim in day_world_vid_dict.keys(): 
+        avg_vid = []
+        avg_vid.append([vid_height, vid_width])
+        for tbucket in day_world_vid_dict[stim].keys():
+            frame_count = day_world_vid_dict[stim][tbucket][0]
+            summed_frame = day_world_vid_dict[stim][tbucket][1]
+            avg_frame = summed_frame/frame_count
+            avg_frame_list = avg_frame.tolist()
+            avg_vid.append([tbucket, avg_frame_list])
+        # save average world vid for each stimulus to csv
+        avg_vid_csv_name = day_date + '_' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
+        csv_file = os.path.join(avg_world_vid_dir, avg_vid_csv_name)
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows(avg_vid)
 
 ### -------------------------------------------- ###
 ### LET THE ANALYSIS BEGIN!! ###
@@ -392,7 +416,7 @@ analysed_folders = sorted(os.listdir(analysed_drive))
 already_analysed = [item for item in zipped_names if item in analysed_folders]
 # unzip each folder, do the analysis
 for item in zipped_data:
-
+    
     # check to see if this folder has already been analyzed
     if item[:-4] in already_analysed:
         print("Folder {name} has already been analysed".format(name=item))
@@ -400,18 +424,12 @@ for item in zipped_data:
     
     # if this folder hasn't already been analysed, full speed ahead!
     print("Working on folder {name}".format(name=item))
-
+    this_day_date = item[:-4].split('_')[1]
     # grab a folder 
     day_zipped = os.path.join(data_drive, item)
 
     # Build relative analysis paths in a folder with same name as zip folder
-
-    # when keeping analysis csv files in data_drive folder
-    # analysis_folder = os.path.join(day_zipped[:-4], "Analysis")
-    # when immediately placing analysis csv files in analysed drive
     analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
-    # when debugging
-    #analysis_folder = os.path.join(current_working_directory, item[:-4], "Analysis")
 
     # Analysis subfolders
     csv_folder = os.path.join(analysis_folder, "csv")
@@ -446,16 +464,26 @@ for item in zipped_data:
         # Load all right eye movies and average
         current_trial = 0
 
+        # intialize time bucket dictionary for world vids
+        stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
+        stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+        stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
+        this_day_world_vids_tbucket = {key:{} for key in stim_vids}
+        this_day_world_vids_height = []
+        this_day_world_vids_width = []
+        # key for each stim type
+        # key for each time bucket with a frame
+
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
                 trial_name = trial_folder.split(os.sep)[-1]
                 # Load CSVs and create timestamps
                 # ------------------------------
-                #print("Loading csv files for {trial}...".format(trial=trial_name))
                 # Get world movie timestamp csv path
                 world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
-                stimuli_number = world_csv_path.split("_")[-2]
+                stimuli_name = world_csv_path.split("_")[-2]
+                stimuli_number = stim_name_to_float[stimuli_name]
                 # at what time resolution to build eye and world camera data?
                 bucket_size = 4 #milliseconds
 
@@ -487,7 +515,11 @@ for item in zipped_data:
                 world_video.release()
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                 print("Extracting world vid frames...")
-                time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
+                # save this to an array and accumulate over trials
+                world_vid_height, world_vid_width, world_vid_length_tbuckets, world_vid_frames = time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
+                this_day_world_vids_height.append(world_vid_height)
+                this_day_world_vids_width.append(world_vid_width)
+                add_to_day_world_dict(world_vid_frames, stimuli_number, this_day_world_vids_tbucket)
                 # ------------------------------
                 # ------------------------------
                 # Now start pupil detection                
@@ -497,17 +529,13 @@ for item in zipped_data:
                 # Get left eye video filepath
                 left_video_path = glob.glob(trial_folder + '/*lefteye.avi')[0]
                 
-                # Find right eye pupils and save pupil data
+                """ # Find right eye pupils and save pupil data
                 print("Finding right eye pupils...")
-                # find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timestamps, align_frame, csv_path)
-                #find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_timestamps, right_eye_octopus, csv_folder)
-                # NOW WE ARE FINDING PUPILS FOR THE WHOLE STIMULI SEQUENCE
-                find_pupil("right", stimuli_number, current_trial, right_video_path, right_eye_timestamps, 0, csv_folder, bucket_size)
+                find_pupil("right", stimuli_name, current_trial, right_video_path, right_eye_timestamps, 0, csv_folder, bucket_size)
                 # Find left eye pupils and save pupil data
                 print("Finding left eye pupils...")
-                #find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_timestamps, left_eye_octopus, csv_folder)
-                find_pupil("left", stimuli_number, current_trial, left_video_path, left_eye_timestamps, 0, csv_folder, bucket_size)
-                
+                find_pupil("left", stimuli_name, current_trial, left_video_path, left_eye_timestamps, 0, csv_folder, bucket_size)
+                    """
                 # Report progress
                 cv2.destroyAllWindows()
                 print("Finished Trial: {trial}".format(trial=current_trial))
@@ -516,7 +544,14 @@ for item in zipped_data:
                 cv2.destroyAllWindows()
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
-
+        
+        # check that all videos have same height and width
+        if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
+            if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
+                unravel_height = this_day_world_vids_height[0]
+                unravel_width = this_day_world_vids_width[0]
+        # average and save world videos for each stimulus type
+        average_day_world_vids(this_day_world_vids_tbucket, this_day_date, world_folder, unravel_height, unravel_width)
         # report progress
         world_video.release()
         cv2.destroyAllWindows()
