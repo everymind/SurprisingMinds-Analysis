@@ -169,7 +169,7 @@ class Logger(object):
         # grab today's date
         now = datetime.datetime.now()
         todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-        log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_filename = "world-frame-extraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
         log_file = os.path.join(current_working_directory, log_filename)
         self.terminal = sys.stdout
         self.log = open(log_file, "a")
