@@ -481,8 +481,8 @@ for item in zipped_data:
                 # ------------------------------
                 world_video.release()
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
-                #print("Extracting world vid frames...")
-                #time_bucket_world_vid(world_video_path, world_timestamps, npy_folder, bucket_size)
+                print("Extracting world vid frames...")
+                time_bucket_world_vid(world_video_path, world_timestamps, npy_folder, bucket_size)
                 # ------------------------------
                 # ------------------------------
                 # Now start pupil detection                
