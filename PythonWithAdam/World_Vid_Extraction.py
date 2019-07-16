@@ -105,6 +105,17 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
 
+### for debugging ###
+temp_video_path = r'C:\Users\taunsquared\Desktop\SM_temp\2018-06-19_10-21-25\2018-06-19_10-21-25_stimuli026_world.avi'
+temp_video_csv = r'C:\Users\taunsquared\Desktop\SM_temp\2018-06-19_10-21-25\2018-06-19_10-21-25_stimuli026_world.csv'
+temp_vid_timestamps = np.genfromtxt(temp_video_csv, dtype=np.str, delimiter=' ')
+temp_bucket_size = 4
+###
+video_path = temp_video_path
+video_timestamps = temp_vid_timestamps
+world_csv_path = r'C:\Users\taunsquared\Desktop\SM_temp\world'
+bucket_size_ms = temp_bucket_size
+
 def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_size_ms):
     ### row = timestamp, not frame #
     # Open world video
