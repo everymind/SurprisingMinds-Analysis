@@ -104,7 +104,7 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
 
-def time_bucket_world_vid(video_path, video_timestamps, npy_path, bucket_size_ms):
+def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_size_ms):
     ### row = timestamp, not frame #
     # Open world video
     world_vid = cv2.VideoCapture(video_path)
@@ -118,7 +118,7 @@ def time_bucket_world_vid(video_path, video_timestamps, npy_path, bucket_size_ms
     # each time bucket = 4ms (world cameras ran at approx 30fps, aka 33.333 ms per frame)
     first_timestamp = video_timestamps[0]
     last_timestamp = video_timestamps[-1]
-    initialize_pattern = np.empty((vid_height,vid_width))
+    initialize_pattern = np.empty((vid_height*vid_width,))
     initialize_pattern[:] = np.nan
     stim_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, initialize_pattern)
     # Loop through 4ms time buckets of world video to find nearest frame and save 2-d matrix of pixel values in that frame
@@ -135,20 +135,28 @@ def time_bucket_world_vid(video_path, video_timestamps, npy_path, bucket_size_ms
         if frame is not None:
             # Convert to grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            # flatten the frame into a list
+            flattened_gray = gray.ravel()
+            flattened_gray = flattened_gray.astype(None)
             # append to dictionary stim_buckets
-            stim_buckets[current_key] = gray
+            stim_buckets[current_key] = flattened_gray
     time_chunks = []
     for key in stim_buckets.keys():
         time_chunks.append(key)
     time_chunks = sorted(time_chunks)
     frames = []
+    # append original video dimensions, for reshaping flattened frame arrays later
+    frames.append([vid_height, vid_width])
     for time in time_chunks:
-        frame_array = stim_buckets[time]
-        frames.append(frame_array)
+        flattened_frame = stim_buckets[time]
+        if not np.isnan(flattened_frame[0]):
+            frames.append([time_chunks.index(time), flattened_frame])
     # save world vid frame data to numpy binary file
-    padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.npy"
-    npy_file = os.path.join(npy_path, padded_filename)
-    np.save(npy_file, frames, allow_pickle=False, fix_imports=False)
+    padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.csv"
+    csv_file = os.path.join(world_csv_path, padded_filename)
+    with open(csv_file, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(frames)
     # release video capture
     world_vid.release()
 
@@ -192,7 +200,7 @@ analysed_folders = sorted(os.listdir(analysed_drive))
 already_extracted = []
 for folder in analysed_folders:
     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-    if 'npy' in subdirs:
+    if 'world' in subdirs:
         already_extracted.append(folder)
 # unzip each folder, do the extraction
 for item in zipped_data:
@@ -210,16 +218,15 @@ for item in zipped_data:
 
     # Build relative world vid frames extraction path in a folder with same name as zip folder
     analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
-    # extraction subfolder
-    npy_folder = os.path.join(analysis_folder, "npy")
+    world_folder = os.path.join(analysis_folder, "world")
 
     # Create analysis and extraction folders if they do not exist
     if not os.path.exists(analysis_folder):
         #print("Creating analysis folder.")
         os.makedirs(analysis_folder)
-    if not os.path.exists(npy_folder):
+    if not os.path.exists(world_folder):
         #print("Creating csv folder.")
-        os.makedirs(npy_folder)
+        os.makedirs(world_folder)
 
     # create a temp folder in current working directory to store data (contents of unzipped folder)
     day_folder = os.path.join(current_working_directory, "temp")
@@ -255,7 +262,7 @@ for item in zipped_data:
                 world_video = cv2.VideoCapture(world_video_path)
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                 print("Extracting world vid frames...")
-                time_bucket_world_vid(world_video_path, world_timestamps, npy_folder, bucket_size)
+                time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
                 
                 # Report progress
                 cv2.destroyAllWindows()
