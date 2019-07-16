@@ -229,7 +229,7 @@ for item in zipped_data:
         os.makedirs(world_folder)
 
     # create a temp folder in current working directory to store data (contents of unzipped folder)
-    day_folder = os.path.join(current_working_directory, "temp")
+    day_folder = os.path.join(current_working_directory, "world_temp")
 
     # unzip current zipped folder into temp folder, this function checks whether the folder is unzippable
     # if it unzips, the function returns True; if it doesn't unzip, the function returns False
