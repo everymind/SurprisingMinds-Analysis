@@ -153,50 +153,36 @@ def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bu
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
-
-""" 
-def load_daily_stims(day_folder_path, max_no_of_buckets, bucket_size): 
-    # List all world camera csv files
-    stim_files = glob.glob(day_folder_path + os.sep + "*world.csv")
-    num_trials = len(stim_files)
-    
-
-        # contours
-        data_contours_X = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_contours_X[:] = -6
-        data_contours_Y = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_contours_Y[:] = -6
-        data_contours = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_contours[:] = -6
-        # circles
-        data_circles_X = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_circles_X[:] = -6
-        data_circles_Y = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_circles_Y[:] = -6
-        data_circles = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_circles[:] = -6
-
+def load_daily_world_vids(day_folder_path, vid_height, vid_width, max_no_of_buckets, original_bucket_size, new_bucket_size): 
+    if (new_bucket_size % original_bucket_size == 0):
+        new_sample_rate = int(new_bucket_size/original_bucket_size)
+        max_no_of_buckets = int(max_no_of_buckets)
+        # List all world camera npy files
+        world_files = glob.glob(day_folder_path + os.sep + "*_world-tbuckets.npy")
+        num_trials = len(world_files)
+        # need to create data structure for saving average of all world vids of same stim number from this day
+        this_day_24 = np.empty((max_no_of_buckets, vid_height*vid_width))
+        this_day_24[:] = np.nan
+        this_day_25 = np.empty((max_no_of_buckets, vid_height*vid_width))
+        this_day_25[:] = np.nan
+        this_day_26 = np.empty((max_no_of_buckets, vid_height*vid_width))
+        this_day_26[:] = np.nan
+        this_day_27 = np.empty((max_no_of_buckets, vid_height*vid_width))
+        this_day_27[:] = np.nan
+        this_day_28 = np.empty((max_no_of_buckets, vid_height*vid_width))
+        this_day_28[:] = np.nan
+        this_day_29 = np.empty((max_no_of_buckets, vid_height*vid_width))
+        this_day_29[:] = np.nan
+        #
         index = 0
-        for trial_file in trial_files:
-            trial_name = trial_file.split(os.sep)[-1]
-            trial_stimulus = trial_name.split("_")[1]
-            trial_stim_number = np.float(trial_stimulus[-2:])
-            trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
-            # if there are too many -5 rows (frames) in a row, don't analyse this trial
-            bad_frame_count = []
-            for frame in trial:
-                if frame[0]==-5:
-                    bad_frame_count.append(1)
-                else:
-                    bad_frame_count.append(0)
-            clusters =  [(x[0], len(list(x[1]))) for x in itertools.groupby(bad_frame_count)]
-            longest_cluster = 0
-            for cluster in clusters:
-                if cluster[0] == 1 and cluster[1]>longest_cluster:
-                    longest_cluster = cluster[1]
-            #print("For trial {name}, the longest cluster is {length}".format(name=trial_name, length=longest_cluster))
-            if longest_cluster<100:
-                no_of_samples = math.ceil(len(trial)/new_sample_rate)
+        for world_file in world_files:
+            world_name = world_file.split(os.sep)[-1]
+            world_stimulus = world_name.split("_")[2]
+            world_stim_number = np.float(world_stimulus[-2:])
+            world = np.load(world_file)
+            no_of_samples = math.ceil(len(world)/new_sample_rate)
+            this_world_frames = 
+
                 this_trial_contours_X = []
                 this_trial_contours_Y = []
                 this_trial_contours = []
@@ -288,8 +274,7 @@ def load_daily_stims(day_folder_path, max_no_of_buckets, bucket_size):
                 good_trials = good_trials - 1
         return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
-        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
- """
+        print("New bucket size must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
 def list_sub_folders(path_to_root_folder):
     # List all sub folders
@@ -598,7 +583,7 @@ all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circ
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
 activation_count = []
 analysed_count = []
-stimuli_timebuckets = {key:[] for key in stim_vids}
+stimuli_tbucketed = {key:[] for key in stim_vids}
 # downsample = collect data from every 40ms or other multiples of 20
 downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
@@ -615,6 +600,7 @@ for day_folder in day_folders:
     day_folder_path = os.path.join(root_folder, day_folder)
     analysis_folder = os.path.join(day_folder_path, "Analysis")
     csv_folder = os.path.join(analysis_folder, "csv")
+    npy_folder = os.path.join(analysis_folder, "npy")
 
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
@@ -1188,15 +1174,6 @@ for stim_type in stim_vids:
         plt.close()
 
 ### POOL ACROSS STIMULI FOR OCTOPUS CLIP ###
-# create dictionary of octopus clip start frames
-octo_clip_start_frame = {24.0: 438, 25.0: 442, 26.0: 517, 27.0: 449, 28.0: 516, 29.0: 583}
-seconds_until_octo_appears = 6.5
-# world camera ran at 30fps, we know there was some dropped frames but let's assume for now
-octo_clip_start_ms = {}
-for stim, octo_start_frame in octo_clip_start_frame.items():
-    octo_clip_start_ms[stim] = (octo_start_frame/30)*1000
-octo_clip_start_tbucket = {}
-for stim, octo_start_ms in octo_clip_start_ms.items():
-    octo_clip_start_tbucket[stim] = octo_start_ms/downsampled_bucket_size_ms
+
 
 #FIN
