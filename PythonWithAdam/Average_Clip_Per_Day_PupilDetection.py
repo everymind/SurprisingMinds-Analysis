@@ -410,7 +410,6 @@ for item in zipped_data:
 
     # Analysis subfolders
     csv_folder = os.path.join(analysis_folder, "csv")
-    npy_folder = os.path.join(analysis_folder, "npy")
     alignment_folder = os.path.join(analysis_folder, "alignment")
 
     # Create analysis folder (and sub-folders) if it (they) does (do) not exist
@@ -420,9 +419,6 @@ for item in zipped_data:
     if not os.path.exists(csv_folder):
         #print("Creating csv folder.")
         os.makedirs(csv_folder)
-    if not os.path.exists(npy_folder):
-        #print("Creating csv folder.")
-        os.makedirs(npy_folder)
     if not os.path.exists(alignment_folder):
         #print("Creating alignment folder.")
         os.makedirs(alignment_folder)
@@ -482,7 +478,7 @@ for item in zipped_data:
                 world_video.release()
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                 print("Extracting world vid frames...")
-                time_bucket_world_vid(world_video_path, world_timestamps, npy_folder, bucket_size)
+                time_bucket_world_vid(world_video_path, world_timestamps, csv_folder, bucket_size)
                 # ------------------------------
                 # ------------------------------
                 # Now start pupil detection                
