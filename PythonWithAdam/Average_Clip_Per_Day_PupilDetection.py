@@ -295,7 +295,7 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
 
-def time_bucket_world_vid(video_path, video_timestamps, npy_path, bucket_size_ms):
+def time_bucket_world_vid(video_path, video_timestamps, csv_path, bucket_size_ms):
     ### row = timestamp, not frame #
     # Open world video
     world_vid = cv2.VideoCapture(video_path)
@@ -309,7 +309,7 @@ def time_bucket_world_vid(video_path, video_timestamps, npy_path, bucket_size_ms
     # each time bucket = 4ms (world cameras ran at approx 30fps, aka 33.333 ms per frame)
     first_timestamp = video_timestamps[0]
     last_timestamp = video_timestamps[-1]
-    initialize_pattern = np.empty((vid_height,vid_width))
+    initialize_pattern = np.empty((vid_height*vid_width,))
     initialize_pattern[:] = np.nan
     stim_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, initialize_pattern)
     # Loop through 4ms time buckets of world video to find nearest frame and save 2-d matrix of pixel values in that frame
@@ -326,20 +326,24 @@ def time_bucket_world_vid(video_path, video_timestamps, npy_path, bucket_size_ms
         if frame is not None:
             # Convert to grayscale
             gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            # flatten the frame into a list
+            flattened_gray = gray.ravel()
             # append to dictionary stim_buckets
-            stim_buckets[current_key] = gray
+            stim_buckets[current_key] = flattened_gray
     time_chunks = []
     for key in stim_buckets.keys():
         time_chunks.append(key)
     time_chunks = sorted(time_chunks)
     frames = []
+    # append original video dimensions, for reshaping flattened frame arrays later
+    frames.append((vid_height, vid_width))
     for time in time_chunks:
-        frame_array = stim_buckets[time]
-        frames.append(frame_array)
+        flattened_frame = stim_buckets[time]
+        frames.append(flattened_frame)
     # save world vid frame data to numpy binary file
-    padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.npy"
-    npy_file = os.path.join(npy_path, padded_filename)
-    np.save(npy_file, frames, allow_pickle=False, fix_imports=False)
+    padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.csv"
+    csv_file = os.path.join(csv_path, padded_filename)
+    np.savetxt(csv_file, frames, fmt='%.2f', delimiter=',')
     # release video capture
     world_vid.release()
 
