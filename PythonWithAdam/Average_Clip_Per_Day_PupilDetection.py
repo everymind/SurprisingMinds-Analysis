@@ -296,7 +296,7 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
 
-def time_bucket_world_vid(video_path, video_timestamps, csv_path, bucket_size_ms):
+def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_size_ms):
     ### row = timestamp, not frame #
     # Open world video
     world_vid = cv2.VideoCapture(video_path)
@@ -345,7 +345,7 @@ def time_bucket_world_vid(video_path, video_timestamps, csv_path, bucket_size_ms
             frames.append([time_chunks.index(time), flattened_frame])
     # save world vid frame data to numpy binary file
     padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.csv"
-    csv_file = os.path.join(csv_path, padded_filename)
+    csv_file = os.path.join(world_csv_path, padded_filename)
     with open(csv_file, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(frames)
@@ -416,6 +416,7 @@ for item in zipped_data:
     # Analysis subfolders
     csv_folder = os.path.join(analysis_folder, "csv")
     alignment_folder = os.path.join(analysis_folder, "alignment")
+    world_folder = os.path.join(analysis_folder, "world")
 
     # Create analysis folder (and sub-folders) if it (they) does (do) not exist
     if not os.path.exists(analysis_folder):
@@ -424,6 +425,9 @@ for item in zipped_data:
     if not os.path.exists(csv_folder):
         #print("Creating csv folder.")
         os.makedirs(csv_folder)
+    if not os.path.exists(world_folder):
+        #print("Creating csv folder.")
+        os.makedirs(world_folder)
     if not os.path.exists(alignment_folder):
         #print("Creating alignment folder.")
         os.makedirs(alignment_folder)
@@ -483,7 +487,7 @@ for item in zipped_data:
                 world_video.release()
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                 print("Extracting world vid frames...")
-                time_bucket_world_vid(world_video_path, world_timestamps, csv_folder, bucket_size)
+                time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
                 # ------------------------------
                 # ------------------------------
                 # Now start pupil detection                
