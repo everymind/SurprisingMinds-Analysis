@@ -9,6 +9,7 @@ import shutil
 import fnmatch
 import sys
 import math
+import csv
 
 ### FUNCTIONS ###
 def unpack_to_temp(path_to_zipped, path_to_temp):
@@ -129,7 +130,6 @@ def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_s
         bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
         current_key = find_nearest_timestamp_key(timestamp_dt, stim_buckets, bucket_window)
         # Read frame at current position
-        # should this be at current key??
         ret, frame = world_vid.read()
         # Make sure the frame exists!
         if frame is not None:
@@ -258,8 +258,6 @@ for item in zipped_data:
                 world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
                 # Get world video filepath
                 world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
-                # Open world video
-                world_video = cv2.VideoCapture(world_video_path)
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                 print("Extracting world vid frames...")
                 time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
