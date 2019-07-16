@@ -13,6 +13,7 @@ from scipy.signal import savgol_filter
 from itertools import groupby
 from operator import itemgetter
 from scipy.signal import find_peaks
+import csv
 
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -153,135 +154,30 @@ def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bu
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
+### for debugging 
+test_world_folder = r'C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\SurprisingMinds_2018-10-25\Analysis\world'
 
-""" 
-def load_daily_stims(day_folder_path, max_no_of_buckets, bucket_size): 
+###
+world_folder_path = test_world_folder
+
+def load_daily_avg_world(world_folder_path, max_no_of_buckets, bucket_size): 
     # List all world camera csv files
-    stim_files = glob.glob(day_folder_path + os.sep + "*world.csv")
-    num_trials = len(stim_files)
-    
-
-        # contours
-        data_contours_X = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_contours_X[:] = -6
-        data_contours_Y = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_contours_Y[:] = -6
-        data_contours = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_contours[:] = -6
-        # circles
-        data_circles_X = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_circles_X[:] = -6
-        data_circles_Y = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_circles_Y[:] = -6
-        data_circles = np.empty((num_trials, downsampled_no_of_buckets+1))
-        data_circles[:] = -6
-
-        index = 0
+    stim_files = glob.glob(world_folder_path + os.sep + "*Avg-World-Vid-tbuckets.csv")
+    for stim_file in stim_files: 
+        stim_name = stim_file.split(os.sep)[-1]
+        stim_type = stim_name.split('_')[1]
+        stim_number = np.float(stim_type)
+        with open(stim_file) as f:
+            csvReader = csv.reader(f)
+            for row in csvReader:
+                print(row)
+        
         for trial_file in trial_files:
             trial_name = trial_file.split(os.sep)[-1]
             trial_stimulus = trial_name.split("_")[1]
             trial_stim_number = np.float(trial_stimulus[-2:])
             trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
-            # if there are too many -5 rows (frames) in a row, don't analyse this trial
-            bad_frame_count = []
-            for frame in trial:
-                if frame[0]==-5:
-                    bad_frame_count.append(1)
-                else:
-                    bad_frame_count.append(0)
-            clusters =  [(x[0], len(list(x[1]))) for x in itertools.groupby(bad_frame_count)]
-            longest_cluster = 0
-            for cluster in clusters:
-                if cluster[0] == 1 and cluster[1]>longest_cluster:
-                    longest_cluster = cluster[1]
-            #print("For trial {name}, the longest cluster is {length}".format(name=trial_name, length=longest_cluster))
-            if longest_cluster<100:
-                no_of_samples = math.ceil(len(trial)/new_sample_rate)
-                this_trial_contours_X = []
-                this_trial_contours_Y = []
-                this_trial_contours = []
-                this_trial_circles_X = []
-                this_trial_circles_Y = []
-                this_trial_circles = []
-                # loop through the trial at given sample rate
-                for sample in range(no_of_samples):
-                    start = sample * new_sample_rate
-                    end = (sample * new_sample_rate) + (new_sample_rate - 1)
-                    this_slice = trial[start:end]
-                    for line in this_slice:
-                        if (line<0).any():
-                            line[:] = np.nan
-                        if (line>15000).any():
-                            line[:] = np.nan
-                    # extract pupil sizes and locations from valid time buckets
-                    this_slice_contours_X = []
-                    this_slice_contours_Y = []
-                    this_slice_contours = []
-                    this_slice_circles_X = []
-                    this_slice_circles_Y = []
-                    this_slice_circles = []
-                    for frame in this_slice:
-                        # contour x,y
-                        ## DON'T PAIR X-Y YET
-                        this_slice_contours_X.append(frame[0])
-                        this_slice_contours_Y.append(frame[1])
-                        # contour area
-                        this_slice_contours.append(frame[2])
-                        # circles x,y
-                        ## DON'T PAIR X-Y YET
-                        this_slice_circles_X.append(frame[3])
-                        this_slice_circles_Y.append(frame[4])
-                        # circles area
-                        this_slice_circles.append(frame[5])
-                    # average the pupil size and movement in this sample slice
-                    this_slice_avg_contour_X = np.nanmean(this_slice_contours_X)
-                    this_slice_avg_contour_Y = np.nanmean(this_slice_contours_Y)
-                    this_slice_avg_contour = np.nanmean(this_slice_contours) 
-                    this_slice_avg_circle_X = np.nanmean(this_slice_circles_X)
-                    this_slice_avg_circle_Y = np.nanmean(this_slice_circles_Y)       
-                    this_slice_avg_circle = np.nanmean(this_slice_circles)
-                    # append to list of downsampled pupil sizes and movements
-                    this_trial_contours_X.append(this_slice_avg_contour_X)
-                    this_trial_contours_Y.append(this_slice_avg_contour_Y)
-                    this_trial_contours.append(this_slice_avg_contour)
-                    this_trial_circles_X.append(this_slice_avg_circle_X)
-                    this_trial_circles_Y.append(this_slice_avg_circle_Y)
-                    this_trial_circles.append(this_slice_avg_circle)
-                # Find count of bad measurements
-                bad_count_contours_X = sum(np.isnan(this_trial_contours_X))
-                bad_count_contours_Y = sum(np.isnan(this_trial_contours_Y))
-                bad_count_contours = sum(np.isnan(this_trial_contours))
-                bad_count_circles_X = sum(np.isnan(this_trial_circles_X))
-                bad_count_circles_Y = sum(np.isnan(this_trial_circles_Y))
-                bad_count_circles = sum(np.isnan(this_trial_circles))
-                # if more than half of the trial is NaN, then throw away this trial
-                # otherwise, if it's a good enough trial...
-                bad_threshold = no_of_samples/2
-                if (bad_count_contours_X<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours_X)
-                    data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
-                    data_contours_X[index][-1] = trial_stim_number
-                if (bad_count_contours_Y<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours_Y)
-                    data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
-                    data_contours_Y[index][-1] = trial_stim_number
-                if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours)
-                    data_contours[index][0:this_chunk_length] = this_trial_contours
-                    data_contours[index][-1] = trial_stim_number
-                if (bad_count_circles_X<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles_X)
-                    data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
-                    data_circles_X[index][-1] = trial_stim_number
-                if (bad_count_circles_Y<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles_Y)
-                    data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
-                    data_circles_Y[index][-1] = trial_stim_number
-                if (bad_count_circles<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles)
-                    data_circles[index][0:this_chunk_length] = this_trial_circles
-                    data_circles[index][-1] = trial_stim_number
-                index = index + 1
+            
             else:
                 #print("Discarding trial {name}".format(name=trial_name))
                 index = index + 1
@@ -289,7 +185,6 @@ def load_daily_stims(day_folder_path, max_no_of_buckets, bucket_size):
         return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
- """
 
 def list_sub_folders(path_to_root_folder):
     # List all sub folders
@@ -615,6 +510,7 @@ for day_folder in day_folders:
     day_folder_path = os.path.join(root_folder, day_folder)
     analysis_folder = os.path.join(day_folder_path, "Analysis")
     csv_folder = os.path.join(analysis_folder, "csv")
+    world_folder = os.path.join(analysis_folder, "world")
 
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
@@ -627,6 +523,11 @@ for day_folder in day_folders:
         activation_count.append((num_right_activations, num_left_activations))
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
         ### EXTRACT TIME BINNED STIM VIDEOS ###
+        # unravel and display average frame
+        for stim in avg_world_vids.keys():
+
+        unraveled_frame = np.reshape(foo,(unravel_height,unravel_width))
+        imgplot = plt.imshow(unraveled_frame, cmap='gray')
         # separate by stimulus number
         R_contours_X = {key:[] for key in stim_vids}
         R_contours_Y = {key:[] for key in stim_vids}
