@@ -438,9 +438,8 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
             this_bucket = [tbucket]
             frame_count = summed_monthly_world_vids_dict[stim][tbucket][0]
             summed_frame = summed_monthly_world_vids_dict[stim][tbucket][1]
-            avg_frame = summed_frame/frame_count
-            avg_frame_list = avg_frame.tolist()
-            for pixel in avg_frame_list:
+            avg_frame = [i/frame_count for i in summed_frame]
+            for pixel in avg_frame:
                 this_bucket.append(pixel)
             avg_vid.append(this_bucket)
         # save average world vid for each stimulus to csv
