@@ -4,6 +4,7 @@ import cv2
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 import zipfile
 import shutil
 import fnmatch
@@ -388,7 +389,7 @@ class Logger(object):
         # grab today's date
         now = datetime.datetime.now()
         todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-        log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_filename = "WorldVidExtraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
         log_file = os.path.join(current_working_directory, log_filename)
         self.terminal = sys.stdout
         self.log = open(log_file, "a")
@@ -406,66 +407,86 @@ sys.stdout = Logger()
 ### ------------------------------------------- ###
 # list all folders in Synology drive
 # on lab computer
-data_drive = r"\\Diskstation\SurprisingMinds"
+#data_drive = r"\\Diskstation\SurprisingMinds"
 ### FOR DEBUGGING ON LAPTOP ###
-#data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
+data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
+# first day was debugging
+zipped_data = zipped_data[1:]
 zipped_names = [item[:-4] for item in zipped_data]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
-analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+#analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 # when working from laptop
-#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 analysed_folders = sorted(os.listdir(analysed_drive))
-already_extracted = []
-for folder in analysed_folders:
+daily_csv_files = fnmatch.filter(analysed_folders, 'SurprisingMinds_*')
+monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
+extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
+already_extracted_daily = []
+for folder in daily_csv_files:
     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
     if 'world' in subdirs:
-        already_extracted.append(folder)
+        already_extracted_daily.append(folder)
 # unzip each folder, do the analysis
 for item in zipped_data:
     
-    # check to see if this folder has already been analyzed
-    if item[:-4] in already_extracted:
+    # check to see if this folder has already had world vid frames extracted
+    if item[:-4] in already_extracted_daily:
         print("World vid frames from {name} has already been extracted".format(name=item))
-        continue
+        # check to see if this folder has already been averaged into a monthly stim vid average
+        item_date = item[:-4].split('_')[1]
+        item_year_month = item_date[:7]
+        if item_year_month in extracted_months:
+            print("World vid frames from {name} have already been consolidated into a monthly average".format(name=item_year_month))
+            continue
+        # if no monthly stim vid average made yet for this month
+        # check that the full month has been extracted
+        item_just_year = int(item_year_month.split('-')[0])
+        item_just_month = int(item_year_month.split('-')[1])
+        if item_just_month<=12:
+            next_month = item_just_month + 1
+            date_to_check = str(item_just_year) + '-' + str(next_month)
+        else:
+            next_year = item_just_year + 1
+            next_month = '01'
+            date_to_check = str(next_year) + '-' + str(next_month)
+        next_month_extracted = fnmatch.filter(analysed_folders, 'SurprisingMinds_' + date_to_check + '*')
+        if not next_month_extracted:
+            print("World vid frames for {month} not yet completed".format(month=item_year_month))
+            continue
+        # full month extracted?
+        # take avg stim vids for each day,
+        # build a monthly average vid for each stim
     
     # if world vid frames this folder haven't already been extracted, full speed ahead!
     print("Working on folder {name}".format(name=item))
     this_day_date = item[:-4].split('_')[1]
     # grab a folder 
     day_zipped = os.path.join(data_drive, item)
-
-    # Build relative analysis paths in a folder with same name as zip folder
+    # Build relative analysis paths, these folders should already exist
     analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
-
+    alignment_folder = os.path.join(analysis_folder, "alignment")
+    if not os.path.exists(analysis_folder):
+        print("No Analysis folder exists for folder {name}!".format(name=item))
+        continue
     # Analysis subfolders
     world_folder = os.path.join(analysis_folder, "world")
-
-    # Create analysis folder (and sub-folders) if it (they) does (do) not exist
-    if not os.path.exists(analysis_folder):
-        #print("Creating analysis folder.")
-        os.makedirs(analysis_folder)
+    # Create world_folder if it doesn't exist
     if not os.path.exists(world_folder):
         #print("Creating csv folder.")
         os.makedirs(world_folder)
-
     # create a temp folder in current working directory to store data (contents of unzipped folder)
     day_folder = os.path.join(current_working_directory, "temp")
-
     # unzip current zipped folder into temp folder, this function checks whether the folder is unzippable
     # if it unzips, the function returns True; if it doesn't unzip, the function returns False
     if unpack_to_temp(day_zipped, day_folder):
-
         # List all trial folders
         trial_folders = list_sub_folders(day_folder)
         num_trials = len(trial_folders)
-
-        # Load all right eye movies and average
         current_trial = 0
-
         # intialize time bucket dictionary for world vids
         stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
         stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
@@ -473,40 +494,53 @@ for item in zipped_data:
         this_day_world_vids_tbucket = {key:{} for key in stim_vids}
         this_day_world_vids_height = []
         this_day_world_vids_width = []
-        # key for each stim type
-        # key for each time bucket with a frame
 
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
                 trial_name = trial_folder.split(os.sep)[-1]
-                # Load CSVs and create timestamps
-                # ------------------------------
-                # Get world movie timestamp csv path
-                world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
-                stimuli_name = world_csv_path.split("_")[-2]
-                stimuli_number = stim_name_to_float[stimuli_name]
-                # at what time resolution to build eye and world camera data?
-                bucket_size = 4 #milliseconds
+                # check that the alignment frame for the day shows the correct start to the exhibit
+                png_filename = trial_name + '.png'
+                alignment_png_path = os.path.join(alignment_folder, png_filename)
+                if os.path.exists(alignment_png_path):
+                    alignment_img = mpimg.imread(alignment_png_path)
+                    alignment_gray = cv2.cvtColor(alignment_img, cv2.COLOR_RGB2GRAY)
+                    monitor_zoom = alignment_gray[60:-200, 110:-110]
+                    # pick a pixel where it should be bright because people are centering their eyes in the cameras
+                    if monitor_zoom[115,200]>=0.7:
+                        # Load CSVs and create timestamps
+                        # ------------------------------
+                        # Get world movie timestamp csv path
+                        world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
+                        stimuli_name = world_csv_path.split("_")[-2]
+                        stimuli_number = stim_name_to_float[stimuli_name]
+                        # at what time resolution to build eye and world camera data?
+                        bucket_size = 4 #milliseconds
 
-                # Load world CSV
-                world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
-                # Get world video filepath
-                world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
-                ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
-                print("Extracting world vid frames...")
-                # save this to an array and accumulate over trials
-                world_vid_height, world_vid_width, world_vid_length_tbuckets, world_vid_frames = time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
-                this_day_world_vids_height.append(world_vid_height)
-                this_day_world_vids_width.append(world_vid_width)
-                add_to_day_world_dict(world_vid_frames, stimuli_number, this_day_world_vids_tbucket)
-                # ------------------------------
-                # ------------------------------
-                
-                # Report progress
-                cv2.destroyAllWindows()
-                print("Finished Trial: {trial}".format(trial=current_trial))
-                current_trial = current_trial + 1
+                        # Load world CSV
+                        world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
+                        # Get world video filepath
+                        world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
+                        ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
+                        print("Extracting world vid frames...")
+                        # save this to an array and accumulate over trials
+                        world_vid_height, world_vid_width, world_vid_length_tbuckets, world_vid_frames = time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
+                        this_day_world_vids_height.append(world_vid_height)
+                        this_day_world_vids_width.append(world_vid_width)
+                        add_to_day_world_dict(world_vid_frames, stimuli_number, this_day_world_vids_tbucket)
+                        # ------------------------------
+                        # ------------------------------
+                        
+                        # Report progress
+                        cv2.destroyAllWindows()
+                        print("Finished Trial: {trial}".format(trial=current_trial))
+                        current_trial = current_trial + 1
+                    else:
+                        print("Bad trial! Stimulus did not display properly for trial {trial}".format(trial=current_trial))
+                        current_trial = current_trial + 1
+                else:
+                    print("No alignment picture exists for trial {trial}".format(trial=current_trial))
+                    current_trial = current_trial + 1
             except Exception: 
                 cv2.destroyAllWindows()
                 print("Trial {trial} failed!".format(trial=current_trial))
