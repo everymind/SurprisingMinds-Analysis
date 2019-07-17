@@ -498,9 +498,9 @@ sys.stdout = Logger()
 ### ------------------------------------------- ###
 # list all folders in Synology drive
 # on lab computer
-#data_drive = r"\\Diskstation\SurprisingMinds"
+data_drive = r"\\Diskstation\SurprisingMinds"
 ### FOR DEBUGGING ON LAPTOP ###
-data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
+#data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
@@ -509,9 +509,9 @@ zipped_data = fnmatch.filter(data_folders, '*.zip')
 zipped_names = [item[:-4] for item in zipped_data]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
-#analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 # when working from laptop
-analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 analysed_folders = sorted(os.listdir(analysed_drive))
 daily_csv_files = fnmatch.filter(analysed_folders, 'SurprisingMinds_*')
 monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
@@ -576,6 +576,10 @@ for item in zipped_data:
     alignment_folder = os.path.join(analysis_folder, "alignment")
     if not os.path.exists(analysis_folder):
         print("No Analysis folder exists for folder {name}!".format(name=item))
+        # delete temporary file with unzipped data contents
+        print("Deleting temp folder of unzipped data...")
+        shutil.rmtree(day_folder)
+        print("Delete successful!")
         continue
     # grab a folder 
     day_zipped = os.path.join(data_drive, item)
