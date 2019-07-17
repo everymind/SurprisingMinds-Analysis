@@ -459,7 +459,7 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
                 this_bucket.append(pixel)
             avg_vid.append(this_bucket)
         # save average world vid for each stimulus to csv
-        monthly_avg_vid_csv_name = 'Stimuli' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
+        monthly_avg_vid_csv_name = month_name + '_Stimuli' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
         world_folder_name = 'WorldVidAverage_' + month_name
         world_folder_path = os.path.join(analysed_data_drive, world_folder_name)
         if not os.path.exists(world_folder_path):
