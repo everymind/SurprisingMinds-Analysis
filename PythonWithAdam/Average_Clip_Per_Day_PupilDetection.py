@@ -380,6 +380,9 @@ for item in zipped_data:
         trial_folders = list_sub_folders(day_folder)
         num_trials = len(trial_folders)
         current_trial = 0
+        stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
+        stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+        stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
