@@ -354,7 +354,7 @@ def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_
         flattened_frame = row[1]
         this_trial_stim_vid[tbucket_num] = flattened_frame
     for tbucket in this_trial_stim_vid.keys():
-        if tbucket in day_world_vid_dict[this_trial_stim_num]:
+        if tbucket in day_world_vid_dict[this_trial_stim_num].keys():
             day_world_vid_dict[this_trial_stim_num][tbucket][0] = day_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
             day_world_vid_dict[this_trial_stim_num][tbucket][1] = day_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
             # keep track of how many videos are going into the average for this stim
