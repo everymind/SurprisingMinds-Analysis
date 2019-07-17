@@ -7,4 +7,5 @@ Bonsai.SurprisingMinds/packages
 *.avi
 *.csv
 pupil*log*.txt
+WorldVidExtraction_log_*.txt
 PythonWithAdam/plots
