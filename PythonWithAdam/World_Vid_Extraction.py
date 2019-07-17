@@ -661,7 +661,7 @@ for item in zipped_data:
             if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
                 unravel_height = this_day_world_vids_height[0]
                 unravel_width = this_day_world_vids_width[0]
-                vid_count = len(unravel_height)
+                vid_count = len(this_day_world_vids_height)
         # average and save world videos for each stimulus type
         average_day_world_vids(this_day_world_vids_tbucket, this_day_date, world_folder, unravel_height, unravel_width)
         # report progress
