@@ -401,9 +401,7 @@ def extract_daily_avg_world_vids(daily_avg_world_folder):
             else:
                 tbucket_num = extracted_rows[i][0]
                 flattened_frame = extracted_rows[i][1:]
-                flat_frame_array = np.array(flattened_frame)
-                unraveled_frame = np.reshape(flat_frame_array,(unravel_height,unravel_width))
-                world_vids_tbucketed[stim_number][tbucket_num] = unraveled_frame
+                world_vids_tbucketed[stim_number][tbucket_num] = flattened_frame
     return world_vids_tbucketed
 
 def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_types):
@@ -421,7 +419,6 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
             this_month_sum_world_vids[stim_type] = {}
             vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
             vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
-            empty_frame = np.zeros((vid_height,vid_width))
             for tbucket_num in this_day_avg_world_vids[stim_type].keys():
                 if tbucket_num=='Vid Dimensions':
                     continue
@@ -508,7 +505,7 @@ stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
 
-# unzip each folder, do the analysis
+# BEGIN WORLD VID FRAME EXTRACTION/AVERAGING #
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
     # check to see if this folder has already had world vid frames extracted
