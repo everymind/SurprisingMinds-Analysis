@@ -537,6 +537,7 @@ for item in zipped_data:
         current_month_analysed = glob.glob(search_pattern)
         current_month_summed_world_vids, world_vid_height, world_vid_width = add_to_monthly_world_vids(current_month_analysed, stim_vids)
         average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
+        continue
     
     # if world vid frames this folder haven't already been extracted, EXTRACT!
     print("Extracting World Vid frames from folder {name}".format(name=item))
