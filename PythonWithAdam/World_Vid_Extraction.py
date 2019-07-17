@@ -505,7 +505,7 @@ data_drive = r"\\Diskstation\SurprisingMinds"
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
 # first day was debugging FOR LAB COMPUTER
-#zipped_data = zipped_data[1:]
+zipped_data = zipped_data[1:]
 zipped_names = [item[:-4] for item in zipped_data]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
