@@ -375,7 +375,6 @@ def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_
                 continue
             this_bucket = [tbucket]
             frame_count = day_world_vid_dict[stim][tbucket][0]
-            this_bucket.append(frame_count)
             summed_frame = day_world_vid_dict[stim][tbucket][1]
             avg_frame = summed_frame/frame_count
             avg_frame_list = avg_frame.tolist()
@@ -451,7 +450,7 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
         print("Averaging world videos for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
-        avg_vid.append([summed_monthly_world_vids_dict][stim]['Vid Count'])
+        avg_vid.append([[summed_monthly_world_vids_dict][stim]['Vid Count']])
         for tbucket in summed_monthly_world_vids_dict[stim].keys():
             this_bucket = [tbucket]
             frame_count = summed_monthly_world_vids_dict[stim][tbucket][0]
