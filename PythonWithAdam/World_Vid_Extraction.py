@@ -548,6 +548,10 @@ for item in zipped_data:
         # check that all videos have same height and width
         if not this_day_world_vids_height:
             print("No world vids averaged for {date}".format(date=this_day_date))
+            # delete temporary file with unzipped data contents
+            print("Deleting temp folder of unzipped data...")
+            shutil.rmtree(day_folder)
+            print("Delete successful!")
             continue
         if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
             if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
@@ -556,9 +560,7 @@ for item in zipped_data:
         # average and save world videos for each stimulus type
         average_day_world_vids(this_day_world_vids_tbucket, this_day_date, world_folder, unravel_height, unravel_width)
         # report progress
-        cv2.destroyAllWindows()
         print("Finished extracting from {day}".format(day=day_zipped[:-4]))
-
         # delete temporary file with unzipped data contents
         print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
