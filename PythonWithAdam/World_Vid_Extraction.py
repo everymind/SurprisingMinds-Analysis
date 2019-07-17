@@ -380,6 +380,80 @@ def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_
             writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(avg_vid)
 
+def extract_daily_avg_world_vids(daily_avg_world_folder):
+    stim_files = glob.glob(daily_avg_world_folder + os.sep + "*Avg-World-Vid-tbuckets.csv")
+    world_vids_tbucketed = {}
+    for stim_file in stim_files: 
+        stim_name = stim_file.split(os.sep)[-1]
+        stim_type = stim_name.split('_')[1]
+        stim_number = np.float(stim_type)
+        world_vids_tbucketed[stim_number] = {}
+        extracted_rows = []
+        with open(stim_file) as f:
+            csvReader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
+            for row in csvReader:
+                extracted_rows.append(row)
+        for i in range(len(extracted_rows)):
+            if i==0:
+                unravel_height = int(extracted_rows[i][0])
+                unravel_width = int(extracted_rows[i][1])
+                world_vids_tbucketed[stim_number]["Vid Dimensions"] = [unravel_height, unravel_width]
+            else:
+                tbucket_num = extracted_rows[i][0]
+                flattened_frame = extracted_rows[i][1:]
+                flat_frame_array = np.array(flattened_frame)
+                unraveled_frame = np.reshape(flat_frame_array,(unravel_height,unravel_width))
+                world_vids_tbucketed[stim_number][tbucket_num] = unraveled_frame
+    return world_vids_tbucketed
+
+def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_types):
+    this_month_sum_world_vids = {key:{} for key in list_of_stim_types}
+    for analysed_day in analysis_folder_paths_for_month:
+        day_name = analysed_day.split(os.sep)[-1]
+        print("Collecting world vid data from {day}".format(day=day_name))
+        analysis_folder = os.path.join(analysed_day, "Analysis")
+        world_folder = os.path.join(analysis_folder, "world")
+        if not os.path.exists(world_folder):
+            print("No average world frames exist for folder {name}!".format(name=day_name))
+            continue
+        this_day_avg_world_vids = extract_daily_avg_world_vids(world_folder)
+        for stim_type in this_day_avg_world_vids.keys():
+            this_month_sum_world_vids[stim_type] = {}
+            vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
+            vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
+            empty_frame = np.zeros((vid_height,vid_width))
+            for tbucket_num in this_day_avg_world_vids[stim_type].keys():
+                if tbucket_num=='Vid Dimensions':
+                    continue
+                if tbucket_num in this_month_sum_world_vids[stim_type].keys():
+                    this_month_sum_world_vids[stim_type][tbucket_num][0] = this_month_sum_world_vids[stim_type][tbucket_num][0] + 1
+                    this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
+                else:
+                    this_month_sum_world_vids[stim_type][tbucket_num] = [1, this_day_avg_world_vids[stim_type][tbucket_num]]
+    return this_month_sum_world_vids, vid_height, vid_width
+
+def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
+    for stim in summed_monthly_world_vids_dict.keys(): 
+        print("Averaging world videos for stimuli {s}".format(s=stim))
+        avg_vid = []
+        avg_vid.append([vid_height, vid_width])
+        for tbucket in summed_monthly_world_vids_dict[stim].keys():
+            this_bucket = [tbucket]
+            frame_count = summed_monthly_world_vids_dict[stim][tbucket][0]
+            summed_frame = summed_monthly_world_vids_dict[stim][tbucket][1]
+            avg_frame = summed_frame/frame_count
+            avg_frame_list = avg_frame.tolist()
+            for pixel in avg_frame_list:
+                this_bucket.append(pixel)
+            avg_vid.append(this_bucket)
+        # save average world vid for each stimulus to csv
+        monthly_avg_vid_csv_name = str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
+        world_folder_name = 'WorldVidAverage_' + month_name
+        world_csv_filename = os.path.join(world_folder_name, monthly_avg_vid_csv_name)
+        with open(world_csv_filename, 'w', newline='') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+            writer.writerows(avg_vid)
+
 ### -------------------------------------------- ###
 ### LET THE ANALYSIS BEGIN!! ###
 ### log everything in a text file
@@ -430,15 +504,18 @@ for folder in daily_csv_files:
     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
     if 'world' in subdirs:
         already_extracted_daily.append(folder)
+stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
+stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
+
 # unzip each folder, do the analysis
 for item in zipped_data:
-    
+    this_day_date = item[:-4].split('_')[1]
     # check to see if this folder has already had world vid frames extracted
     if item[:-4] in already_extracted_daily:
         print("World vid frames from {name} has already been extracted".format(name=item))
         # check to see if this folder has already been averaged into a monthly stim vid average
-        item_date = item[:-4].split('_')[1]
-        item_year_month = item_date[:7]
+        item_year_month = this_day_date[:7]
         if item_year_month in extracted_months:
             print("World vid frames from {name} have already been consolidated into a monthly average".format(name=item_year_month))
             continue
@@ -453,26 +530,28 @@ for item in zipped_data:
             next_year = item_just_year + 1
             next_month = '01'
             date_to_check = str(next_year) + '-' + str(next_month)
-        next_month_extracted = fnmatch.filter(analysed_folders, 'SurprisingMinds_' + date_to_check + '*')
-        if not next_month_extracted:
+        next_month_analysed = fnmatch.filter(analysed_folders, 'SurprisingMinds_' + date_to_check + '*')
+        if not next_month_analysed:
             print("World vid frames for {month} not yet completed".format(month=item_year_month))
             continue
         # full month extracted?
-        # take avg stim vids for each day,
-        # build a monthly average vid for each stim
+        # take avg stim vids for each day and build a monthly average vid for each stim
+        search_pattern = os.path.join(analysed_drive, 'SurprisingMinds_'+item_year_month+'-*')
+        current_month_analysed = glob.glob(search_pattern)
+        current_month_summed_world_vids, world_vid_height, world_vid_width = add_to_monthly_world_vids(current_month_analysed, stim_vids)
+        average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
     
-    # if world vid frames this folder haven't already been extracted, full speed ahead!
-    print("Working on folder {name}".format(name=item))
-    this_day_date = item[:-4].split('_')[1]
-    # grab a folder 
-    day_zipped = os.path.join(data_drive, item)
+    # if world vid frames this folder haven't already been extracted, EXTRACT!
+    print("Extracting World Vid frames from folder {name}".format(name=item))
     # Build relative analysis paths, these folders should already exist
     analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
     alignment_folder = os.path.join(analysis_folder, "alignment")
     if not os.path.exists(analysis_folder):
         print("No Analysis folder exists for folder {name}!".format(name=item))
         continue
-    # Analysis subfolders
+    # grab a folder 
+    day_zipped = os.path.join(data_drive, item)
+    # create Analysis subfolder for avg world vid data
     world_folder = os.path.join(analysis_folder, "world")
     # Create world_folder if it doesn't exist
     if not os.path.exists(world_folder):
@@ -488,9 +567,6 @@ for item in zipped_data:
         num_trials = len(trial_folders)
         current_trial = 0
         # intialize time bucket dictionary for world vids
-        stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
-        stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
-        stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
         this_day_world_vids_tbucket = {key:{} for key in stim_vids}
         this_day_world_vids_height = []
         this_day_world_vids_width = []
