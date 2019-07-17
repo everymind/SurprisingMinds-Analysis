@@ -375,7 +375,7 @@ def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_
                 continue
             this_bucket = [tbucket]
             frame_count = day_world_vid_dict[stim][tbucket][0]
-            avg_vid.append([frame_count])
+            this_bucket.append(frame_count)
             summed_frame = day_world_vid_dict[stim][tbucket][1]
             avg_frame = summed_frame/frame_count
             avg_frame_list = avg_frame.tolist()
