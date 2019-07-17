@@ -413,8 +413,8 @@ data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
-# first day was debugging
-zipped_data = zipped_data[1:]
+# first day was debugging FOR LAB COMPUTER
+#zipped_data = zipped_data[1:]
 zipped_names = [item[:-4] for item in zipped_data]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
@@ -494,7 +494,6 @@ for item in zipped_data:
         this_day_world_vids_tbucket = {key:{} for key in stim_vids}
         this_day_world_vids_height = []
         this_day_world_vids_width = []
-
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
@@ -547,6 +546,9 @@ for item in zipped_data:
                 current_trial = current_trial + 1
 
         # check that all videos have same height and width
+        if not this_day_world_vids_height:
+            print("No world vids averaged for {date}".format(date=this_day_date))
+            continue
         if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
             if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
                 unravel_height = this_day_world_vids_height[0]
