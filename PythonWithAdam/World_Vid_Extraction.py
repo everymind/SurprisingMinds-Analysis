@@ -348,6 +348,8 @@ def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_s
     return vid_height, vid_width, vid_length_tbuckets, frames
 
 def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_world_vid_dict):
+    # keep track of how many videos are going into the average for this stim
+            day_world_vid_dict[this_trial_stim_num]['Vid Count'] = day_world_vid_dict[this_trial_stim_num].get('Vid Count',0) + 1
     this_trial_stim_vid = {}
     for row in this_trial_world_vid_frames:
         tbucket_num = row[0]
@@ -357,12 +359,8 @@ def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_
         if tbucket in day_world_vid_dict[this_trial_stim_num].keys():
             day_world_vid_dict[this_trial_stim_num][tbucket][0] = day_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
             day_world_vid_dict[this_trial_stim_num][tbucket][1] = day_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
-            # keep track of how many videos are going into the average for this stim
-            day_world_vid_dict[this_trial_stim_num]['Vid Count'] = day_world_vid_dict[this_trial_stim_num]['Vid Count'] + 1
         else: 
             day_world_vid_dict[this_trial_stim_num][tbucket] = [1, this_trial_stim_vid[tbucket]]
-            # keep track of how many videos are going into the average for this stim
-            day_world_vid_dict[this_trial_stim_num]['Vid Count'] = 1
 
 def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_height, vid_width):
     for stim in day_world_vid_dict.keys(): 
