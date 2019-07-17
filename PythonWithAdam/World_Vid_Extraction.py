@@ -62,6 +62,46 @@ def find_target_frame(ref_timestamps_csv, target_timestamps_csv, ref_frame):
         frame_counter = frame_counter + 1
     return frame_counter
 
+def find_darkest_circle(list_of_circles, source_image):
+    #print("Finding darkest circle in {list}...".format(list=list_of_circles))
+    # starting parameters
+    darkest_intensity = 255
+    darkest_index = 0
+    # check that source_image is a grayscaled image
+    if len(source_image.shape) > 2: 
+        print("{Image} is not grayscale!".format(Image=source_image))
+        exit()
+    for i in range(len(list_of_circles)):
+        # create a mask image that is the same size as source_image
+        mask = np.zeros(source_image.shape, source_image.dtype)
+        # get center coordinates and radius of circle from list_of_circle
+        center = (list_of_circles[i][0], list_of_circles[i][1])
+        radius = list_of_circles[i][2]
+        #print("Center: {x},{y}".format(x=center[0], y=center[1]))
+        # draw mask circle at coordinates and w/radius of circle from list_of_circles
+        mask_circle = cv2.circle(mask, center, radius, 255, -1)
+        ## for debugging
+        # this_circle = cv2.circle(source_image, center, radius, (i*100, 0, 100), 2)
+        # plt.imshow(source_image)
+        # plt.show(block=False)
+        # plt.pause(2)
+        # plt.clf()
+        # plt.cla()
+        # plt.close()
+        # get coordinates of mask circle pixels
+        where = np.where(mask==255)
+        # find those same coordinates in source_image
+        intensity_inside_circle_on_source_image = source_image[where[0], where[1]]
+        # take average of those pixels in source_image
+        average_intensity = np.average(intensity_inside_circle_on_source_image)
+        #print("Average intensity of circle {number}: {intensity}".format(number=i, intensity=average_intensity))
+        # check this circle's intensity against darkest circle found so far
+        if (average_intensity < darkest_intensity):
+            darkest_intensity = average_intensity
+            darkest_index = i
+    #print("Darkest circle: {number}, intensity {intensity}".format(number=darkest_index, intensity=darkest_intensity))
+    return list_of_circles[darkest_index]
+
 def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp, fill_pattern): 
     start_timestamp = start_timestamp.split('+')[0][:-3]
     end_timestamp = end_timestamp.split('+')[0][:-3]
@@ -88,6 +128,157 @@ def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_wind
         if key <= timestamp_to_check <= (key + time_window):
             return key
 
+def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timestamps, align_frame, csv_path, bucket_size_ms):
+    ### row = timestamp, not frame #
+    # Open eye video and world video
+    video = cv2.VideoCapture(video_path)
+    # Jump to specific frame (position) for alignment purposes 
+    ret = video.set(cv2.CAP_PROP_POS_FRAMES, align_frame)
+    # Open display window for debugging
+    video_name = video_path.split(os.sep)[-1]
+    debug_name = "Eye"+"_"+video_name
+    cv2.namedWindow(debug_name)
+    # each time bucket = 4ms (eye cameras ran at 60fps, aka 16.6666 ms per frame)
+    # octobpus clip to thank you screen is 16.2 seconds
+    first_timestamp = video_timestamps[align_frame]
+    last_timestamp = video_timestamps[-1]
+    initialize_pattern = [-5,-5,-5,-5,-5,-5]
+    pupil_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, initialize_pattern)
+    
+    # Loop through 4ms time buckets of eye video to find nearest frame and save pupil xy positon and area
+    timestamps_to_check = video_timestamps[align_frame:]
+    for timestamp in timestamps_to_check:
+        # find the time bucket into which this frame falls
+        timestamp = timestamp.split('+')[0][:-3]
+        timestamp_dt = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
+        bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
+        current_key = find_nearest_timestamp_key(timestamp_dt, pupil_buckets, bucket_window)
+        # Read frame at current position
+        ret, frame = video.read()
+        mask = np.copy(frame)
+        # Make sure the frame exists!
+        if frame is not None:
+            # Magically find pupil...
+            # Convert to grayscale
+            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
+            # Median blur
+            blurred = cv2.medianBlur(gray, 25)
+            # Hough circle detection
+            rows = blurred.shape[0]
+            ## WTF DOES HOUGHCIRCLES DO??
+            ## sometimes the image seems really clean and easy to find the pupil and yet it still fails
+            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 8,
+                                    param1=75, param2=25,
+                                    minRadius=10, maxRadius=150)
+            # If there are no circles, then what??
+            if circles is not None:
+                #print("Circles found: {circles}".format(circles=circles))
+                # check that we are taking the darkest circle
+                darkest_circle = find_darkest_circle(circles[0], blurred)
+                #print("Darkest circle: {circle}".format(circle=darkest_circle))
+                # Using the best circle...crop around center
+                # Threshold
+                # Fit an ellipse
+                # Crop
+                eye_circle = np.uint16(np.around(darkest_circle))
+                left = eye_circle[0] - 64
+                top = eye_circle[1] - 64
+                crop_size = 128
+                # Check boundarys of image
+                if( (left >= 0) and (top >= 0) and ((left + crop_size) < 800) and ((top + crop_size) < 600) ):
+                    cropped = gray[top:(top + crop_size), left:(left+crop_size)]
+                    # Compute average and stdev of all pixel luminances along border
+                    ## this currently averages the rightmost and leftmost edges of the cropped window, because we assume that these pixels are not the pupil
+                    avg = (np.mean(cropped[:, 0]) + np.mean(cropped[:, -1])) / 2
+                    std = (np.std(cropped[:, 0]) + np.std(cropped[:, -1])) / 2
+                    ## Find shape of pupil
+                    # Threshold
+                    ## try removing otsu
+                    ## try using 2 standard devs away from average instead of 3
+                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1])
+                    # Find contours
+                    contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+                    # if more than one contour
+                    if len(contours) > 0:
+                        # Get largest contour
+                        largest_contour = max(contours, key=cv2.contourArea)
+                        # sanity check size of largest contour
+                        ## SHOULD MAKE SURE THAT LARGEST CONTOUR ISN'T BIGGER THAN CROPPED
+                        #####
+                        # make sure contour is large enough to fit an ellipse to it
+                        if(len(largest_contour) > 5):
+                            # Fit ellipse to largest contour
+                            ellipse = cv2.fitEllipse(largest_contour)
+                            # Shift ellipse back to full frame coordinates
+                            shifted_center = (np.int(ellipse[0][0]) + left, np.int(ellipse[0][1]) + top)
+                            # Draw circles
+                            circles = np.uint16(np.around(circles))
+                            for i in circles[0, :]:
+                                center = (i[0], i[1])
+                                # circle center
+                                cv2.circle(frame, center, 5, (0, 100, 100), 1)
+                                # circle outline
+                                radius = i[2]
+                                cv2.circle(frame, center, radius, (255, 0, 255), 1)
+                            # Draw ellipse around largest contour
+                            axes = (np.int(ellipse[1][0]/2),np.int(ellipse[1][1]/2)) 
+                            angle = np.int(ellipse[2])
+                            frame = cv2.ellipse(frame, shifted_center, axes, angle, 0, 360, (0, 255, 0), 3, cv2.LINE_AA, 0)
+                            # Draw debugging circle around darkest circle
+                            axes = (darkest_circle[2], darkest_circle[2]) 
+                            angle = 0
+                            frame = cv2.ellipse(frame, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 2, cv2.LINE_AA, 0)
+                            # Save Data
+                            darkest_circle_area = np.pi*(darkest_circle[2])**2
+                            #print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
+                            #print("Pupil size predicted by circles: {area1}".format(area1=darkest_circle_area))
+                            # save data from both findContours and find_darkest_circle
+                            pupil_buckets[current_key][0] = shifted_center[0]
+                            pupil_buckets[current_key][1] = shifted_center[1]
+                            pupil_buckets[current_key][2] = cv2.contourArea(largest_contour)
+                            pupil_buckets[current_key][3] = darkest_circle[0]
+                            pupil_buckets[current_key][4] = darkest_circle[1]
+                            pupil_buckets[current_key][5] = (darkest_circle[2]**2) * math.pi
+                            # Fill debug displays and show
+                            cv2.imshow(debug_name, frame)
+                            ret = cv2.waitKey(1)
+                        else:
+                            #print("Pupil Size: n/a (too small)")
+                            pupil_buckets[current_key][2] = -1
+                            pupil_buckets[current_key][5] = -1
+                    else:
+                        #print("Pupil Size: n/a (pupil off screen)")
+                        pupil_buckets[current_key][2] = -2
+                        pupil_buckets[current_key][5] = -2
+                else:
+                    #print("Pupil Size: n/a (no contour)")
+                    pupil_buckets[current_key][2] = -3
+                    pupil_buckets[current_key][5] = -3
+            else:
+                #print("Pupil Size: n/a (no circles)")
+                pupil_buckets[current_key][2] = -4
+                pupil_buckets[current_key][5] = -4
+            ## STILL DOING THIS?????
+            # Add current frame to average clip at correct slot
+            #day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
+    # Save pupil size data
+    # HOW TO SAVE A DICTIONARY AS A CSV????
+    time_chunks = []
+    for key in pupil_buckets.keys():
+        time_chunks.append(key)
+    time_chunks = sorted(time_chunks)
+    pupils = []
+    for time in time_chunks:
+        pupil = pupil_buckets[time]
+        pupils.append(pupil)
+    #print("Saving csv of positions and areas for {eye} eye...".format(eye=which_eye))
+    padded_filename = which_eye + "_" + which_stimuli + "_" + str(trial_number).zfill(4) + ".csv"
+    csv_file = os.path.join(csv_path, padded_filename)
+    np.savetxt(csv_file, pupils, fmt='%.2f', delimiter=',')
+    # release video capture
+    video.release()
+    cv2.destroyAllWindows()
+
 def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images):
     # Save images from trial clip to folder
     #print("Saving averaged frames from {eye}...".format(eye=which_eye))
@@ -104,17 +295,6 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
 
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
-
-### for debugging ###
-temp_video_path = r'C:\Users\taunsquared\Desktop\SM_temp\2018-06-19_10-21-25\2018-06-19_10-21-25_stimuli026_world.avi'
-temp_video_csv = r'C:\Users\taunsquared\Desktop\SM_temp\2018-06-19_10-21-25\2018-06-19_10-21-25_stimuli026_world.csv'
-temp_vid_timestamps = np.genfromtxt(temp_video_csv, dtype=np.str, delimiter=' ')
-temp_bucket_size = 4
-###
-video_path = temp_video_path
-video_timestamps = temp_vid_timestamps
-world_csv_path = r'C:\Users\taunsquared\Desktop\SM_temp\world'
-bucket_size_ms = temp_bucket_size
 
 def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_size_ms):
     ### row = timestamp, not frame #
@@ -141,6 +321,7 @@ def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_s
         bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
         current_key = find_nearest_timestamp_key(timestamp_dt, stim_buckets, bucket_window)
         # Read frame at current position
+        # should this be at current key??
         ret, frame = world_vid.read()
         # Make sure the frame exists!
         if frame is not None:
@@ -155,21 +336,48 @@ def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_s
     for key in stim_buckets.keys():
         time_chunks.append(key)
     time_chunks = sorted(time_chunks)
+    vid_length_tbuckets = len(time_chunks)
     frames = []
-    # append original video dimensions, for reshaping flattened frame arrays later
-    frames.append([vid_height, vid_width])
     for time in time_chunks:
         flattened_frame = stim_buckets[time]
         if not np.isnan(flattened_frame[0]):
             frames.append([time_chunks.index(time), flattened_frame])
-    # save world vid frame data to numpy binary file
-    padded_filename = video_date + "_" + video_time + "_" + video_stim_number + "_world-tbuckets.csv"
-    csv_file = os.path.join(world_csv_path, padded_filename)
-    with open(csv_file, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(frames)
     # release video capture
     world_vid.release()
+    return vid_height, vid_width, vid_length_tbuckets, frames
+
+def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_world_vid_dict):
+    this_trial_stim_vid = {}
+    for row in this_trial_world_vid_frames:
+        tbucket_num = row[0]
+        flattened_frame = row[1]
+        this_trial_stim_vid[tbucket_num] = flattened_frame
+    for tbucket in this_trial_stim_vid.keys():
+        if tbucket in day_world_vid_dict[this_trial_stim_num]:
+            day_world_vid_dict[this_trial_stim_num][tbucket][0] = day_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
+            day_world_vid_dict[this_trial_stim_num][tbucket][1] = day_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
+        else: 
+            day_world_vid_dict[this_trial_stim_num][tbucket] = [1, this_trial_stim_vid[tbucket]]
+
+def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_height, vid_width):
+    for stim in day_world_vid_dict.keys(): 
+        avg_vid = []
+        avg_vid.append([vid_height, vid_width])
+        for tbucket in day_world_vid_dict[stim].keys():
+            this_bucket = [tbucket]
+            frame_count = day_world_vid_dict[stim][tbucket][0]
+            summed_frame = day_world_vid_dict[stim][tbucket][1]
+            avg_frame = summed_frame/frame_count
+            avg_frame_list = avg_frame.tolist()
+            for pixel in avg_frame_list:
+                this_bucket.append(pixel)
+            avg_vid.append(this_bucket)
+        # save average world vid for each stimulus to csv
+        avg_vid_csv_name = day_date + '_' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
+        csv_file = os.path.join(avg_world_vid_dir, avg_vid_csv_name)
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+            writer.writerows(avg_vid)
 
 ### -------------------------------------------- ###
 ### LET THE ANALYSIS BEGIN!! ###
@@ -180,7 +388,7 @@ class Logger(object):
         # grab today's date
         now = datetime.datetime.now()
         todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-        log_filename = "world-frame-extraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
         log_file = os.path.join(current_working_directory, log_filename)
         self.terminal = sys.stdout
         self.log = open(log_file, "a")
@@ -197,12 +405,15 @@ class Logger(object):
 sys.stdout = Logger()
 ### ------------------------------------------- ###
 # list all folders in Synology drive
+# on lab computer
 data_drive = r"\\Diskstation\SurprisingMinds"
+### FOR DEBUGGING ON LAPTOP ###
+#data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
 zipped_names = [item[:-4] for item in zipped_data]
-# figure out which days have already had world vid frames extracted
+# figure out which days have already been analysed
 # when working from local drive, lab computer
 analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 # when working from laptop
@@ -213,25 +424,27 @@ for folder in analysed_folders:
     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
     if 'world' in subdirs:
         already_extracted.append(folder)
-# unzip each folder, do the extraction
+# unzip each folder, do the analysis
 for item in zipped_data:
-
+    
     # check to see if this folder has already been analyzed
     if item[:-4] in already_extracted:
-        print("World video frames for {name} have already been extracted".format(name=item))
+        print("World vid frames from {name} has already been extracted".format(name=item))
         continue
     
-    # if this day hasn't had the world vid frames extracted, full speed ahead!
+    # if world vid frames this folder haven't already been extracted, full speed ahead!
     print("Working on folder {name}".format(name=item))
-
+    this_day_date = item[:-4].split('_')[1]
     # grab a folder 
     day_zipped = os.path.join(data_drive, item)
 
-    # Build relative world vid frames extraction path in a folder with same name as zip folder
+    # Build relative analysis paths in a folder with same name as zip folder
     analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
+
+    # Analysis subfolders
     world_folder = os.path.join(analysis_folder, "world")
 
-    # Create analysis and extraction folders if they do not exist
+    # Create analysis folder (and sub-folders) if it (they) does (do) not exist
     if not os.path.exists(analysis_folder):
         #print("Creating analysis folder.")
         os.makedirs(analysis_folder)
@@ -240,7 +453,7 @@ for item in zipped_data:
         os.makedirs(world_folder)
 
     # create a temp folder in current working directory to store data (contents of unzipped folder)
-    day_folder = os.path.join(current_working_directory, "world_temp")
+    day_folder = os.path.join(current_working_directory, "temp")
 
     # unzip current zipped folder into temp folder, this function checks whether the folder is unzippable
     # if it unzips, the function returns True; if it doesn't unzip, the function returns False
@@ -253,38 +466,62 @@ for item in zipped_data:
         # Load all right eye movies and average
         current_trial = 0
 
+        # intialize time bucket dictionary for world vids
+        stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
+        stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
+        stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
+        this_day_world_vids_tbucket = {key:{} for key in stim_vids}
+        this_day_world_vids_height = []
+        this_day_world_vids_width = []
+        # key for each stim type
+        # key for each time bucket with a frame
+
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
                 trial_name = trial_folder.split(os.sep)[-1]
                 # Load CSVs and create timestamps
                 # ------------------------------
-                #print("Loading csv files for {trial}...".format(trial=trial_name))
                 # Get world movie timestamp csv path
                 world_csv_path = glob.glob(trial_folder + '/*world.csv')[0]
-                stimuli_number = world_csv_path.split("_")[-2]
+                stimuli_name = world_csv_path.split("_")[-2]
+                stimuli_number = stim_name_to_float[stimuli_name]
                 # at what time resolution to build eye and world camera data?
                 bucket_size = 4 #milliseconds
+
                 # Load world CSV
                 world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ')
                 # Get world video filepath
                 world_video_path = glob.glob(trial_folder + '/*world.avi')[0]
                 ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                 print("Extracting world vid frames...")
-                time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
+                # save this to an array and accumulate over trials
+                world_vid_height, world_vid_width, world_vid_length_tbuckets, world_vid_frames = time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
+                this_day_world_vids_height.append(world_vid_height)
+                this_day_world_vids_width.append(world_vid_width)
+                add_to_day_world_dict(world_vid_frames, stimuli_number, this_day_world_vids_tbucket)
+                # ------------------------------
+                # ------------------------------
                 
                 # Report progress
                 cv2.destroyAllWindows()
-                print("Finished extracting world vid frames from trial: {trial}".format(trial=current_trial))
+                print("Finished Trial: {trial}".format(trial=current_trial))
                 current_trial = current_trial + 1
             except Exception: 
                 cv2.destroyAllWindows()
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
 
+        # check that all videos have same height and width
+        if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
+            if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
+                unravel_height = this_day_world_vids_height[0]
+                unravel_width = this_day_world_vids_width[0]
+        # average and save world videos for each stimulus type
+        average_day_world_vids(this_day_world_vids_tbucket, this_day_date, world_folder, unravel_height, unravel_width)
         # report progress
         cv2.destroyAllWindows()
-        print("Finished {day}".format(day=day_zipped[:-4]))
+        print("Finished extracting from {day}".format(day=day_zipped[:-4]))
 
         # delete temporary file with unzipped data contents
         print("Deleting temp folder of unzipped data...")
@@ -292,6 +529,6 @@ for item in zipped_data:
         print("Delete successful!")
 
 #FIN
-print("Completed extraction on all data folders in this drive!")
+print("Completed world vid frame extraction on all data folders in this drive!")
 # close logfile
 sys.stdout.close()

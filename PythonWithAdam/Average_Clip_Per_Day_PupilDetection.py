@@ -364,16 +364,19 @@ def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
         for tbucket in day_world_vid_dict[stim].keys():
+            this_bucket = [tbucket]
             frame_count = day_world_vid_dict[stim][tbucket][0]
             summed_frame = day_world_vid_dict[stim][tbucket][1]
             avg_frame = summed_frame/frame_count
             avg_frame_list = avg_frame.tolist()
-            avg_vid.append([tbucket, avg_frame_list])
+            for pixel in avg_frame_list:
+                this_bucket.append(pixel)
+            avg_vid.append(this_bucket)
         # save average world vid for each stimulus to csv
         avg_vid_csv_name = day_date + '_' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
         csv_file = os.path.join(avg_world_vid_dir, avg_vid_csv_name)
         with open(csv_file, 'w', newline='') as f:
-            writer = csv.writer(f)
+            writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(avg_vid)
 
 ### -------------------------------------------- ###
@@ -402,7 +405,10 @@ class Logger(object):
 sys.stdout = Logger()
 ### ------------------------------------------- ###
 # list all folders in Synology drive
+# on lab computer
 data_drive = r"\\Diskstation\SurprisingMinds"
+### FOR DEBUGGING ON LAPTOP ###
+#data_drive = r'C:\Users\taunsquared\Desktop\SM_temp'
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
@@ -529,13 +535,13 @@ for item in zipped_data:
                 # Get left eye video filepath
                 left_video_path = glob.glob(trial_folder + '/*lefteye.avi')[0]
                 
-                """ # Find right eye pupils and save pupil data
+                # Find right eye pupils and save pupil data
                 print("Finding right eye pupils...")
                 find_pupil("right", stimuli_name, current_trial, right_video_path, right_eye_timestamps, 0, csv_folder, bucket_size)
                 # Find left eye pupils and save pupil data
                 print("Finding left eye pupils...")
                 find_pupil("left", stimuli_name, current_trial, left_video_path, left_eye_timestamps, 0, csv_folder, bucket_size)
-                    """
+                   
                 # Report progress
                 cv2.destroyAllWindows()
                 print("Finished Trial: {trial}".format(trial=current_trial))
@@ -544,7 +550,7 @@ for item in zipped_data:
                 cv2.destroyAllWindows()
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
-        
+
         # check that all videos have same height and width
         if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
             if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
