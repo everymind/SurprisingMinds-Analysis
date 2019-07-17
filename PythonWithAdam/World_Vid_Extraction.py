@@ -357,16 +357,23 @@ def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_
         if tbucket in day_world_vid_dict[this_trial_stim_num]:
             day_world_vid_dict[this_trial_stim_num][tbucket][0] = day_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
             day_world_vid_dict[this_trial_stim_num][tbucket][1] = day_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
+            # keep track of how many videos are going into the average for this stim
+            day_world_vid_dict[this_trial_stim_num]['Vid Count'] = day_world_vid_dict[this_trial_stim_num]['Vid Count'] + 1
         else: 
             day_world_vid_dict[this_trial_stim_num][tbucket] = [1, this_trial_stim_vid[tbucket]]
+            # keep track of how many videos are going into the average for this stim
+            day_world_vid_dict[this_trial_stim_num]['Vid Count'] = 1
 
 def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_height, vid_width):
     for stim in day_world_vid_dict.keys(): 
+        print("Averaging world videos for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
+        avg_vid.append(day_world_vid_dict[stim]['Vid Count'])
         for tbucket in day_world_vid_dict[stim].keys():
             this_bucket = [tbucket]
             frame_count = day_world_vid_dict[stim][tbucket][0]
+            avg_vid.append(frame_count)
             summed_frame = day_world_vid_dict[stim][tbucket][1]
             avg_frame = summed_frame/frame_count
             avg_frame_list = avg_frame.tolist()
@@ -376,6 +383,7 @@ def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_
         # save average world vid for each stimulus to csv
         avg_vid_csv_name = day_date + '_' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
         csv_file = os.path.join(avg_world_vid_dir, avg_vid_csv_name)
+        print("Saving average world video of stimulus {s} for {d}".format(s=stim, d=day_date))
         with open(csv_file, 'w', newline='') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(avg_vid)
@@ -398,6 +406,9 @@ def extract_daily_avg_world_vids(daily_avg_world_folder):
                 unravel_height = int(extracted_rows[i][0])
                 unravel_width = int(extracted_rows[i][1])
                 world_vids_tbucketed[stim_number]["Vid Dimensions"] = [unravel_height, unravel_width]
+            if i==1:
+                vid_count = int(extracted_rows[i])
+                world_vids_tbucketed[stim_number]["Vid Count"] = vid_count
             else:
                 tbucket_num = extracted_rows[i][0]
                 flattened_frame = extracted_rows[i][1:]
@@ -419,14 +430,18 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
             this_month_sum_world_vids[stim_type] = {}
             vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
             vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
+            vid_count = this_day_avg_world_vids[stim_type]['Vid Count']
             for tbucket_num in this_day_avg_world_vids[stim_type].keys():
                 if tbucket_num=='Vid Dimensions':
                     continue
+                if tbucket_num=='Vid Count':
+                    this_month_sum_world_vids[stim_type]['Vid Count'] = this_month_sum_world_vids[stim_type]['Vid Count'] + 1
                 if tbucket_num in this_month_sum_world_vids[stim_type].keys():
                     this_month_sum_world_vids[stim_type][tbucket_num][0] = this_month_sum_world_vids[stim_type][tbucket_num][0] + 1
                     this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
                 else:
                     this_month_sum_world_vids[stim_type][tbucket_num] = [1, this_day_avg_world_vids[stim_type][tbucket_num]]
+                    this_month_sum_world_vids[stim_type]['Vid Count'] = 1
     return this_month_sum_world_vids, vid_height, vid_width
 
 def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
@@ -434,6 +449,7 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
         print("Averaging world videos for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
+        avg_vid.append([summed_monthly_world_vids_dict][stim]['Vid Count'])
         for tbucket in summed_monthly_world_vids_dict[stim].keys():
             this_bucket = [tbucket]
             frame_count = summed_monthly_world_vids_dict[stim][tbucket][0]
@@ -445,10 +461,11 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
         # save average world vid for each stimulus to csv
         monthly_avg_vid_csv_name = 'Stimuli' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
         world_folder_name = 'WorldVidAverage_' + month_name
-        if not os.path.exists(world_folder_name):
+        world_folder_path = os.path.join(analysed_data_drive, world_folder_name)
+        if not os.path.exists(world_folder_path):
             #print("Creating plots folder.")
-            os.makedirs(world_folder_name)
-        world_csv_filename = os.path.join(world_folder_name, monthly_avg_vid_csv_name)
+            os.makedirs(world_folder_path)
+        world_csv_filename = os.path.join(world_folder_path, monthly_avg_vid_csv_name)
         print("Saving average world video of stimulus {s} for {m}".format(s=stim, m=month_name))
         with open(world_csv_filename, 'w', newline='') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
@@ -634,6 +651,7 @@ for item in zipped_data:
             if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
                 unravel_height = this_day_world_vids_height[0]
                 unravel_width = this_day_world_vids_width[0]
+                vid_count = len(unravel_height)
         # average and save world videos for each stimulus type
         average_day_world_vids(this_day_world_vids_tbucket, this_day_date, world_folder, unravel_height, unravel_width)
         # report progress
