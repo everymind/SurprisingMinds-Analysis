@@ -431,7 +431,7 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
 
 def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
     for stim in summed_monthly_world_vids_dict.keys(): 
-        print("Averaging world videos for stimuli {s}".format(s=stim))
+        print("Averaging world videos for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
         for tbucket in summed_monthly_world_vids_dict[stim].keys():
@@ -443,9 +443,13 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
                 this_bucket.append(pixel)
             avg_vid.append(this_bucket)
         # save average world vid for each stimulus to csv
-        monthly_avg_vid_csv_name = str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
+        monthly_avg_vid_csv_name = 'Stimuli' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
         world_folder_name = 'WorldVidAverage_' + month_name
+        if not os.path.exists(world_folder_name):
+            #print("Creating plots folder.")
+            os.makedirs(world_folder_name)
         world_csv_filename = os.path.join(world_folder_name, monthly_avg_vid_csv_name)
+        print("Saving average world video of stimulus {s} for {m}".format(s=stim, m=month_name))
         with open(world_csv_filename, 'w', newline='') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(avg_vid)
