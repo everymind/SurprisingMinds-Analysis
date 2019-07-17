@@ -576,10 +576,6 @@ for item in zipped_data:
     alignment_folder = os.path.join(analysis_folder, "alignment")
     if not os.path.exists(analysis_folder):
         print("No Analysis folder exists for folder {name}!".format(name=item))
-        # delete temporary file with unzipped data contents
-        print("Deleting temp folder of unzipped data...")
-        shutil.rmtree(day_folder)
-        print("Delete successful!")
         continue
     # grab a folder 
     day_zipped = os.path.join(data_drive, item)
