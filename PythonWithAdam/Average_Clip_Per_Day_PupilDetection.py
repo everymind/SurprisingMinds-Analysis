@@ -296,89 +296,6 @@ def save_average_clip_images(which_eye, no_of_seconds, save_folder_path, images)
         # Write to image file
         ret = cv2.imwrite(image_file_path, gray)
 
-def time_bucket_world_vid(video_path, video_timestamps, world_csv_path, bucket_size_ms):
-    ### row = timestamp, not frame #
-    # Open world video
-    world_vid = cv2.VideoCapture(video_path)
-    vid_width = int(world_vid.get(3))
-    vid_height = int(world_vid.get(4))
-    # Get video file details
-    video_name = video_path.split(os.sep)[-1]
-    video_date = video_name.split('_')[0]
-    video_time = video_name.split('_')[1]
-    video_stim_number = video_name.split('_')[2]
-    # each time bucket = 4ms (world cameras ran at approx 30fps, aka 33.333 ms per frame)
-    first_timestamp = video_timestamps[0]
-    last_timestamp = video_timestamps[-1]
-    initialize_pattern = np.empty((vid_height*vid_width,))
-    initialize_pattern[:] = np.nan
-    stim_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, initialize_pattern)
-    # Loop through 4ms time buckets of world video to find nearest frame and save 2-d matrix of pixel values in that frame
-    for timestamp in video_timestamps:
-        # find the time bucket into which this frame falls
-        timestamp = timestamp.split('+')[0][:-3]
-        timestamp_dt = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-        bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
-        current_key = find_nearest_timestamp_key(timestamp_dt, stim_buckets, bucket_window)
-        # Read frame at current position
-        # should this be at current key??
-        ret, frame = world_vid.read()
-        # Make sure the frame exists!
-        if frame is not None:
-            # Convert to grayscale
-            gray = cv2.cvtColor(frame, cv2.COLOR_RGB2GRAY)
-            # flatten the frame into a list
-            flattened_gray = gray.ravel()
-            flattened_gray = flattened_gray.astype(None)
-            # append to dictionary stim_buckets
-            stim_buckets[current_key] = flattened_gray
-    time_chunks = []
-    for key in stim_buckets.keys():
-        time_chunks.append(key)
-    time_chunks = sorted(time_chunks)
-    vid_length_tbuckets = len(time_chunks)
-    frames = []
-    for time in time_chunks:
-        flattened_frame = stim_buckets[time]
-        if not np.isnan(flattened_frame[0]):
-            frames.append([time_chunks.index(time), flattened_frame])
-    # release video capture
-    world_vid.release()
-    return vid_height, vid_width, vid_length_tbuckets, frames
-
-def add_to_day_world_dict(this_trial_world_vid_frames, this_trial_stim_num, day_world_vid_dict):
-    this_trial_stim_vid = {}
-    for row in this_trial_world_vid_frames:
-        tbucket_num = row[0]
-        flattened_frame = row[1]
-        this_trial_stim_vid[tbucket_num] = flattened_frame
-    for tbucket in this_trial_stim_vid.keys():
-        if tbucket in day_world_vid_dict[this_trial_stim_num]:
-            day_world_vid_dict[this_trial_stim_num][tbucket][0] = day_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
-            day_world_vid_dict[this_trial_stim_num][tbucket][1] = day_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
-        else: 
-            day_world_vid_dict[this_trial_stim_num][tbucket] = [1, this_trial_stim_vid[tbucket]]
-
-def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_height, vid_width):
-    for stim in day_world_vid_dict.keys(): 
-        avg_vid = []
-        avg_vid.append([vid_height, vid_width])
-        for tbucket in day_world_vid_dict[stim].keys():
-            this_bucket = [tbucket]
-            frame_count = day_world_vid_dict[stim][tbucket][0]
-            summed_frame = day_world_vid_dict[stim][tbucket][1]
-            avg_frame = summed_frame/frame_count
-            avg_frame_list = avg_frame.tolist()
-            for pixel in avg_frame_list:
-                this_bucket.append(pixel)
-            avg_vid.append(this_bucket)
-        # save average world vid for each stimulus to csv
-        avg_vid_csv_name = day_date + '_' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
-        csv_file = os.path.join(avg_world_vid_dir, avg_vid_csv_name)
-        with open(csv_file, 'w', newline='') as f:
-            writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
-            writer.writerows(avg_vid)
-
 ### -------------------------------------------- ###
 ### LET THE ANALYSIS BEGIN!! ###
 ### log everything in a text file
@@ -440,7 +357,6 @@ for item in zipped_data:
     # Analysis subfolders
     csv_folder = os.path.join(analysis_folder, "csv")
     alignment_folder = os.path.join(analysis_folder, "alignment")
-    world_folder = os.path.join(analysis_folder, "world")
 
     # Create analysis folder (and sub-folders) if it (they) does (do) not exist
     if not os.path.exists(analysis_folder):
@@ -449,9 +365,6 @@ for item in zipped_data:
     if not os.path.exists(csv_folder):
         #print("Creating csv folder.")
         os.makedirs(csv_folder)
-    if not os.path.exists(world_folder):
-        #print("Creating csv folder.")
-        os.makedirs(world_folder)
     if not os.path.exists(alignment_folder):
         #print("Creating alignment folder.")
         os.makedirs(alignment_folder)
@@ -466,20 +379,7 @@ for item in zipped_data:
         # List all trial folders
         trial_folders = list_sub_folders(day_folder)
         num_trials = len(trial_folders)
-
-        # Load all right eye movies and average
         current_trial = 0
-
-        # intialize time bucket dictionary for world vids
-        stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
-        stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
-        stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
-        this_day_world_vids_tbucket = {key:{} for key in stim_vids}
-        this_day_world_vids_height = []
-        this_day_world_vids_width = []
-        # key for each stim type
-        # key for each time bucket with a frame
-
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
             try:
@@ -519,13 +419,6 @@ for item in zipped_data:
                 plt.close()
                 # ------------------------------
                 world_video.release()
-                ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
-                print("Extracting world vid frames...")
-                # save this to an array and accumulate over trials
-                world_vid_height, world_vid_width, world_vid_length_tbuckets, world_vid_frames = time_bucket_world_vid(world_video_path, world_timestamps, world_folder, bucket_size)
-                this_day_world_vids_height.append(world_vid_height)
-                this_day_world_vids_width.append(world_vid_width)
-                add_to_day_world_dict(world_vid_frames, stimuli_number, this_day_world_vids_tbucket)
                 # ------------------------------
                 # ------------------------------
                 # Now start pupil detection                
@@ -551,13 +444,6 @@ for item in zipped_data:
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
 
-        # check that all videos have same height and width
-        if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
-            if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
-                unravel_height = this_day_world_vids_height[0]
-                unravel_width = this_day_world_vids_width[0]
-        # average and save world videos for each stimulus type
-        average_day_world_vids(this_day_world_vids_tbucket, this_day_date, world_folder, unravel_height, unravel_width)
         # report progress
         world_video.release()
         cv2.destroyAllWindows()
