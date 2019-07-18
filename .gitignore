@@ -8,5 +8,6 @@ Bonsai.SurprisingMinds/packages
 *.csv
 pupil*log*.txt
 WorldVidExtraction_log_*.txt
+data-extraction_log*.txt
 PythonWithAdam/plots
 *.zip
