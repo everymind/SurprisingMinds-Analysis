@@ -538,7 +538,8 @@ for folder in daily_csv_files:
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
-
+### UNZIPPABLE DAYS ###
+invalid_zipped = ['2017-12-28','2018-01-25']
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING #
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
@@ -554,7 +555,7 @@ for item in zipped_data:
         # check that the full month has been extracted
         item_just_year = int(item_year_month.split('-')[0])
         item_just_month = int(item_year_month.split('-')[1])
-        if item_just_month<=12:
+        if item_just_month<12:
             next_month = item_just_month + 1
             date_to_check = str(item_just_year) + '-' + str(next_month)
         else:
