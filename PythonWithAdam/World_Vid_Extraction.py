@@ -579,14 +579,15 @@ for item in zipped_data:
         extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
         # delete daily videos
         for daily_folder in current_month_analysed:
+            current_date = daily_folder.split(os.sep)[-1].split('_')[1]
             analysis_folder = os.path.join(daily_folder, "Analysis")
             world_folder = os.path.join(analysis_folder, "world")
-            print("Deleting daily world vid average files...")
+            print("Deleting daily world vid average files for {date}...".format(date=current_date))
             shutil.rmtree(world_folder)
             print("Delete successful!")
-            print("Making empty 'world' folder...")
+            print("Making empty 'world' folder for {date}...".format(date=current_date))
             os.makedirs(world_folder)
-            print("Finished!")
+        print("Finished averaging world videos for {month}!".format(month=item_year_month))
         continue
     
     # if world vid frames this folder haven't already been extracted, EXTRACT!
