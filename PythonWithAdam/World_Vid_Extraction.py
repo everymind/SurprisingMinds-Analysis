@@ -405,7 +405,7 @@ def extract_daily_avg_world_vids(daily_avg_world_folder):
                 unravel_height = int(extracted_rows[i][0])
                 unravel_width = int(extracted_rows[i][1])
                 world_vids_tbucketed[stim_number]["Vid Dimensions"] = [unravel_height, unravel_width]
-            if i==1:
+            elif i==1:
                 vid_count = int(extracted_rows[i][0])
                 world_vids_tbucketed[stim_number]["Vid Count"] = vid_count
             else:
@@ -434,9 +434,9 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
             for tbucket_num in this_day_avg_world_vids[stim_type].keys():
                 if tbucket_num=='Vid Dimensions':
                     continue
-                if tbucket_num=='Vid Count':
+                elif tbucket_num=='Vid Count':
                     continue
-                if tbucket_num in this_month_sum_world_vids[stim_type].keys():
+                elif tbucket_num in this_month_sum_world_vids[stim_type].keys():
                     this_month_sum_world_vids[stim_type][tbucket_num][0] = this_month_sum_world_vids[stim_type][tbucket_num][0] + 1
                     this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
                 else:
@@ -448,8 +448,11 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
         print("Averaging world videos for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
-        avg_vid.append([[summed_monthly_world_vids_dict][stim]['Vid Count']])
+        vid_count = summed_monthly_world_vids_dict[stim]['Vid Count']
+        avg_vid.append([vid_count])
         for tbucket in summed_monthly_world_vids_dict[stim].keys():
+            if tbucket=='Vid Count':
+                continue
             this_bucket = [tbucket]
             frame_count = summed_monthly_world_vids_dict[stim][tbucket][0]
             summed_frame = summed_monthly_world_vids_dict[stim][tbucket][1]
