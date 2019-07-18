@@ -445,7 +445,9 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
                     this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
                 else:
                     this_month_sum_world_vids[stim_type][tbucket_num] = [1, this_day_avg_world_vids[stim_type][tbucket_num]]
-    if all(x == this_month_vid_heights[0] for x in this_month_vid_heights):
+    if not this_month_vid_heights:
+            print("No world vids averaged for {date}".format(date=day_name))
+    elif all(x == this_month_vid_heights[0] for x in this_month_vid_heights):
         if all(x == this_month_vid_widths[0] for x in this_month_vid_widths):
             this_month_vid_height = this_month_vid_heights[0]
             this_month_vid_width = this_month_vid_widths[0]
@@ -536,7 +538,8 @@ for folder in daily_csv_files:
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
-
+### UNZIPPABLE DAYS ###
+invalid_zipped = ['2017-12-28','2018-01-25']
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING #
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
@@ -552,7 +555,7 @@ for item in zipped_data:
         # check that the full month has been extracted
         item_just_year = int(item_year_month.split('-')[0])
         item_just_month = int(item_year_month.split('-')[1])
-        if item_just_month<=12:
+        if item_just_month<12:
             next_month = item_just_month + 1
             date_to_check = str(item_just_year) + '-' + str(next_month)
         else:
@@ -570,6 +573,8 @@ for item in zipped_data:
         current_month_summed_world_vids, world_vid_height, world_vid_width = add_to_monthly_world_vids(current_month_analysed, stim_vids)
         average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
         # update list of already extracted months
+        print("Updating list of extracted months...")
+        analysed_folders = sorted(os.listdir(analysed_drive))
         monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
         extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
         # delete daily videos
