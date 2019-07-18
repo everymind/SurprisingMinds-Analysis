@@ -538,7 +538,7 @@ for folder in daily_csv_files:
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
-### UNZIPPABLE DAYS ###
+### DAYS THAT CANNOT BE UNZIPPED ###
 invalid_zipped = ['2017-12-28','2018-01-25']
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING #
 for item in zipped_data:
