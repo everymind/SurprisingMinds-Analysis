@@ -1,3 +1,7 @@
+### --------------------------------------------------------------------------- ###
+# this script requires ImageMagick: https://www.imagemagick.org/script/download.php
+### --------------------------------------------------------------------------- ###
+
 import os
 import glob
 import cv2
@@ -441,7 +445,7 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
 def display_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket):
     # convert dictionary of avg world vid frames into a list of arrays
     frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys()])
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
     for tbucket in sorted_tbuckets:
         frames.append(avg_world_vid_tbucketed_dict[tbucket])
     fig = plt.figure()
@@ -462,27 +466,29 @@ def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket
     # temporarily switch matplotlib backend in order to write video
     plt.switch_backend("Agg")
     # convert dictionary of avg world vid frames into a list of arrays
-    frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys()])
+    tbucket_frames = []
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
     for tbucket in sorted_tbuckets:
-        frames.append(avg_world_vid_tbucketed_dict[tbucket])
+        tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
     # Set up formatting for the movie files
     Writer = animation.writers['ffmpeg']
-    writer = Writer(fps=15, metadata=dict(artist='Danbee Kim'), bitrate=1800)
+    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
     fig = plt.figure()
     i = start_tbucket
-    im = plt.imshow(frames[i], cmap='gray', animated=True)
+    im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
     def updatefig(*args):
         global i
         if (i<end_tbucket):
             i += 1
         else:
             i=0
-        im.set_array(frames[i])
+        im.set_array(tbucket_frames[i])
         return im,
-    ani = animation.FuncAnimation(fig, updatefig, repeat_delay=1000, blit=True)
+    ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
     print("Writing average world video frames to {path}...".format(path=write_path))
-    ani.save(write_path, writer=writer)
+    ani.save(write_path, writer=FF_writer)
+    plt.close(fig)
+    print("Finished writing!")
     # restore default matplotlib backend
     plt.switch_backend('TkAgg')
 
@@ -686,21 +692,20 @@ for month_folder in avg_world_vid_folders:
     for stim in downsampled_monthly_world_vids.keys():
         # save to all_months_avg_world_vids
         all_months_avg_world_vids[month_name][stim] = {}
-        for tbucket in downsampled_monthly_world_vids[stim].keys():
-            all_months_avg_world_vids[month_name][stim][tbucket] = downsampled_monthly_world_vids[stim][tbucket]
+        for key in downsampled_monthly_world_vids[stim].keys():
+            all_months_avg_world_vids[month_name][stim][key] = downsampled_monthly_world_vids[stim][key]
         # display and write to file
-        tbuckets = sorted([x for x in downsampled_monthly_world_vids[stim].keys()])
+        tbuckets = sorted([x for x in downsampled_monthly_world_vids[stim].keys() if type(x) is int])
         start_bucket = 0
         end_bucket = tbuckets[-1]
         i = start_bucket
         # display movie of average world vid
-        display_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket)
+        #display_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket)
         # write to file average world vid
-        write_filename = str(month_name) + '_Stimulus' + str(int(stim)) + '_AvgWorldVid.mp4'
+        num_vids_in_avg_vid = downsampled_monthly_world_vids[stim]['Vid Count']
+        write_filename = str(month_name) + '_Stimulus' + str(int(stim)) + '_AvgWorldVid' + str(num_vids_in_avg_vid) + '.mp4'
         write_path = os.path.join(month_folder_path, write_filename)
-        write_avg_world_vid(downsampled_monthly_world_vids[stim], start_tbucket, end_tbucket, write_path)
-
-
+        write_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket, write_path)
 
 # ------------------------------------------------------------------------ #
 ### EXTRACTION COMPLETE ###
