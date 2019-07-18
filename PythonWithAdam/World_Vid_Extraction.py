@@ -457,7 +457,7 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
 
 def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
     for stim in summed_monthly_world_vids_dict.keys(): 
-        print("Averaging world videos for stimuli {s}...".format(s=stim))
+        print("Averaging world video frames for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
         vid_count = summed_monthly_world_vids_dict[stim]['Vid Count']
@@ -480,7 +480,7 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
             #print("Creating plots folder.")
             os.makedirs(world_folder_path)
         world_csv_filename = os.path.join(world_folder_path, monthly_avg_vid_csv_name)
-        print("Saving average world video of stimulus {s} for {m}".format(s=stim, m=month_name))
+        print("Saving average world video frames of stimulus {s} for {m} to csv".format(s=stim, m=month_name))
         with open(world_csv_filename, 'w', newline='') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(avg_vid)
@@ -538,7 +538,7 @@ for folder in daily_csv_files:
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
 stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
-### UNZIPPABLE DAYS ###
+### DAYS THAT CANNOT BE UNZIPPED ###
 invalid_zipped = ['2017-12-28','2018-01-25']
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING #
 for item in zipped_data:
@@ -557,7 +557,7 @@ for item in zipped_data:
         item_just_month = int(item_year_month.split('-')[1])
         if item_just_month<12:
             next_month = item_just_month + 1
-            date_to_check = str(item_just_year) + '-' + str(next_month)
+            date_to_check = str(item_just_year) + '-' + str(next_month).zfill(2)
         else:
             next_year = item_just_year + 1
             next_month = '01'
@@ -579,14 +579,15 @@ for item in zipped_data:
         extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
         # delete daily videos
         for daily_folder in current_month_analysed:
+            current_date = daily_folder.split(os.sep)[-1].split('_')[1]
             analysis_folder = os.path.join(daily_folder, "Analysis")
             world_folder = os.path.join(analysis_folder, "world")
-            print("Deleting daily world vid average files...")
+            print("Deleting daily world vid average files for {date}...".format(date=current_date))
             shutil.rmtree(world_folder)
             print("Delete successful!")
-            print("Making empty 'world' folder...")
+            print("Making empty 'world' folder for {date}...".format(date=current_date))
             os.makedirs(world_folder)
-            print("Finished!")
+        print("Finished averaging world video frames for {month}!".format(month=item_year_month))
         continue
     
     # if world vid frames this folder haven't already been extracted, EXTRACT!
@@ -690,8 +691,7 @@ for item in zipped_data:
         print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
         print("Delete successful!")
-
-#FIN
-print("Completed world vid frame extraction on all data folders in this drive!")
+    #FIN
+    print("Completed world vid frame extraction on all data folders in this drive!")
 # close logfile
 sys.stdout.close()
