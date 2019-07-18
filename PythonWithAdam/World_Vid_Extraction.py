@@ -416,6 +416,8 @@ def extract_daily_avg_world_vids(daily_avg_world_folder):
 
 def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_types):
     this_month_sum_world_vids = {key:{} for key in list_of_stim_types}
+    this_month_vid_heights = []
+    this_month_vid_widths = []
     for analysed_day in analysis_folder_paths_for_month:
         day_name = analysed_day.split(os.sep)[-1]
         print("Collecting world vid data from {day}".format(day=day_name))
@@ -427,10 +429,12 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
         this_day_avg_world_vids = extract_daily_avg_world_vids(world_folder)
         for stim_type in this_day_avg_world_vids.keys():
             this_month_sum_world_vids[stim_type] = {}
-            vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
-            vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
-            vid_count = this_day_avg_world_vids[stim_type]['Vid Count']
-            this_month_sum_world_vids[stim_type]['Vid Count'] = this_month_sum_world_vids[stim_type].get('Vid Count', 0) + vid_count
+            this_stim_vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
+            this_month_vid_heights.append(this_stim_vid_height)
+            this_stim_vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
+            this_month_vid_widths.append(this_stim_vid_width)
+            this_stim_vid_count = this_day_avg_world_vids[stim_type]['Vid Count']
+            this_month_sum_world_vids[stim_type]['Vid Count'] = this_month_sum_world_vids[stim_type].get('Vid Count', 0) + this_stim_vid_count
             for tbucket_num in this_day_avg_world_vids[stim_type].keys():
                 if tbucket_num=='Vid Dimensions':
                     continue
@@ -441,7 +445,13 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
                     this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
                 else:
                     this_month_sum_world_vids[stim_type][tbucket_num] = [1, this_day_avg_world_vids[stim_type][tbucket_num]]
-    return this_month_sum_world_vids, vid_height, vid_width
+    if all(x == this_month_vid_heights[0] for x in this_month_vid_heights):
+        if all(x == this_month_vid_widths[0] for x in this_month_vid_widths):
+            this_month_vid_height = this_month_vid_heights[0]
+            this_month_vid_width = this_month_vid_widths[0]
+    else:
+        print("Not all video heights and widths are equal!")
+    return this_month_sum_world_vids, this_month_vid_height, this_month_vid_width
 
 def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
     for stim in summed_monthly_world_vids_dict.keys(): 
@@ -559,6 +569,9 @@ for item in zipped_data:
         current_month_analysed = glob.glob(search_pattern)
         current_month_summed_world_vids, world_vid_height, world_vid_width = add_to_monthly_world_vids(current_month_analysed, stim_vids)
         average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
+        # update list of already extracted months
+        monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
+        extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
         # delete daily videos
         for daily_folder in current_month_analysed:
             analysis_folder = os.path.join(daily_folder, "Analysis")
