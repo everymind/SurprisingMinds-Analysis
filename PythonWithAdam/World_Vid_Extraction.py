@@ -691,8 +691,7 @@ for item in zipped_data:
         print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
         print("Delete successful!")
-
-#FIN
-print("Completed world vid frame extraction on all data folders in this drive!")
+    #FIN
+    print("Completed world vid frame extraction on all data folders in this drive!")
 # close logfile
 sys.stdout.close()
