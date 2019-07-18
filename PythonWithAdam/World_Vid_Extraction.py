@@ -406,7 +406,7 @@ def extract_daily_avg_world_vids(daily_avg_world_folder):
                 unravel_width = int(extracted_rows[i][1])
                 world_vids_tbucketed[stim_number]["Vid Dimensions"] = [unravel_height, unravel_width]
             if i==1:
-                vid_count = int(extracted_rows[i])
+                vid_count = int(extracted_rows[i][0])
                 world_vids_tbucketed[stim_number]["Vid Count"] = vid_count
             else:
                 tbucket_num = extracted_rows[i][0]
@@ -430,17 +430,17 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
             vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
             vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
             vid_count = this_day_avg_world_vids[stim_type]['Vid Count']
+            this_month_sum_world_vids[stim_type]['Vid Count'] = this_month_sum_world_vids[stim_type].get('Vid Count', 0) + vid_count
             for tbucket_num in this_day_avg_world_vids[stim_type].keys():
                 if tbucket_num=='Vid Dimensions':
                     continue
                 if tbucket_num=='Vid Count':
-                    this_month_sum_world_vids[stim_type]['Vid Count'] = this_month_sum_world_vids[stim_type]['Vid Count'] + 1
+                    continue
                 if tbucket_num in this_month_sum_world_vids[stim_type].keys():
                     this_month_sum_world_vids[stim_type][tbucket_num][0] = this_month_sum_world_vids[stim_type][tbucket_num][0] + 1
                     this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
                 else:
                     this_month_sum_world_vids[stim_type][tbucket_num] = [1, this_day_avg_world_vids[stim_type][tbucket_num]]
-                    this_month_sum_world_vids[stim_type]['Vid Count'] = 1
     return this_month_sum_world_vids, vid_height, vid_width
 
 def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
