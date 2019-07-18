@@ -404,16 +404,56 @@ def load_avg_world_unraveled(avg_world_folder_path):
                 world_vids_tbucketed[stim_number][tbucket_num] = unraveled_frame
     return world_vids_tbucketed
 
-downsample_avg_world_vids(unraveled_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-unraveled_world_vids_dict = unraveled_world_vids
-new_bucket_size_ms = 40
-original_bucket_size_ms = 4
 def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms, new_bucket_size_ms):
     if (new_bucket_size_ms % original_bucket_size_ms == 0):
         new_sample_rate = int(new_bucket_size_ms/original_bucket_size_ms)
+        downsampled_world_vids_dict = {}
         for stim in unraveled_world_vids_dict.keys():
+            downsampled_world_vids_dict[stim] = {}
+            vid_metadata_keys = sorted([x for x in unraveled_world_vids_dict[stim].keys() if type(x) is str])
+            this_stim_avg_vid_dimensions = unraveled_world_vids_dict[stim][vid_metadata_keys[1]]
             tbuckets = sorted([x for x in unraveled_world_vids_dict[stim].keys() if type(x) is float])
+            padding = new_sample_rate - (int(tbuckets[-1]) % new_sample_rate)
+            original_tbuckets_sliced = range(0, int(tbuckets[-1]+padding), new_sample_rate)
+            new_tbucket = 0
+            for i in original_tbuckets_sliced:
+                start = i
+                end = i + new_sample_rate - 1
+                this_slice_summed_frame = np.zeros((this_stim_avg_vid_dimensions[0], this_stim_avg_vid_dimensions[1]))
+                this_slice_tbuckets = []
+                this_slice_count = 0
+                for tbucket in tbuckets:
+                    if start<=tbucket<=end:
+                        this_slice_tbuckets.append(tbucket)
+                for bucket in this_slice_tbuckets:
+                    this_slice_summed_frame = this_slice_summed_frame + unraveled_world_vids_dict[stim][bucket]
+                    this_slice_count = this_slice_count + 1
+                this_slice_avg_frame = this_slice_summed_frame/float(this_slice_count)
+                downsampled_world_vids_dict[stim][new_tbucket] = this_slice_avg_frame
+                new_tbucket = new_tbucket + 1
+        return downsampled_world_vids_dict
+    else: 
+        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
             
+def display_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket):
+    # convert dictionary of avg world vid frames into a list of arrays
+    frames = []
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys()])
+    for tbucket in sorted_tbuckets:
+        frames.append(avg_world_vid_tbucketed_dict[tbucket])
+    fig = plt.figure()
+    i = start_tbucket
+    im = plt.imshow(frames[i], cmap='gray', animated=True)
+    def updatefig(*args):
+        global i
+        if (i<end_tbucket):
+            i += 1
+        else:
+            i=0
+        im.set_array(frames[i])
+        return im,
+    ani = animation.FuncAnimation(fig, updatefig,  blit=True)
+    plt.show()
 
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
@@ -605,13 +645,13 @@ for month_folder in avg_world_vid_folders:
 ### EXTRACT AND UNRAVEL TIME BINNED STIM VIDEOS ###
 unraveled_world_vids = load_avg_world_unraveled(world_folder)
 # downsample 
-downsampled_world_vids = downsample_avg_world_vids(unraveled_world_vids, )
-unraveled_frame = unraveled_world_vids[24.0][6717.0]
-imgplot = plt.imshow(unraveled_frame, cmap='gray')
-plt.show()
-
-# display average frame at given time bucket
-for stim in avg_world_vids.keys():
+downsampled_world_vids = downsample_avg_world_vids(unraveled_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+# display an averaged frame
+for stim in downsampled_world_vids.keys():
+    tbuckets = sorted([x for x in downsampled_world_vids[stim].keys()])
+    start_bucket = 0
+    end_bucket = tbuckets[-1]
+    display_avg_world_vid(downsampled_world_vids[stim], start_bucket, end_bucket)
 
 
 
@@ -623,6 +663,10 @@ fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 ### EXTRACT STIMULUS INFO ###
+
+### ------------------------------ ###
+### NEED TO UPDATE THIS TO USE THE TIMEBUCKETED STIM FRAMES!!! ###
+### ------------------------------ ###
 # find average luminance of stimuli vids
 luminances = {key:[] for key in stim_vids}
 luminances_avg = {key:[] for key in stim_vids}
@@ -654,6 +698,8 @@ for stimulus in luminances:
     # find peaks
     lum_peaks, _ = find_peaks(avg_lum_smoothed, height=-1, prominence=0.1)
     luminances_peaks[stimulus] = lum_peaks
+### ------------------------------ ###
+
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
 engagement_count_filename = 'Exhibit_Activation_Count_measured-' + todays_datetime + '.csv'
@@ -682,6 +728,8 @@ analysed_array_left = np.array(good_trials_left)
 # time of the day
 # month of the year
 # language chosen
+
+### ------------------------------ ###
 # ---------- #
 ### PUPILS ###
 # ---------- #
@@ -748,7 +796,6 @@ for side in range(len(all_movements)):
             all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
             all_avg_motion_peaks[side][c_axis][stimuli] = peaks_this_stim
 
-### ------------------------------ ###
 ### MARK PEAKS (SACCADES) ###
 all_right_contours_X_peaks = {key:{} for key in stim_vids}
 all_right_circles_X_peaks = {key:{} for key in stim_vids}
