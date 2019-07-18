@@ -14,15 +14,16 @@ from itertools import groupby
 from operator import itemgetter
 from scipy.signal import find_peaks
 import csv
+import fnmatch
 
 ### FUNCTIONS ###
-def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
+def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
     if (new_bucket_size % original_bucket_size == 0):
         new_sample_rate = int(new_bucket_size/original_bucket_size)
         max_no_of_buckets = int(max_no_of_buckets)
         #print("New bucket window = {size}, need to average every {sample_rate} buckets".format(size=new_bucket_size, sample_rate=new_sample_rate))
         # List all csv trial files
-        trial_files = glob.glob(day_folder_path + os.sep + which_eye + "*.csv")
+        trial_files = glob.glob(day_csv_folder_path + os.sep + which_eye + "*.csv")
         num_trials = len(trial_files)
         good_trials = num_trials
         # contours
@@ -153,168 +154,6 @@ def load_daily_pupils(which_eye, day_folder_path, max_no_of_buckets, original_bu
         return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
-
-<<<<<<< HEAD
-def load_daily_world_vids(day_folder_path, vid_height, vid_width, max_no_of_buckets, original_bucket_size, new_bucket_size): 
-    if (new_bucket_size % original_bucket_size == 0):
-        new_sample_rate = int(new_bucket_size/original_bucket_size)
-        max_no_of_buckets = int(max_no_of_buckets)
-        # List all world camera npy files
-        world_files = glob.glob(day_folder_path + os.sep + "*_world-tbuckets.npy")
-        num_trials = len(world_files)
-        # need to create data structure for saving average of all world vids of same stim number from this day
-        this_day_24 = np.empty((max_no_of_buckets, vid_height*vid_width))
-        this_day_24[:] = np.nan
-        this_day_25 = np.empty((max_no_of_buckets, vid_height*vid_width))
-        this_day_25[:] = np.nan
-        this_day_26 = np.empty((max_no_of_buckets, vid_height*vid_width))
-        this_day_26[:] = np.nan
-        this_day_27 = np.empty((max_no_of_buckets, vid_height*vid_width))
-        this_day_27[:] = np.nan
-        this_day_28 = np.empty((max_no_of_buckets, vid_height*vid_width))
-        this_day_28[:] = np.nan
-        this_day_29 = np.empty((max_no_of_buckets, vid_height*vid_width))
-        this_day_29[:] = np.nan
-        #
-        index = 0
-        for world_file in world_files:
-            world_name = world_file.split(os.sep)[-1]
-            world_stimulus = world_name.split("_")[2]
-            world_stim_number = np.float(world_stimulus[-2:])
-            world = np.load(world_file)
-            no_of_samples = math.ceil(len(world)/new_sample_rate)
-            this_world_frames = 
-
-                this_trial_contours_X = []
-                this_trial_contours_Y = []
-                this_trial_contours = []
-                this_trial_circles_X = []
-                this_trial_circles_Y = []
-                this_trial_circles = []
-                # loop through the trial at given sample rate
-                for sample in range(no_of_samples):
-                    start = sample * new_sample_rate
-                    end = (sample * new_sample_rate) + (new_sample_rate - 1)
-                    this_slice = trial[start:end]
-                    for line in this_slice:
-                        if (line<0).any():
-                            line[:] = np.nan
-                        if (line>15000).any():
-                            line[:] = np.nan
-                    # extract pupil sizes and locations from valid time buckets
-                    this_slice_contours_X = []
-                    this_slice_contours_Y = []
-                    this_slice_contours = []
-                    this_slice_circles_X = []
-                    this_slice_circles_Y = []
-                    this_slice_circles = []
-                    for frame in this_slice:
-                        # contour x,y
-                        ## DON'T PAIR X-Y YET
-                        this_slice_contours_X.append(frame[0])
-                        this_slice_contours_Y.append(frame[1])
-                        # contour area
-                        this_slice_contours.append(frame[2])
-                        # circles x,y
-                        ## DON'T PAIR X-Y YET
-                        this_slice_circles_X.append(frame[3])
-                        this_slice_circles_Y.append(frame[4])
-                        # circles area
-                        this_slice_circles.append(frame[5])
-                    # average the pupil size and movement in this sample slice
-                    this_slice_avg_contour_X = np.nanmean(this_slice_contours_X)
-                    this_slice_avg_contour_Y = np.nanmean(this_slice_contours_Y)
-                    this_slice_avg_contour = np.nanmean(this_slice_contours) 
-                    this_slice_avg_circle_X = np.nanmean(this_slice_circles_X)
-                    this_slice_avg_circle_Y = np.nanmean(this_slice_circles_Y)       
-                    this_slice_avg_circle = np.nanmean(this_slice_circles)
-                    # append to list of downsampled pupil sizes and movements
-                    this_trial_contours_X.append(this_slice_avg_contour_X)
-                    this_trial_contours_Y.append(this_slice_avg_contour_Y)
-                    this_trial_contours.append(this_slice_avg_contour)
-                    this_trial_circles_X.append(this_slice_avg_circle_X)
-                    this_trial_circles_Y.append(this_slice_avg_circle_Y)
-                    this_trial_circles.append(this_slice_avg_circle)
-                # Find count of bad measurements
-                bad_count_contours_X = sum(np.isnan(this_trial_contours_X))
-                bad_count_contours_Y = sum(np.isnan(this_trial_contours_Y))
-                bad_count_contours = sum(np.isnan(this_trial_contours))
-                bad_count_circles_X = sum(np.isnan(this_trial_circles_X))
-                bad_count_circles_Y = sum(np.isnan(this_trial_circles_Y))
-                bad_count_circles = sum(np.isnan(this_trial_circles))
-                # if more than half of the trial is NaN, then throw away this trial
-                # otherwise, if it's a good enough trial...
-                bad_threshold = no_of_samples/2
-                if (bad_count_contours_X<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours_X)
-                    data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
-                    data_contours_X[index][-1] = trial_stim_number
-                if (bad_count_contours_Y<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours_Y)
-                    data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
-                    data_contours_Y[index][-1] = trial_stim_number
-                if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold): 
-                    this_chunk_length = len(this_trial_contours)
-                    data_contours[index][0:this_chunk_length] = this_trial_contours
-                    data_contours[index][-1] = trial_stim_number
-                if (bad_count_circles_X<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles_X)
-                    data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
-                    data_circles_X[index][-1] = trial_stim_number
-                if (bad_count_circles_Y<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles_Y)
-                    data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
-                    data_circles_Y[index][-1] = trial_stim_number
-                if (bad_count_circles<bad_threshold): 
-                    this_chunk_length = len(this_trial_circles)
-                    data_circles[index][0:this_chunk_length] = this_trial_circles
-                    data_circles[index][-1] = trial_stim_number
-                index = index + 1
-=======
-### for debugging 
-test_world_folder = r'C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\SurprisingMinds_2018-10-25\Analysis\world'
-
-###
-world_folder_path = test_world_folder
-
-def load_daily_avg_world(world_folder_path, max_no_of_buckets, bucket_size): 
-    # List all world camera csv files
-    stim_files = glob.glob(world_folder_path + os.sep + "*Avg-World-Vid-tbuckets.csv")
-    for stim_file in stim_files: 
-        stim_name = stim_file.split(os.sep)[-1]
-        stim_type = stim_name.split('_')[1]
-        stim_number = np.float(stim_type)
-        with open(stim_file) as f:
-            csvReader = csv.reader(f)
-            for row in csvReader:
-                print(row)
-        
-        for trial_file in trial_files:
-            trial_name = trial_file.split(os.sep)[-1]
-            trial_stimulus = trial_name.split("_")[1]
-            trial_stim_number = np.float(trial_stimulus[-2:])
-            trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
-            
->>>>>>> 69a7282c4134c16343b112f36b30e21da6124401
-            else:
-                #print("Discarding trial {name}".format(name=trial_name))
-                index = index + 1
-                good_trials = good_trials - 1
-        return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
-    else: 
-<<<<<<< HEAD
-        print("New bucket size must be a multiple of {bucket}".format(bucket=original_bucket_size))
-=======
-        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
->>>>>>> 69a7282c4134c16343b112f36b30e21da6124401
-
-def list_sub_folders(path_to_root_folder):
-    # List all sub folders
-    sub_folders = []
-    for folder in os.listdir(path_to_root_folder):
-        if(os.path.isdir(os.path.join(path_to_root_folder, folder))):
-            sub_folders.append(os.path.join(path_to_root_folder, folder))
-    return sub_folders
 
 def threshold_to_nan(input_array, threshold, upper_or_lower):
     for index in range(len(input_array)): 
@@ -533,6 +372,49 @@ def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshol
     saccades = {tbucket:total for tbucket,total in peak_tbuckets_windowed.items()}
     return saccades
 
+def load_avg_world_unraveled(avg_world_folder_path): 
+    # List all world camera csv files
+    stim_files = glob.glob(avg_world_folder_path + os.sep + "*Avg-World-Vid-tbuckets.csv")
+    world_vids_tbucketed = {}
+    for stim_file in stim_files: 
+        stim_filename = stim_file.split(os.sep)[-1]
+        stim_type = stim_filename.split('_')[1]
+        stim_number = np.float(stim_type)
+        world_vids_tbucketed[stim_number] = {}
+        extracted_rows = []
+        print("Extracting from {name}".format(name=stim_filename))
+        with open(stim_file) as f:
+            csvReader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
+            for row in csvReader:
+                extracted_rows.append(row)
+        print("Unraveling average frame data...")
+        for i in range(len(extracted_rows)):
+            if i==0:
+                unravel_height = int(extracted_rows[i][0])
+                unravel_width = int(extracted_rows[i][1])
+                world_vids_tbucketed[stim_number]["Vid Dimensions"] = [unravel_height, unravel_width]
+            elif i==1:
+                vid_count = int(extracted_rows[i][0])
+                world_vids_tbucketed[stim_number]["Vid Count"] = vid_count
+            else:
+                tbucket_num = extracted_rows[i][0]
+                flattened_frame = extracted_rows[i][1:]
+                flat_frame_array = np.array(flattened_frame)
+                unraveled_frame = np.reshape(flat_frame_array,(unravel_height,unravel_width))
+                world_vids_tbucketed[stim_number][tbucket_num] = unraveled_frame
+    return world_vids_tbucketed
+
+downsample_avg_world_vids(unraveled_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+unraveled_world_vids_dict = unraveled_world_vids
+new_bucket_size_ms = 40
+original_bucket_size_ms = 4
+def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms, new_bucket_size_ms):
+    if (new_bucket_size_ms % original_bucket_size_ms == 0):
+        new_sample_rate = int(new_bucket_size_ms/original_bucket_size_ms)
+        for stim in unraveled_world_vids_dict.keys():
+            tbuckets = sorted([x for x in unraveled_world_vids_dict[stim].keys() if type(x) is float])
+            
+
 ### NEED TO WRITE THESE FUNCTIONS
 ### WRITE A SACCADE DETECTOR
 # frame by frame change in xy
@@ -546,7 +428,7 @@ class Logger(object):
     def __init__(self):
         # grab today's date
         now = datetime.datetime.now()
-        log_filename = "pupil-plotting_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_filename = "data-extraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
         log_file = os.path.join(current_working_directory, log_filename)
         self.terminal = sys.stdout
         self.log = open(log_file, "a")
@@ -566,7 +448,9 @@ sys.stdout = Logger()
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
-stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
+### DELETE THIS
+#stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
+###
 # set up folders
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")
@@ -586,7 +470,7 @@ if not os.path.exists(linReg_folder):
     #print("Creating engagement count folder.")
     os.makedirs(linReg_folder)
 # consolidate csv files from multiple days into one data structure
-day_folders = list_sub_folders(root_folder)
+day_folders = sorted(os.listdir(root_folder))
 # first day was a debugging session, so skip it
 day_folders = day_folders[1:]
 ### --------------------------------------------- ###
@@ -627,16 +511,13 @@ milliseconds_for_baseline = 3000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
 
 ### BEGIN PUPIL DATA EXTRACTION ###
-for day_folder in day_folders: 
+pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
+for day_folder in pupil_folders: 
     # for each day...
     day_folder_path = os.path.join(root_folder, day_folder)
     analysis_folder = os.path.join(day_folder_path, "Analysis")
     csv_folder = os.path.join(analysis_folder, "csv")
-<<<<<<< HEAD
-    npy_folder = os.path.join(analysis_folder, "npy")
-=======
     world_folder = os.path.join(analysis_folder, "world")
->>>>>>> 69a7282c4134c16343b112f36b30e21da6124401
 
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
@@ -648,12 +529,7 @@ for day_folder in day_folders:
         analysed_count.append((num_good_right_trials, num_good_left_trials))
         activation_count.append((num_right_activations, num_left_activations))
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
-        ### EXTRACT TIME BINNED STIM VIDEOS ###
-        # unravel and display average frame
-        for stim in avg_world_vids.keys():
 
-        unraveled_frame = np.reshape(foo,(unravel_height,unravel_width))
-        imgplot = plt.imshow(unraveled_frame, cmap='gray')
         # separate by stimulus number
         R_contours_X = {key:[] for key in stim_vids}
         R_contours_Y = {key:[] for key in stim_vids}
@@ -728,6 +604,25 @@ for day_folder in day_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 
+### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
+avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
+for month_folder in avg_world_vid_folders:
+
+## TEST BED ##
+### EXTRACT AND UNRAVEL TIME BINNED STIM VIDEOS ###
+unraveled_world_vids = load_avg_world_unraveled(world_folder)
+# downsample 
+downsampled_world_vids = downsample_avg_world_vids(unraveled_world_vids, )
+unraveled_frame = unraveled_world_vids[24.0][6717.0]
+imgplot = plt.imshow(unraveled_frame, cmap='gray')
+plt.show()
+
+# display average frame at given time bucket
+for stim in avg_world_vids.keys():
+
+
+
+# ------------------------------------------------------------------------ #
 ### EXTRACTION COMPLETE ###
 ### SOME GLOBAL VARIABLES ###
 smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
