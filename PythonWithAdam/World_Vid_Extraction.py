@@ -561,7 +561,7 @@ for item in zipped_data:
         average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
         # delete daily videos
         for daily_folder in current_month_analysed:
-            analysis_folder = os.path.join(daily_folder, item[:-4], "Analysis")
+            analysis_folder = os.path.join(daily_folder, "Analysis")
             world_folder = os.path.join(analysis_folder, "world")
             print("Deleting daily world vid average files...")
             shutil.rmtree(world_folder)
