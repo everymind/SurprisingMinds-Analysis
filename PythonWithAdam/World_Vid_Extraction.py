@@ -457,7 +457,7 @@ def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_type
 
 def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_width, month_name, analysed_data_drive):
     for stim in summed_monthly_world_vids_dict.keys(): 
-        print("Averaging world videos for stimuli {s}...".format(s=stim))
+        print("Averaging world video frames for stimuli {s}...".format(s=stim))
         avg_vid = []
         avg_vid.append([vid_height, vid_width])
         vid_count = summed_monthly_world_vids_dict[stim]['Vid Count']
@@ -480,7 +480,7 @@ def average_monthly_world_vids(summed_monthly_world_vids_dict, vid_height, vid_w
             #print("Creating plots folder.")
             os.makedirs(world_folder_path)
         world_csv_filename = os.path.join(world_folder_path, monthly_avg_vid_csv_name)
-        print("Saving average world video of stimulus {s} for {m}".format(s=stim, m=month_name))
+        print("Saving average world video frames of stimulus {s} for {m} to csv".format(s=stim, m=month_name))
         with open(world_csv_filename, 'w', newline='') as f:
             writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
             writer.writerows(avg_vid)
@@ -557,7 +557,7 @@ for item in zipped_data:
         item_just_month = int(item_year_month.split('-')[1])
         if item_just_month<12:
             next_month = item_just_month + 1
-            date_to_check = str(item_just_year) + '-' + str(next_month)
+            date_to_check = str(item_just_year) + '-' + str(next_month).zfill(2)
         else:
             next_year = item_just_year + 1
             next_month = '01'
@@ -587,7 +587,7 @@ for item in zipped_data:
             print("Delete successful!")
             print("Making empty 'world' folder for {date}...".format(date=current_date))
             os.makedirs(world_folder)
-        print("Finished averaging world videos for {month}!".format(month=item_year_month))
+        print("Finished averaging world video frames for {month}!".format(month=item_year_month))
         continue
     
     # if world vid frames this folder haven't already been extracted, EXTRACT!
