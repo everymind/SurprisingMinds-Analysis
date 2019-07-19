@@ -731,16 +731,17 @@ for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
 ### month/stimulus variables to change ###
 month_index = 0 # change index to change month
-stim_to_check = 24.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
 sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(x) is int])
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 150 # change to check different time buckets
+tbucket_to_check = 1109 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
 ### --------------------------------------------- ###
+
 
 # ------------------------------------------------------------------------ #
 ### GLOBAL VARIABLES FOR PROCESSING EXTRACTED DATA ###
