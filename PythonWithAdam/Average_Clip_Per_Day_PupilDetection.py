@@ -330,6 +330,8 @@ data_drive = r"\\Diskstation\SurprisingMinds"
 data_folders = sorted(os.listdir(data_drive))
 zipped_data = fnmatch.filter(data_folders, '*.zip')
 zipped_names = [item[:-4] for item in zipped_data]
+# skip first day because it was an exhibit debugging day
+zipped_data = zipped_data[1:]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
 analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
