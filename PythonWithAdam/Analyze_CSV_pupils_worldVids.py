@@ -1,20 +1,25 @@
+### --------------------------------------------------------------------------- ###
+# this script requires ImageMagick: https://www.imagemagick.org/script/download.php
+### --------------------------------------------------------------------------- ###
+
 import os
 import glob
 import cv2
 import datetime
-import numpy as np
-import matplotlib.pyplot as plt
 import math
 import sys
 import itertools
+import csv
+import fnmatch
+import numpy as np
+import matplotlib as mpl
+import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from collections import defaultdict
 from scipy.signal import savgol_filter
 from itertools import groupby
 from operator import itemgetter
 from scipy.signal import find_peaks
-import csv
-import fnmatch
 
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
@@ -379,7 +384,7 @@ def load_avg_world_unraveled(avg_world_folder_path):
     for stim_file in stim_files: 
         stim_filename = stim_file.split(os.sep)[-1]
         stim_type = stim_filename.split('_')[1]
-        stim_number = np.float(stim_type)
+        stim_number = stim_name_to_float[stim_type]
         world_vids_tbucketed[stim_number] = {}
         extracted_rows = []
         print("Extracting from {name}".format(name=stim_filename))
@@ -411,6 +416,8 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
         for stim in unraveled_world_vids_dict.keys():
             downsampled_world_vids_dict[stim] = {}
             vid_metadata_keys = sorted([x for x in unraveled_world_vids_dict[stim].keys() if type(x) is str])
+            for metadata in vid_metadata_keys:
+                downsampled_world_vids_dict[stim][metadata] = unraveled_world_vids_dict[stim][metadata]
             this_stim_avg_vid_dimensions = unraveled_world_vids_dict[stim][vid_metadata_keys[1]]
             tbuckets = sorted([x for x in unraveled_world_vids_dict[stim].keys() if type(x) is float])
             padding = new_sample_rate - (int(tbuckets[-1]) % new_sample_rate)
@@ -438,7 +445,7 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
 def display_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket):
     # convert dictionary of avg world vid frames into a list of arrays
     frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys()])
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
     for tbucket in sorted_tbuckets:
         frames.append(avg_world_vid_tbucketed_dict[tbucket])
     fig = plt.figure()
@@ -452,8 +459,38 @@ def display_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbuck
             i=0
         im.set_array(frames[i])
         return im,
-    ani = animation.FuncAnimation(fig, updatefig,  blit=True)
+    ani = animation.FuncAnimation(fig, updatefig, repeat_delay=1000, blit=True)
     plt.show()
+
+def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket, write_path):
+    # temporarily switch matplotlib backend in order to write video
+    plt.switch_backend("Agg")
+    # convert dictionary of avg world vid frames into a list of arrays
+    tbucket_frames = []
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
+    for tbucket in sorted_tbuckets:
+        tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
+    # Set up formatting for the movie files
+    Writer = animation.writers['ffmpeg']
+    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
+    fig = plt.figure()
+    i = start_tbucket
+    im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
+    def updatefig(*args):
+        global i
+        if (i<end_tbucket):
+            i += 1
+        else:
+            i=0
+        im.set_array(tbucket_frames[i])
+        return im,
+    ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
+    print("Writing average world video frames to {path}...".format(path=write_path))
+    ani.save(write_path, writer=FF_writer)
+    plt.close(fig)
+    print("Finished writing!")
+    # restore default matplotlib backend
+    plt.switch_backend('TkAgg')
 
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
@@ -511,10 +548,23 @@ day_folders = day_folders[1:]
 # currently still running pupil finding analysis...
 day_folders = day_folders[:-1]
 ### --------------------------------------------- ###
-# sort data by stimulus
+### TIMING/SAMPLING VARIABLES
+# downsample = collect data from every 40ms or other multiples of 20
+downsampled_bucket_size_ms = 40
+original_bucket_size_in_ms = 4
+max_length_of_stim_vid = 60000 # milliseconds
+no_of_time_buckets = max_length_of_stim_vid/original_bucket_size_in_ms
+downsampled_no_of_time_buckets = max_length_of_stim_vid/downsampled_bucket_size_ms
+new_time_bucket_sample_rate = downsampled_bucket_size_ms/original_bucket_size_in_ms
+milliseconds_for_baseline = 3000
+baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
+### STIMULI VID INFO
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
-stim_name_to_float = {"stimuli024": 24.0, "stimuli025": 25.0, "stimuli026": 26.0, "stimuli027": 27.0, "stimuli028": 28.0, "stimuli029": 29.0}
-stim_float_to_name = {24.0: "stimuli024", 25.0: "stimuli025", 26.0: "stimuli026", 27.0: "stimuli027", 28.0: "stimuli028", 29.0: "stimuli029"}
+stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
+stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
+
+### BEGIN PUPIL DATA EXTRACTION ###
+# prepare to sort pupil data by stimulus
 all_right_trials_contours_X = {key:[] for key in stim_vids}
 all_right_trials_contours_Y = {key:[] for key in stim_vids}
 all_right_trials_contours = {key:[] for key in stim_vids}
@@ -533,17 +583,7 @@ all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all
 activation_count = []
 analysed_count = []
 stimuli_tbucketed = {key:[] for key in stim_vids}
-# downsample = collect data from every 40ms or other multiples of 20
-downsampled_bucket_size_ms = 40
-original_bucket_size_in_ms = 4
-max_length_of_stim_vid = 60000 # milliseconds
-no_of_time_buckets = max_length_of_stim_vid/original_bucket_size_in_ms
-downsampled_no_of_time_buckets = max_length_of_stim_vid/downsampled_bucket_size_ms
-new_time_bucket_sample_rate = downsampled_bucket_size_ms/original_bucket_size_in_ms
-milliseconds_for_baseline = 3000
-baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
-
-### BEGIN PUPIL DATA EXTRACTION ###
+# find pupil data on dropbox
 pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 for day_folder in pupil_folders: 
     # for each day...
@@ -636,28 +676,40 @@ for day_folder in pupil_folders:
         print("Day {day} succeeded!".format(day=day_name))
     except Exception:
         print("Day {day} failed!".format(day=day_name))
+### END PUPIL EXTRACTION ###
 
 ### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
 avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
+all_months_avg_world_vids = {}
 for month_folder in avg_world_vid_folders:
-
-## TEST BED ##
-### EXTRACT AND UNRAVEL TIME BINNED STIM VIDEOS ###
-unraveled_world_vids = load_avg_world_unraveled(world_folder)
-# downsample 
-downsampled_world_vids = downsample_avg_world_vids(unraveled_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-# display an averaged frame
-for stim in downsampled_world_vids.keys():
-    tbuckets = sorted([x for x in downsampled_world_vids[stim].keys()])
-    start_bucket = 0
-    end_bucket = tbuckets[-1]
-    display_avg_world_vid(downsampled_world_vids[stim], start_bucket, end_bucket)
-
-
+    month_name = month_folder.split('_')[1]
+    all_months_avg_world_vids[month_name] = {}
+    month_folder_path = os.path.join(root_folder, month_folder)
+    ### EXTRACT AND UNRAVEL TIME BINNED STIM VIDEOS ###
+    unraveled_monthly_world_vids = load_avg_world_unraveled(month_folder_path)
+    # downsample 
+    downsampled_monthly_world_vids = downsample_avg_world_vids(unraveled_monthly_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+    for stim in downsampled_monthly_world_vids.keys():
+        # save to all_months_avg_world_vids
+        all_months_avg_world_vids[month_name][stim] = {}
+        for key in downsampled_monthly_world_vids[stim].keys():
+            all_months_avg_world_vids[month_name][stim][key] = downsampled_monthly_world_vids[stim][key]
+        # display and write to file
+        tbuckets = sorted([x for x in downsampled_monthly_world_vids[stim].keys() if type(x) is int])
+        start_bucket = 0
+        end_bucket = tbuckets[-1]
+        i = start_bucket
+        # display movie of average world vid
+        #display_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket)
+        # write to file average world vid
+        num_vids_in_avg_vid = downsampled_monthly_world_vids[stim]['Vid Count']
+        write_filename = str(month_name) + '_Stimulus' + str(int(stim)) + '_AvgWorldVid' + str(num_vids_in_avg_vid) + '.mp4'
+        write_path = os.path.join(month_folder_path, write_filename)
+        write_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket, write_path)
 
 # ------------------------------------------------------------------------ #
 ### EXTRACTION COMPLETE ###
-### SOME GLOBAL VARIABLES ###
+### GLOBAL VARIABLES FOR PROCESSING EXTRACTED DATA ###
 smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
 fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
@@ -667,7 +719,7 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 ### ------------------------------ ###
 ### NEED TO UPDATE THIS TO USE THE TIMEBUCKETED STIM FRAMES!!! ###
 ### ------------------------------ ###
-# find average luminance of stimuli vids
+""" # find average luminance of stimuli vids
 luminances = {key:[] for key in stim_vids}
 luminances_avg = {key:[] for key in stim_vids}
 luminances_baseline = {key:[] for key in stim_vids}
@@ -697,7 +749,7 @@ for stimulus in luminances:
     luminances_avg[stimulus] = avg_lum_smoothed
     # find peaks
     lum_peaks, _ = find_peaks(avg_lum_smoothed, height=-1, prominence=0.1)
-    luminances_peaks[stimulus] = lum_peaks
+    luminances_peaks[stimulus] = lum_peaks """
 ### ------------------------------ ###
 
 ### EXHIBIT ACTIVITY METADATA ### 
