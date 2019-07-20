@@ -680,10 +680,18 @@ for day_folder in pupil_folders:
 ### --------------------------------------------- ###
 ### --------------------------------------------- ###
 ### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
-avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
 all_months_avg_world_vids = {}
 ### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS ###
-for month_folder in avg_world_vid_folders:
+# update list of completed world vid average folders on dropbox
+day_folders = sorted(os.listdir(root_folder))
+avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
+updated_folders_to_extract = []
+for avg_world_vid_folder in avg_world_vid_folders:
+    folder_year_month = avg_world_vid_folder.split('_')[1]
+    if folder_year_month not in all_months_avg_world_vids.keys():
+        updated_folders_to_extract.append(avg_world_vid_folder)
+# extract, unravel, write to video, and save
+for month_folder in updated_folders_to_extract:
     month_name = month_folder.split('_')[1]
     all_months_avg_world_vids[month_name] = {}
     month_folder_path = os.path.join(root_folder, month_folder)
@@ -723,27 +731,58 @@ for month_folder in avg_world_vid_folders:
 #
 ### BEGIN DATA CLEANING AND PROCESSING ###
 #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+### MANUAL SECTION, DO NOT RUN AS A SCRIPT!!! ###
+# ------------------------------------------------------------------------ #
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
-# change this variable based on what month/stim you want to check
+# setup 
+moments_of_interest = ['calibration start', 'calibration end', 'unique clip start', 'octo clip start', 'octo appears', 'thank you screen']
+all_months_avg_world_moments = {key:{} for key in all_months_avg_world_vids.keys()}
+for month in all_months_avg_world_moments.keys():
+    all_months_avg_world_moments[month] = {stim:{} for stim in stim_vids}
+    for stim in all_months_avg_world_moments[month].keys():
+        all_months_avg_world_moments[month][stim] = {moment:[] for moment in moments_of_interest}
+# start searching for time bucket numbers
+# display available months
 months_available = [x for x in all_months_avg_world_vids.keys()]
 print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
+# change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 0 # change index to change month
-stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+month_index = 1 # change index to change month
+stim_to_check = 25.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+# more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
 sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(x) is int])
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 1109 # change to check different time buckets
+tbucket_to_check = 104 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
 ### --------------------------------------------- ###
-
+### once found, manually insert time bucket numbers for moments of interest
+# 2017-10
+all_months_avg_world_moments['2017-10'] = {24.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [442], 'octo clip start': [595,596], 'octo appears': [759], 'thank you screen': [985,987]}, 
+25.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [599], 'octo appears': [763], 'thank you screen': [987,989]}, 
+26.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [442], 'octo clip start': [662,663], 'octo appears': [827], 'thank you screen': [1051,1054]}, 
+27.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [605,606], 'octo appears': [770], 'thank you screen': [994,996]}, 
+28.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [661,662], 'octo appears': [826], 'thank you screen': [1051,1054]}, 
+29.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [442], 'octo clip start': [716,717], 'octo appears': [881], 'thank you screen': [1105,1108]}}
+all_months_avg_world_moments['2017-11'] = {24.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+25.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+26.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+27.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+28.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+29.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}}
 
 # ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+
 ### GLOBAL VARIABLES FOR PROCESSING EXTRACTED DATA ###
 smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
 fig_size = 200 # dpi
