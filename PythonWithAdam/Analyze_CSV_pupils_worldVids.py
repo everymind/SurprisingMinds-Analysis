@@ -1,5 +1,6 @@
 ### --------------------------------------------------------------------------- ###
-# this script requires ImageMagick: https://www.imagemagick.org/script/download.php
+# this script uses ImageMagick to easily install ffmpeg onto Windows 10: 
+# https://www.imagemagick.org/script/download.php
 ### --------------------------------------------------------------------------- ###
 
 import os
@@ -414,6 +415,7 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
         new_sample_rate = int(new_bucket_size_ms/original_bucket_size_ms)
         downsampled_world_vids_dict = {}
         for stim in unraveled_world_vids_dict.keys():
+            print("Working on stimulus {s}".format(s=stim))
             downsampled_world_vids_dict[stim] = {}
             vid_metadata_keys = sorted([x for x in unraveled_world_vids_dict[stim].keys() if type(x) is str])
             for metadata in vid_metadata_keys:
@@ -441,26 +443,6 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
         return downsampled_world_vids_dict
     else: 
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
-            
-def display_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket):
-    # convert dictionary of avg world vid frames into a list of arrays
-    frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
-    for tbucket in sorted_tbuckets:
-        frames.append(avg_world_vid_tbucketed_dict[tbucket])
-    fig = plt.figure()
-    i = start_tbucket
-    im = plt.imshow(frames[i], cmap='gray', animated=True)
-    def updatefig(*args):
-        global i
-        if (i<end_tbucket):
-            i += 1
-        else:
-            i=0
-        im.set_array(frames[i])
-        return im,
-    ani = animation.FuncAnimation(fig, updatefig, repeat_delay=1000, blit=True)
-    plt.show()
 
 def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket, write_path):
     # temporarily switch matplotlib backend in order to write video
@@ -491,6 +473,17 @@ def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket
     print("Finished writing!")
     # restore default matplotlib backend
     plt.switch_backend('TkAgg')
+       
+def display_avg_world_tbucket(avg_world_vid_tbucketed_dict, tbucket_to_display):
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
+    max_tbucket = sorted_tbuckets[-1]
+    if 0<=tbucket_to_display<=max_tbucket:
+        display = avg_world_vid_tbucketed_dict[tbucket_to_display]
+        fig = plt.figure()
+        im = plt.imshow(display, cmap='gray')
+        plt.show()
+    else: 
+        print("Time Bucket is out of range!")
 
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
@@ -513,7 +506,7 @@ class Logger(object):
         #you might want to specify some extra behavior here.
         pass    
 sys.stdout = Logger()
-
+#
 ### BEGIN ANALYSIS ###
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
@@ -541,12 +534,6 @@ if not os.path.exists(linReg_folder):
     os.makedirs(linReg_folder)
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
-# first day was a debugging session, so skip it
-day_folders = day_folders[1:]
-### --------------------------------------------- ###
-### REMOVE THIS LINE WHEN PUPIL FINDING IS DONE!! ###
-# currently still running pupil finding analysis...
-day_folders = day_folders[:-1]
 ### --------------------------------------------- ###
 ### TIMING/SAMPLING VARIABLES
 # downsample = collect data from every 40ms or other multiples of 20
@@ -563,6 +550,10 @@ stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
 
+#
+#
+### --------------------------------------------- ###
+### --------------------------------------------- ###
 ### BEGIN PUPIL DATA EXTRACTION ###
 # prepare to sort pupil data by stimulus
 all_right_trials_contours_X = {key:[] for key in stim_vids}
@@ -585,6 +576,10 @@ analysed_count = []
 stimuli_tbucketed = {key:[] for key in stim_vids}
 # find pupil data on dropbox
 pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
+# first day was a debugging session, so skip it
+pupil_folders = pupil_folders[1:]
+# currently still running pupil finding analysis...
+pupil_folders = pupil_folders[:-1]
 for day_folder in pupil_folders: 
     # for each day...
     day_folder_path = os.path.join(root_folder, day_folder)
@@ -677,38 +672,78 @@ for day_folder in pupil_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 ### END PUPIL EXTRACTION ###
+### --------------------------------------------- ###
+### --------------------------------------------- ###
+#
 
+#
+### --------------------------------------------- ###
+### --------------------------------------------- ###
 ### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
 avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
 all_months_avg_world_vids = {}
+### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS ###
 for month_folder in avg_world_vid_folders:
     month_name = month_folder.split('_')[1]
     all_months_avg_world_vids[month_name] = {}
     month_folder_path = os.path.join(root_folder, month_folder)
-    ### EXTRACT AND UNRAVEL TIME BINNED STIM VIDEOS ###
+    # unravel
     unraveled_monthly_world_vids = load_avg_world_unraveled(month_folder_path)
-    # downsample 
+    # downsample
+    print("Downsampling monthly averaged stimulus videos for {month}".format(month=month_name)) 
     downsampled_monthly_world_vids = downsample_avg_world_vids(unraveled_monthly_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+    # save and display
+    avg_files_this_month = os.listdir(month_folder_path)
+    vids_already_made = fnmatch.filter(avg_files_this_month, '*.mp4')
     for stim in downsampled_monthly_world_vids.keys():
         # save to all_months_avg_world_vids
         all_months_avg_world_vids[month_name][stim] = {}
         for key in downsampled_monthly_world_vids[stim].keys():
             all_months_avg_world_vids[month_name][stim][key] = downsampled_monthly_world_vids[stim][key]
-        # display and write to file
-        tbuckets = sorted([x for x in downsampled_monthly_world_vids[stim].keys() if type(x) is int])
-        start_bucket = 0
-        end_bucket = tbuckets[-1]
-        i = start_bucket
-        # display movie of average world vid
-        #display_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket)
-        # write to file average world vid
-        num_vids_in_avg_vid = downsampled_monthly_world_vids[stim]['Vid Count']
-        write_filename = str(month_name) + '_Stimulus' + str(int(stim)) + '_AvgWorldVid' + str(num_vids_in_avg_vid) + '.mp4'
-        write_path = os.path.join(month_folder_path, write_filename)
-        write_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket, write_path)
+        # write average world video to file
+        stim_name = stim_float_to_name[stim]
+        search_pattern = month_name + '_' + stim_name + '_AvgWorldVid*.mp4'
+        this_stim_vid_already_made = fnmatch.filter(vids_already_made, search_pattern)
+        if not this_stim_vid_already_made:
+            tbuckets = sorted([x for x in downsampled_monthly_world_vids[stim].keys() if type(x) is int])
+            start_bucket = 0
+            end_bucket = tbuckets[-1]
+            i = start_bucket
+            num_vids_in_avg_vid = downsampled_monthly_world_vids[stim]['Vid Count']
+            write_filename = str(month_name) + '_' + stim_name + '_AvgWorldVid' + str(num_vids_in_avg_vid) + '.mp4'
+            write_path = os.path.join(month_folder_path, write_filename)
+            write_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket, write_path)
+        else:
+            print("Monthly averaged stimulus videos already made for stimulus {s}".format(s=stim))
+### END MONTHLY AVERAGE DATA EXTRACTION ###
+### --------------------------------------------- ###
+### --------------------------------------------- ###
+### CSV DATA EXTRACTION COMPLETE ###
+#
+#
+### BEGIN DATA CLEANING AND PROCESSING ###
+#
+### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
+# change this variable based on what month/stim you want to check
+months_available = [x for x in all_months_avg_world_vids.keys()]
+print("Months for which averaged stimulus video data exists: ")
+for i in range(len(months_available)):
+    print("{index}: {month}".format(index=i, month=months_available[i]))
+### month/stimulus variables to change ###
+month_index = 0 # change index to change month
+stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+month_to_check = months_available[month_index]
+avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
+sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(x) is int])
+max_tbucket = sorted_tbuckets[-1]
+print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
+### tbucket variable to change ###
+tbucket_to_check = 1109 # change to check different time buckets
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
+### --------------------------------------------- ###
+
 
 # ------------------------------------------------------------------------ #
-### EXTRACTION COMPLETE ###
 ### GLOBAL VARIABLES FOR PROCESSING EXTRACTED DATA ###
 smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
 fig_size = 200 # dpi
