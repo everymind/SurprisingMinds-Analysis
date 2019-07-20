@@ -2,7 +2,6 @@
 # this script uses ImageMagick to easily install ffmpeg onto Windows 10: 
 # https://www.imagemagick.org/script/download.php
 ### --------------------------------------------------------------------------- ###
-
 import os
 import glob
 import cv2
@@ -21,7 +20,6 @@ from scipy.signal import savgol_filter
 from itertools import groupby
 from operator import itemgetter
 from scipy.signal import find_peaks
-
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
     if (new_bucket_size % original_bucket_size == 0):
@@ -485,6 +483,40 @@ def display_avg_world_tbucket(avg_world_vid_tbucketed_dict, tbucket_to_display):
     else: 
         print("Time Bucket is out of range!")
 
+def find_moment_tbuckets(list_of_moments_to_find, all_moments_dict, year_month, this_stimulus):
+    this_year_int = int(year_month.split('-')[0])
+    this_month_int = int(year_month.split('-')[1])
+    tbuckets_of_moments = {}
+    for m in list_of_moments_to_find:
+        if len(all_moments_dict[this_stimulus][m].keys())>1:
+            for tbucket_num in all_moments_dict[this_stimulus][m].keys():
+                if month in all_moments_dict[this_stimulus][m][tbucket_num]:
+                    tbuckets_of_moments[m] = tbucket_num
+        else:
+            for tbucket_num in all_moments_dict[this_stimulus][m].keys():
+                tbuckets_of_moments[m] = tbucket_num
+    # if a month has not been checked for moments of interest, find the nearest month that has been checked
+    if len(tbuckets_of_moments)!=len(list_of_moments_to_find):
+        for m in list_of_moments_to_find:
+            if m not in tbuckets_of_moments:
+                nearest_year_month = None
+                nearest_year_diff = math.inf
+                nearest_month_diff = math.inf
+                for tbucket_num in all_moments_dict[this_stimulus][m].keys():
+                    for year_month_str in all_moments_dict[this_stimulus][m][tbucket_num]:
+                        year_int = int(year_month_str.split('-')[0])
+                        month_int = int(year_month_str.split('-')[1])
+                        this_year_diff = abs(this_year_int-year_int)
+                        this_month_diff = abs(this_month_int-month_int)
+                        if this_year_diff<nearest_year_diff and this_month_diff<nearest_month_diff:
+                            nearest_year_diff = this_year_diff
+                            nearest_month_diff = this_month_diff
+                            nearest_year_month = year_month_str
+                for tbucket_num in all_moments_dict[this_stimulus][m].keys():
+                    if nearest_year_month in all_moments_dict[this_stimulus][m][tbucket_num]:
+                        tbuckets_of_moments[m] = tbucket_num
+    return tbuckets_of_moments
+
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
 class Logger(object):
@@ -506,14 +538,10 @@ class Logger(object):
         #you might want to specify some extra behavior here.
         pass    
 sys.stdout = Logger()
-#
 ### BEGIN ANALYSIS ###
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
-### DELETE THIS
-#stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
-###
 # set up folders
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")
@@ -534,8 +562,7 @@ if not os.path.exists(linReg_folder):
     os.makedirs(linReg_folder)
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
-### --------------------------------------------- ###
-### TIMING/SAMPLING VARIABLES
+### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
 # downsample = collect data from every 40ms or other multiples of 20
 downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
@@ -549,11 +576,10 @@ baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
-
-#
-#
-### --------------------------------------------- ###
-### --------------------------------------------- ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### BEGIN PUPIL DATA EXTRACTION ###
 # prepare to sort pupil data by stimulus
 all_right_trials_contours_X = {key:[] for key in stim_vids}
@@ -672,18 +698,23 @@ for day_folder in pupil_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 ### END PUPIL EXTRACTION ###
-### --------------------------------------------- ###
-### --------------------------------------------- ###
-#
-
-#
-### --------------------------------------------- ###
-### --------------------------------------------- ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
-avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
 all_months_avg_world_vids = {}
 ### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS ###
-for month_folder in avg_world_vid_folders:
+# update list of completed world vid average folders on dropbox
+day_folders = sorted(os.listdir(root_folder))
+avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
+updated_folders_to_extract = []
+for avg_world_vid_folder in avg_world_vid_folders:
+    folder_year_month = avg_world_vid_folder.split('_')[1]
+    if folder_year_month not in all_months_avg_world_vids.keys():
+        updated_folders_to_extract.append(avg_world_vid_folder)
+# extract, unravel, write to video, and save
+for month_folder in updated_folders_to_extract:
     month_name = month_folder.split('_')[1]
     all_months_avg_world_vids[month_name] = {}
     month_folder_path = os.path.join(root_folder, month_folder)
@@ -716,77 +747,200 @@ for month_folder in avg_world_vid_folders:
         else:
             print("Monthly averaged stimulus videos already made for stimulus {s}".format(s=stim))
 ### END MONTHLY AVERAGE DATA EXTRACTION ###
-### --------------------------------------------- ###
-### --------------------------------------------- ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### CSV DATA EXTRACTION COMPLETE ###
-#
-#
-### BEGIN DATA CLEANING AND PROCESSING ###
-#
+### GLOBAL VARIABLES FOR CLEANING AND PROCESSING EXTRACTED DATA ###
+smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
+todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
-# change this variable based on what month/stim you want to check
+# setup 
+moments_of_interest = ['calibration start', 'calibration end', 'unique clip start', 'octo clip start', 'octo appears', 'thank you screen']
+all_avg_world_moments = {key:{} for key in stim_vids}
+for stim in all_avg_world_moments.keys():
+    all_avg_world_moments[stim] = {moment:[] for moment in moments_of_interest}
+# ------------------------------------------------------------------------ #
+### MANUAL SECTION, DO NOT RUN BELOW AS A SCRIPT!!! ###
+### MANUAL SECTION, DO NOT RUN BELOW AS A SCRIPT!!! ###
+# ------------------------------------------------------------------------ #
+# start searching for time bucket numbers
+# display available months
 months_available = [x for x in all_months_avg_world_vids.keys()]
 print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
+# change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 0 # change index to change month
+month_index = 1 # change index to change month
 stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+# more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
 sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(x) is int])
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 1109 # change to check different time buckets
+tbucket_to_check = 1111 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
-### --------------------------------------------- ###
-
-
 # ------------------------------------------------------------------------ #
-### GLOBAL VARIABLES FOR PROCESSING EXTRACTED DATA ###
-smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
-fig_size = 200 # dpi
-image_type_options = ['.png', '.pdf']
-todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-### EXTRACT STIMULUS INFO ###
-
+### END MANUAL SECTION, DO NOT RUN ABOVE AS A SCRIPT!!! ###
+### END MANUAL SECTION, DO NOT RUN ABOVE AS A SCRIPT!!! ###
+# ------------------------------------------------------------------------ #
+### RERUN THIS SECTION TO UPDATE MOMENTS OF INTEREST
+### once found, manually insert time bucket numbers for moments of interest
+### format --> for 'start' and 'appears' moments: 
+### {first tbucket when a frame of this moment is visible in the monthly avg frame: [list of months for which this applies]}
+### for 'end' moments:
+### {last tbucket when a frame of this moment is visible in the monthly avg frame: [list of months for which this applies]}
+# Stimulus 24.0
+all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11']}, 
+'calibration end': {441:['2017-10','2017-11']}, 
+'unique start': {442:['2017-10'],443:['2017-11']}, 
+'unique end': {596:['2017-10','2017-11']}, 
+'octo start': {595:['2017-10'],596:['2017-11']}, 
+'octo appears': {759:['2017-10','2017-11']}, 
+'octo end': {987:['2017-10'],989:['2017-11']}} 
+# Stimulus 25.0
+all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11']}, 
+'calibration end': {441:['2017-10','2017-11']}, 
+'unique start': {443:['2017-10','2017-11']}, 
+'unique end': {599:['2017-10'],600:['2017-11']}, 
+'octo start': {599:['2017-10','2017-11']}, 
+'octo appears': {763:['2017-10','2017-11']}, 
+'octo end': {989:['2017-10'],993:['2017-11']}} 
+# Stimulus 26.0
+all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11']}, 
+'calibration end': {441:['2017-10','2017-11']}, 
+'unique start': {442:['2017-10'],443:['2017-11']}, 
+'unique end': {663:['2017-10'],665:['2017-11']}, 
+'octo start': {662:['2017-10'],664:['2017-11']}, 
+'octo appears': {827:['2017-10','2017-11']}, 
+'octo end': {1054:['2017-10'],1059:['2017-11']}} 
+# Stimulus 27.0
+all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11']}, 
+'calibration end': {441:['2017-10','2017-11']}, 
+'unique start': {443:['2017-10','2017-11']}, 
+'unique end': {606:['2017-10'],607:['2017-11']}, 
+'octo start': {605:['2017-10','2017-11']}, 
+'octo appears': {770:['2017-10'],772:['2017-11']}, 
+'octo end': {996:['2017-10'],1000:['2017-11']}} 
+# Stimulus 28.0
+all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11']}, 
+'calibration end': {441:['2017-10','2017-11']}, 
+'unique start': {443:['2017-10','2017-11']}, 
+'unique end': {662:['2017-10'],663:['2017-11']}, 
+'octo start': {661:['2017-10'],663:['2017-11']}, 
+'octo appears': {826:['2017-10','2017-11']}, 
+'octo end': {1054:['2017-10'],1056:['2017-11']}} 
+# Stimulus 29.0
+all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11']}, 
+'calibration end': {441:['2017-10','2017-11']}, 
+'unique start': {442:['2017-10'],443:['2017-11']}, 
+'unique end': {717:['2017-10','2017-11']}, 
+'octo start': {716:['2017-10'],717:['2017-11']}, 
+'octo appears': {881:['2017-10'],882:['2017-11']}, 
+'octo end': {1108:['2017-10'],1110:['2017-11']}} 
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+### AVERAGE LUMINANCE PER TIME BUCKET
+avg_monthly_world_vid_luminance = {}
+for month in all_months_avg_world_vids.keys():
+    avg_monthly_world_vid_luminance[month] = {}
+    for stim in all_months_avg_world_vids[month].keys():
+        print("Calculating luminance of each frame in average video for stimulus {s} during {m}".format(s=stim, m=month))
+        avg_monthly_world_vid_luminance[month][stim] = {}
+        for tbucket in all_months_avg_world_vids[month][stim].keys():
+            if tbucket=='Vid Count':
+                avg_monthly_world_vid_luminance[month][stim][tbucket] = all_months_avg_world_vids[month][stim][tbucket]
+                continue
+            elif tbucket=='Vid Dimensions':
+                avg_monthly_world_vid_luminance[month][stim][tbucket] = all_months_avg_world_vids[month][stim][tbucket]
+                continue
+            elif type(tbucket) is int:
+                this_tbucket_luminance = np.nansum(all_months_avg_world_vids[month][stim][tbucket])
+                avg_monthly_world_vid_luminance[month][stim][tbucket] = this_tbucket_luminance
 ### ------------------------------ ###
-### NEED TO UPDATE THIS TO USE THE TIMEBUCKETED STIM FRAMES!!! ###
+### POOL AVG LUMINANCE ACROSS CALBIRATION SEQUENCE
+all_months_cal_lum = {}
+for month in avg_monthly_world_vid_luminance.keys():
+    this_month_cal_lum_total = []
+    total_vid_count = 0
+    for stim in avg_monthly_world_vid_luminance[month].keys():
+        #print("Collecting average luminance during calibration sequence for stimulus {s}".format(s=stim))
+        total_vid_count = total_vid_count + avg_monthly_world_vid_luminance[month][stim]['Vid Count']
+        this_stim_avg_lum = []
+        ordered_tbuckets = sorted([tbucket for tbucket in avg_monthly_world_vid_luminance[month][stim].keys() if type(tbucket) is int])
+        # find start and end of this moment
+        moments_to_find = ['calibration start', 'calibration end']
+        moments_tbuckets = find_moment_tbuckets(moments_to_find, all_avg_world_moments, month, stim)
+        start_tbucket = moments_tbuckets['calibration start']
+        end_tbucket = moments_tbuckets['calibration end']
+        for tbucket in ordered_tbuckets[start_tbucket:end_tbucket]:
+            this_stim_avg_lum.append(avg_monthly_world_vid_luminance[month][stim][tbucket])
+        this_month_cal_lum_total = this_month_cal_lum_total + this_stim_avg_lum
+    print("Building baselined average luminance for all calibration sequences for month {m}".format(m=month))
+    this_month_avg_lum_cal = [float(x)/total_vid_count for x in this_month_cal_lum_total]
+    baseline_this_month = np.nanmean(this_month_avg_lum_cal[0:baseline_no_buckets])
+    this_month_cal_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_avg_lum_cal]
+    this_month_cal_lum_array = np.array(this_month_cal_lum_baselined)
+    all_months_cal_lum[month] = [total_vid_count, this_month_cal_lum_array]
 ### ------------------------------ ###
-""" # find average luminance of stimuli vids
-luminances = {key:[] for key in stim_vids}
-luminances_avg = {key:[] for key in stim_vids}
-luminances_baseline = {key:[] for key in stim_vids}
-luminances_peaks = {key:[] for key in stim_vids}
-luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
-## NEED TO SEPARATE BY STIMULI NUMBER
-for data_path in luminance_data_paths: 
-    luminance_values = np.genfromtxt(data_path, dtype=np.str, delimiter='  ')
-    luminance_values = np.array(luminance_values)
-    stimulus_type = data_path.split("_")[-3]
-    stimulus_num = stim_name_to_float[stimulus_type]
-    luminances[stimulus_num].append(luminance_values)
-# build average then smooth
-for stimulus in luminances:
-    print('Calculating average, smoothed luminance and peaks for stimuli {s}'.format(s=stimulus)) 
-    luminance_array = np.array(luminances[stimulus])
-    # build average
-    average_luminance = build_timebucket_avg_luminance(luminance_array, downsampled_bucket_size_ms, no_of_time_buckets)
-    luminances_avg[stimulus] = average_luminance
-    # baseline average
-    baseline = np.nanmean(average_luminance[0:baseline_no_buckets])
-    avg_lum_baselined = [((x-baseline)/baseline) for x in average_luminance]
-    avg_lum_base_array = np.array(avg_lum_baselined)
-    luminances_baseline[stimulus] = avg_lum_base_array
-    # smooth average
-    avg_lum_smoothed = savgol_filter(avg_lum_base_array, smoothing_window-10, 3)
-    luminances_avg[stimulus] = avg_lum_smoothed
-    # find peaks
-    lum_peaks, _ = find_peaks(avg_lum_smoothed, height=-1, prominence=0.1)
-    luminances_peaks[stimulus] = lum_peaks """
+### POOL AVG LUMINANCE ACROSS OCTOPUS CLIP
+all_months_octo_lum = {}
+for month in avg_monthly_world_vid_luminance.keys():
+    this_month_octo_lum_total = []
+    total_vid_count = 0
+    for stim in avg_monthly_world_vid_luminance[month].keys():
+        total_vid_count = total_vid_count + avg_monthly_world_vid_luminance[month][stim]['Vid Count']
+        this_stim_avg_lum = []
+        ordered_tbuckets = sorted([tbucket for tbucket in avg_monthly_world_vid_luminance[month][stim].keys() if type(tbucket) is int])
+        # find start and end of this moment
+        moments_to_find = ['octo start', 'octo appears', 'octo end']
+        moments_tbuckets = find_moment_tbuckets(moments_to_find, all_avg_world_moments, month, stim)
+        start_tbucket = moments_tbuckets['octo start']
+        end_tbucket = moments_tbuckets['octo end']
+        for tbucket in ordered_tbuckets[start_tbucket:end_tbucket]:
+            this_stim_avg_lum.append(avg_monthly_world_vid_luminance[month][stim][tbucket])
+        this_month_octo_lum_total = this_month_octo_lum_total + this_stim_avg_lum
+    print("Building baselined average luminance for all octopus sequences for month {m}".format(m=month))
+    this_month_avg_lum_octo = [float(x)/total_vid_count for x in this_month_octo_lum_total]
+    baseline_this_month = np.nanmean(this_month_avg_lum_octo[0:baseline_no_buckets])
+    this_month_octo_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_avg_lum_octo]
+    this_month_octo_lum_array = np.array(this_month_octo_lum_baselined)
+    all_months_octo_lum[month] = [total_vid_count, this_month_octo_lum_array]
 ### ------------------------------ ###
-
+### POOL AVG LUMINANCE ACROSS EACH STIMULUS UNIQUE CLIP
+all_months_unique_lum = {}
+for month in avg_monthly_world_vid_luminance.keys():
+    for stim in avg_monthly_world_vid_luminance[month].keys():
+        this_month_unique_lum = []
+        total_vid_count = avg_monthly_world_vid_luminance[month][stim]['Vid Count']
+        ordered_tbuckets = sorted([tbucket for tbucket in avg_monthly_world_vid_luminance[month][stim].keys() if type(tbucket) is int])
+        # find start and end of this moment
+        moments_to_find = ['unique start', 'unique end']
+        moments_tbuckets = find_moment_tbuckets(moments_to_find, all_avg_world_moments, month, stim)
+        start_tbucket = moments_tbuckets['unique start']
+        end_tbucket = moments_tbuckets['unique end']
+        for tbucket in ordered_tbuckets[start_tbucket:end_tbucket]:
+            this_month_unique_lum.append(avg_monthly_world_vid_luminance[month][stim][tbucket])
+    print("Building baselined average luminance for all unique stimulus sequences for month {m}".format(m=month))
+    baseline_this_month = np.nanmean(this_month_unique_lum[0:baseline_no_buckets])
+    this_month_unique_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_unique_lum]
+    this_month_unique_lum_array = np.array(this_month_unique_lum_baselined)
+    all_months_unique_lum[month] = [total_vid_count, this_month_unique_lum_array]
+### ------------------------------ ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### EXHIBIT ACTIVITY METADATA ### 
 # Save activation count to csv
 engagement_count_filename = 'Exhibit_Activation_Count_measured-' + todays_datetime + '.csv'
@@ -815,17 +969,15 @@ analysed_array_left = np.array(good_trials_left)
 # time of the day
 # month of the year
 # language chosen
-
-### ------------------------------ ###
-# ---------- #
-### PUPILS ###
-# ---------- #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### PUPIL POSITION AND MOVEMENT ###
 all_trials_position_right_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
 all_trials_position_left_data = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
 all_positions = [all_trials_position_right_data, all_trials_position_left_data]
-# currently we are not pairing right and left eye coordinates
-# measure movement from one frame to next
+# measure movement: setup
 all_right_contours_movement_X = {key:[] for key in stim_vids}
 all_right_circles_movement_X = {key:[] for key in stim_vids}
 all_right_contours_movement_Y = {key:[] for key in stim_vids}
@@ -837,11 +989,9 @@ all_left_circles_movement_Y = {key:[] for key in stim_vids}
 all_movement_right = [all_right_contours_movement_X, all_right_contours_movement_Y, all_right_circles_movement_X, all_right_circles_movement_Y]
 all_movement_left = [all_left_contours_movement_X, all_left_contours_movement_Y, all_left_circles_movement_X, all_left_circles_movement_Y]
 all_movements = [all_movement_right, all_movement_left]
-
 side_names = ['Right', 'Left']
 cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
-
-### calculate movement ###
+### CALCULATE MOVEMENT ###
 for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
         for stimuli in all_positions[side][c_axis]:
@@ -849,7 +999,7 @@ for side in range(len(all_positions)):
             # if there are nans (dropped frames) for more than 2 seconds of video time, then toss that trial
             dropped_frames_threshold = 2000/downsampled_bucket_size_ms
             all_movements[side][c_axis][stimuli] = calc_mvmnt_from_pos(all_positions[side][c_axis][stimuli], dropped_frames_threshold, 100, -100)
-
+# measure motion: setup
 all_right_contours_X_avg_motion = {key:[] for key in stim_vids}
 all_right_circles_X_avg_motion = {key:[] for key in stim_vids}
 all_right_contours_Y_avg_motion = {key:[] for key in stim_vids}
@@ -861,7 +1011,7 @@ all_left_circles_Y_avg_motion = {key:[] for key in stim_vids}
 all_avg_motion_right = [all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion, all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion]
 all_avg_motion_left = [all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion, all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion]
 all_avg_motion = [all_avg_motion_right, all_avg_motion_left]
-
+# mark motion peaks: setup
 all_RcontoursX_avg_motion_peaks = {key:[] for key in stim_vids}
 all_RcirclesX_avg_motion_peaks = {key:[] for key in stim_vids}
 all_RcontoursY_avg_motion_peaks = {key:[] for key in stim_vids}
@@ -873,8 +1023,7 @@ all_LcirclesY_avg_motion_peaks = {key:[] for key in stim_vids}
 all_avg_motion_right_peaks = [all_RcontoursX_avg_motion_peaks, all_RcontoursY_avg_motion_peaks, all_RcirclesX_avg_motion_peaks, all_RcirclesY_avg_motion_peaks]
 all_avg_motion_left_peaks = [all_LcontoursX_avg_motion_peaks, all_LcontoursY_avg_motion_peaks, all_LcirclesX_avg_motion_peaks, all_LcirclesY_avg_motion_peaks]
 all_avg_motion_peaks = [all_avg_motion_right_peaks, all_avg_motion_left_peaks]
-
-# find average pixel motion per time_bucket for each stimulus
+### CALCULATE AVERAGE PIXEL MOTION PER TIME BUCKET FOR EACH STIM ###
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stimuli in all_movements[side][c_axis]:
@@ -882,8 +1031,7 @@ for side in range(len(all_movements)):
             avg_motion_this_stim, peaks_this_stim = calc_avg_motion_and_peaks(all_movements[side][c_axis][stimuli], smoothing_window)
             all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
             all_avg_motion_peaks[side][c_axis][stimuli] = peaks_this_stim
-
-### MARK PEAKS (SACCADES) ###
+### mark saccades: setup
 all_right_contours_X_peaks = {key:{} for key in stim_vids}
 all_right_circles_X_peaks = {key:{} for key in stim_vids}
 all_right_contours_Y_peaks = {key:{} for key in stim_vids}
@@ -895,8 +1043,7 @@ all_left_circles_Y_peaks = {key:{} for key in stim_vids}
 all_peaks_right = [all_right_contours_X_peaks, all_right_contours_Y_peaks, all_right_circles_X_peaks, all_right_circles_Y_peaks]
 all_peaks_left = [all_left_contours_X_peaks, all_left_contours_Y_peaks, all_left_circles_X_peaks, all_left_circles_Y_peaks]
 all_peaks = [all_peaks_right, all_peaks_left]
-
-# filter through the movement to find saccades in individual traces
+### FILTER INDIVIDUAL EYE MOVEMENTS FOR SACCADES ###
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stim in all_movements[side][c_axis]:
@@ -911,15 +1058,57 @@ for side in range(len(all_movements)):
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
                 all_peaks[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, peaks_window, w_thresh)
-
-### ------------------------------ ###
-
+### PUPIL SIZE ###
+# average pupil diameters: setup
+all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
+all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
+all_right_size_contours_means = {key:[] for key in stim_vids}
+all_left_size_contours_means = {key:[] for key in stim_vids}
+all_right_size_circles_means = {key:[] for key in stim_vids}
+all_left_size_circles_means = {key:[] for key in stim_vids}
+all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
+all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
+# find peaks in pupil diameter sizes: setup
+all_right_size_contours_peaks = {key:[] for key in stim_vids}
+all_left_size_contours_peaks = {key:[] for key in stim_vids}
+all_right_size_circles_peaks = {key:[] for key in stim_vids}
+all_left_size_circles_peaks = {key:[] for key in stim_vids}
+all_right_size_peaks = [all_right_size_contours_peaks, all_right_size_circles_peaks]
+all_left_size_peaks = [all_left_size_contours_peaks, all_left_size_circles_peaks]
+# Compute global mean
+for i in range(len(all_right_sizes)):
+    for stimulus in all_right_sizes[i]: 
+        print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
+        avg_right_pupil_size = np.nanmean(all_right_sizes[i][stimulus], 0)
+        avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window-10, 3)
+        all_right_size_means[i][stimulus] = avg_right_pupil_size_smoothed
+        avg_right_pupil_size_peaks, _ = find_peaks(avg_right_pupil_size_smoothed, prominence=0.125)
+        all_right_size_peaks[i][stimulus] = avg_right_pupil_size_peaks
+for i in range(len(all_left_sizes)):
+    for stimulus in all_left_sizes[i]: 
+        print('Calculating average pupil sizes for left camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
+        avg_left_pupil_size = np.nanmean(all_left_sizes[i][stimulus], 0)
+        avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window-10, 3)
+        all_left_size_means[i][stimulus] = avg_left_pupil_size_smoothed
+        avg_left_pupil_size_peaks, _ = find_peaks(avg_left_pupil_size_smoothed, prominence=0.125)
+        all_left_size_peaks[i][stimulus] = avg_left_pupil_size_peaks
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+### GLOBAL VARIABLES FOR PLOTTING DATA ###
+fig_size = 200 # dpi
+image_type_options = ['.png', '.pdf']
 plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
 cType_names = ['Contours', 'Circles']
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
-
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+### GENERATE PLOTS ###
 # plot movement traces
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
@@ -977,16 +1166,13 @@ for side in range(len(all_movements_plot)):
             plt.show(block=False)
             plt.pause(1)
             plt.close()
-
 # next plots
 all_avg_motion_right_plot = [(all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion), (all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion)]
 all_avg_motion_left_plot = [(all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion), (all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion)]
 all_avg_motion_plot = [all_avg_motion_right_plot, all_avg_motion_left_plot]
-
 all_avg_motion_right_peaks_plot = [(all_RcontoursX_avg_motion_peaks, all_RcontoursY_avg_motion_peaks), (all_RcirclesX_avg_motion_peaks, all_RcirclesY_avg_motion_peaks)]
 all_avg_motion_left_peaks_plot = [(all_LcontoursX_avg_motion_peaks, all_LcontoursY_avg_motion_peaks), (all_LcirclesX_avg_motion_peaks, all_LcirclesY_avg_motion_peaks)]
 all_avg_motion_peaks_plot = [all_avg_motion_right_peaks_plot, all_avg_motion_left_peaks_plot]
-
 # plot MOTION traces (abs val of movement traces)
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
@@ -1058,12 +1244,10 @@ for side in range(len(all_movements_plot)):
             plt.show(block=False)
             plt.pause(1)
             plt.close()
-
 # plot peaks/saccades
 all_peaks_right_plot = [(all_right_contours_X_peaks, all_right_contours_Y_peaks), (all_right_circles_X_peaks, all_right_circles_Y_peaks)]
 all_peaks_left_plot = [(all_left_contours_X_peaks, all_left_contours_Y_peaks), (all_left_circles_X_peaks, all_left_circles_Y_peaks)]
 all_peaks_plot = [all_peaks_right_plot, all_peaks_left_plot]
-
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
         for stimuli in all_movements_plot[side][c_type][0]:
@@ -1130,42 +1314,6 @@ for side in range(len(all_movements_plot)):
             plt.show(block=False)
             plt.pause(1)
             plt.close()
-
-### PUPIL SIZE ###
-# average pupil diameters
-all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
-all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
-all_right_size_contours_means = {key:[] for key in stim_vids}
-all_left_size_contours_means = {key:[] for key in stim_vids}
-all_right_size_circles_means = {key:[] for key in stim_vids}
-all_left_size_circles_means = {key:[] for key in stim_vids}
-all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
-all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
-# find peaks in pupil diameter sizes
-all_right_size_contours_peaks = {key:[] for key in stim_vids}
-all_left_size_contours_peaks = {key:[] for key in stim_vids}
-all_right_size_circles_peaks = {key:[] for key in stim_vids}
-all_left_size_circles_peaks = {key:[] for key in stim_vids}
-all_right_size_peaks = [all_right_size_contours_peaks, all_right_size_circles_peaks]
-all_left_size_peaks = [all_left_size_contours_peaks, all_left_size_circles_peaks]
-# Compute global mean
-for i in range(len(all_right_sizes)):
-    for stimulus in all_right_sizes[i]: 
-        print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
-        avg_right_pupil_size = np.nanmean(all_right_sizes[i][stimulus], 0)
-        avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window-10, 3)
-        all_right_size_means[i][stimulus] = avg_right_pupil_size_smoothed
-        avg_right_pupil_size_peaks, _ = find_peaks(avg_right_pupil_size_smoothed, prominence=0.125)
-        all_right_size_peaks[i][stimulus] = avg_right_pupil_size_peaks
-for i in range(len(all_left_sizes)):
-    for stimulus in all_left_sizes[i]: 
-        print('Calculating average pupil sizes for left camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
-        avg_left_pupil_size = np.nanmean(all_left_sizes[i][stimulus], 0)
-        avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window-10, 3)
-        all_left_size_means[i][stimulus] = avg_left_pupil_size_smoothed
-        avg_left_pupil_size_peaks, _ = find_peaks(avg_left_pupil_size_smoothed, prominence=0.125)
-        all_left_size_peaks[i][stimulus] = avg_left_pupil_size_peaks
-### PLOTTING PUPIL STUFF ###
 # Plot pupil sizes
 plot_types = ["contours", "circles"]
 for stim_type in stim_vids: 
@@ -1235,8 +1383,4 @@ for stim_type in stim_vids:
         plt.show(block=False)
         plt.pause(1)
         plt.close()
-
-### POOL ACROSS STIMULI FOR OCTOPUS CLIP ###
-
-
 #FIN
