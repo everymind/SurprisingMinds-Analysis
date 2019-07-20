@@ -511,9 +511,6 @@ sys.stdout = Logger()
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
-### DELETE THIS
-#stimuli_luminance_folder = r"C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame"
-###
 # set up folders
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")
@@ -534,8 +531,7 @@ if not os.path.exists(linReg_folder):
     os.makedirs(linReg_folder)
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
-### --------------------------------------------- ###
-### TIMING/SAMPLING VARIABLES
+### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
 # downsample = collect data from every 40ms or other multiples of 20
 downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
@@ -550,10 +546,10 @@ stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
 
-#
-#
-### --------------------------------------------- ###
-### --------------------------------------------- ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### BEGIN PUPIL DATA EXTRACTION ###
 # prepare to sort pupil data by stimulus
 all_right_trials_contours_X = {key:[] for key in stim_vids}
@@ -672,13 +668,10 @@ for day_folder in pupil_folders:
     except Exception:
         print("Day {day} failed!".format(day=day_name))
 ### END PUPIL EXTRACTION ###
-### --------------------------------------------- ###
-### --------------------------------------------- ###
-#
-
-#
-### --------------------------------------------- ###
-### --------------------------------------------- ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
 all_months_avg_world_vids = {}
 ### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS ###
@@ -724,17 +717,18 @@ for month_folder in updated_folders_to_extract:
         else:
             print("Monthly averaged stimulus videos already made for stimulus {s}".format(s=stim))
 ### END MONTHLY AVERAGE DATA EXTRACTION ###
-### --------------------------------------------- ###
-### --------------------------------------------- ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### CSV DATA EXTRACTION COMPLETE ###
-#
-#
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### BEGIN DATA CLEANING AND PROCESSING ###
-#
+### GLOBAL VARIABLES FOR CLEANING AND PROCESSING EXTRACTED DATA ###
+smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-### MANUAL SECTION, DO NOT RUN AS A SCRIPT!!! ###
+### MANUAL SECTION, DO NOT RUN BELOW AS A SCRIPT!!! ###
+### MANUAL SECTION, DO NOT RUN BELOW AS A SCRIPT!!! ###
 # ------------------------------------------------------------------------ #
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
 # setup 
@@ -753,7 +747,7 @@ for i in range(len(months_available)):
 # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
 month_index = 1 # change index to change month
-stim_to_check = 25.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -761,10 +755,24 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 104 # change to check different time buckets
+tbucket_to_check = 1111 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
 ### --------------------------------------------- ###
 ### once found, manually insert time bucket numbers for moments of interest
+# 2017-12
+all_months_avg_world_moments['2017-12'] = {24.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+25.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+26.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+27.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+28.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
+29.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}}
+# 2017-11
+all_months_avg_world_moments['2017-11'] = {24.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [596], 'octo appears': [759], 'thank you screen': [987,989]}, 
+25.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [599,600], 'octo appears': [763], 'thank you screen': [991,993]}, 
+26.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [664,665], 'octo appears': [827], 'thank you screen': [1056,1059]}, 
+27.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [605,607], 'octo appears': [772], 'thank you screen': [998,1000]}, 
+28.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [663], 'octo appears': [826], 'thank you screen': [1054,1056]}, 
+29.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [717], 'octo appears': [882], 'thank you screen': [1109,1110]}}
 # 2017-10
 all_months_avg_world_moments['2017-10'] = {24.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [442], 'octo clip start': [595,596], 'octo appears': [759], 'thank you screen': [985,987]}, 
 25.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [599], 'octo appears': [763], 'thank you screen': [987,989]}, 
@@ -772,27 +780,33 @@ all_months_avg_world_moments['2017-10'] = {24.0: {'calibration start': [102,103]
 27.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [605,606], 'octo appears': [770], 'thank you screen': [994,996]}, 
 28.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [443], 'octo clip start': [661,662], 'octo appears': [826], 'thank you screen': [1051,1054]}, 
 29.0: {'calibration start': [102,103], 'calibration end': [441], 'unique clip start': [442], 'octo clip start': [716,717], 'octo appears': [881], 'thank you screen': [1105,1108]}}
-all_months_avg_world_moments['2017-11'] = {24.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
-25.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
-26.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
-27.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
-28.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}, 
-29.0: {'calibration start': [], 'calibration end': [], 'unique clip start': [], 'octo clip start': [], 'octo appears': [], 'thank you screen': []}}
-
+### END MANUAL SECTION, DO NOT RUN ABOVE AS A SCRIPT!!! ###
+### END MANUAL SECTION, DO NOT RUN ABOVE AS A SCRIPT!!! ###
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
-
-### GLOBAL VARIABLES FOR PROCESSING EXTRACTED DATA ###
-smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
-fig_size = 200 # dpi
-image_type_options = ['.png', '.pdf']
-todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
-### EXTRACT STIMULUS INFO ###
-
+# ------------------------------------------------------------------------ #
+### AVERAGE LUMINANCE PER TIME BUCKET
+avg_monthly_world_vid_luminance = {}
+for month in all_months_avg_world_vids.keys():
+    avg_monthly_world_vid_luminance[month] = {}
+    for stim in all_months_avg_world_vids[month].keys():
+        avg_monthly_world_vid_luminance[month][stim] = {}
+        for tbucket in all_months_avg_world_vids[month][stim].keys():
+            if tbucket=='Vid Count':
+                avg_monthly_world_vid_luminance[month][stim][tbucket] = all_months_avg_world_vids[month][stim][tbucket]
+                continue
+            elif tbucket=='Vid Dimensions':
+                avg_monthly_world_vid_luminance[month][stim][tbucket] = all_months_avg_world_vids[month][stim][tbucket]
+                continue
+            elif type(tbucket) is int:
+                this_tbucket_luminance = np.sum(all_months_avg_world_vids[month][stim][tbucket])
+                avg_monthly_world_vid_luminance[month][stim][tbucket] = this_tbucket_luminance
 ### ------------------------------ ###
-### NEED TO UPDATE THIS TO USE THE TIMEBUCKETED STIM FRAMES!!! ###
-### ------------------------------ ###
+### POOL ACROSS CALBIRATION SEQUENCE
+
+
+
 """ # find average luminance of stimuli vids
 luminances = {key:[] for key in stim_vids}
 luminances_avg = {key:[] for key in stim_vids}
@@ -800,12 +814,6 @@ luminances_baseline = {key:[] for key in stim_vids}
 luminances_peaks = {key:[] for key in stim_vids}
 luminance_data_paths = glob.glob(stimuli_luminance_folder + "/*_stimuli*_world_LuminancePerFrame.csv")
 ## NEED TO SEPARATE BY STIMULI NUMBER
-for data_path in luminance_data_paths: 
-    luminance_values = np.genfromtxt(data_path, dtype=np.str, delimiter='  ')
-    luminance_values = np.array(luminance_values)
-    stimulus_type = data_path.split("_")[-3]
-    stimulus_num = stim_name_to_float[stimulus_type]
-    luminances[stimulus_num].append(luminance_values)
 # build average then smooth
 for stimulus in luminances:
     print('Calculating average, smoothed luminance and peaks for stimuli {s}'.format(s=stimulus)) 
@@ -863,7 +871,6 @@ analysed_array_left = np.array(good_trials_left)
 all_trials_position_right_data = [all_right_trials_contours_X, all_right_trials_contours_Y, all_right_trials_circles_X, all_right_trials_circles_Y]
 all_trials_position_left_data = [all_left_trials_contours_X, all_left_trials_contours_Y, all_left_trials_circles_X, all_left_trials_circles_Y]
 all_positions = [all_trials_position_right_data, all_trials_position_left_data]
-# currently we are not pairing right and left eye coordinates
 # measure movement from one frame to next
 all_right_contours_movement_X = {key:[] for key in stim_vids}
 all_right_circles_movement_X = {key:[] for key in stim_vids}
@@ -951,8 +958,14 @@ for side in range(len(all_movements)):
                 w_thresh = windowed_count_thresholds[thresh]
                 all_peaks[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, peaks_window, w_thresh)
 
-### ------------------------------ ###
-
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+### GLOBAL VARIABLES FOR PLOTTING DATA ###
+fig_size = 200 # dpi
+image_type_options = ['.png', '.pdf']
+todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
 cType_names = ['Contours', 'Circles']
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
@@ -1274,8 +1287,4 @@ for stim_type in stim_vids:
         plt.show(block=False)
         plt.pause(1)
         plt.close()
-
-### POOL ACROSS STIMULI FOR OCTOPUS CLIP ###
-
-
 #FIN
