@@ -556,21 +556,14 @@ for item in zipped_data:
             continue
         # if no monthly stim vid average made yet for this month
         # check that the full month has been extracted
-        item_just_year = int(item_year_month.split('-')[0])
-        item_just_month = int(item_year_month.split('-')[1])
-        if item_just_month<12:
-            next_month = item_just_month + 1
-            date_to_check = str(item_just_year) + '-' + str(next_month).zfill(2)
-        else:
-            next_year = item_just_year + 1
-            next_month = '01'
-            date_to_check = str(next_year) + '-' + str(next_month)
-        next_month_analysed = fnmatch.filter(analysed_folders, 'SurprisingMinds_' + date_to_check + '*')
-        if not next_month_analysed:
+        this_month_analysed = fnmatch.filter(analysed_folders, 'SurprisingMinds_' + item_year_month + '*')
+        this_month_data = fnmatch.filter(zipped_data, 'SurprisingMinds_' + item_year_month + '*')
+        this_month_invalid = fnmatch.filter(invalid_zipped, item_year_month)
+        if len(this_month_analysed) != len(this_month_data) + len(this_month_invalid):
             print("World vid frames for {month} not yet completed".format(month=item_year_month))
             continue
         # full month extracted?
-        print('Next months analysed: {month_list}'.format(month_list=next_month_analysed))
+        print('This month extraction completed: {month_list}'.format(month_list=this_month_analysed))
         # take avg stim vids for each day and build a monthly average vid for each stim
         search_pattern = os.path.join(analysed_drive, 'SurprisingMinds_'+item_year_month+'-*')
         current_month_analysed = glob.glob(search_pattern)
@@ -695,7 +688,11 @@ for item in zipped_data:
         print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
         print("Delete successful!")
+    else:
+        print("Could not unzip data folder for day {name}".format(name=this_day_date))
+        invalid_zipped.append(this_day_date)
+        print("Days that cannot be unzipped: {list}".format(list=invalid_zipped))
     #FIN
-    print("Completed world vid frame extraction on all data folders in this drive!")
+print("Completed world vid frame extraction on all data folders in this drive!")
 # close logfile
 sys.stdout.close()
