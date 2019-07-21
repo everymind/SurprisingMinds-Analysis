@@ -517,6 +517,16 @@ def find_moment_tbuckets(list_of_moments_to_find, all_moments_dict, year_month, 
                         tbuckets_of_moments[m] = tbucket_num
     return tbuckets_of_moments
 
+def display_avg_tbucket_from_array(avg_world_vid_tbucketed_array, tbucket_to_display):
+    max_tbucket = len(avg_world_vid_tbucketed_array)
+    if 0<=tbucket_to_display<=max_tbucket:
+        display = avg_world_vid_tbucketed_array[tbucket_to_display]
+        fig = plt.figure()
+        im = plt.imshow(display, cmap='gray')
+        plt.show()
+    else: 
+        print("Time Bucket is out of range!")
+
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
 class Logger(object):
@@ -954,6 +964,8 @@ for month in avg_monthly_world_vid_luminance.keys():
         all_months_unique_lum[month][stim]['start'] = start_tbucket
         all_months_unique_lum[month][stim]['end'] = end_tbucket
 ### ------------------------------ ###
+# double check the pooled world vid dictionaries
+display_avg_tbucket_from_array(all_months_cal_lum['2017-11']['luminances'], 0)
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
