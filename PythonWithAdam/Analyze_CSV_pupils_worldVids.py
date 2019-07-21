@@ -761,15 +761,14 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 # ------------------------------------------------------------------------ #
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
 # setup 
-moments_of_interest = ['calibration start', 'calibration end', 'unique clip start', 'octo clip start', 'octo appears', 'thank you screen']
+moments_of_interest = ['calibration start', 'calibration end', 'unique start', 'unique end', 'octo start', 'octo appears', 'octo end']
 all_avg_world_moments = {key:{} for key in stim_vids}
 for stim in all_avg_world_moments.keys():
-    all_avg_world_moments[stim] = {moment:[] for moment in moments_of_interest}
+    all_avg_world_moments[stim] = {moment:{} for moment in moments_of_interest}
 # ------------------------------------------------------------------------ #
-### MANUAL SECTION, DO NOT RUN BELOW AS A SCRIPT!!! ###
-### MANUAL SECTION, DO NOT RUN BELOW AS A SCRIPT!!! ###
+### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
 # ------------------------------------------------------------------------ #
-# start searching for time bucket numbers
+""" # start searching for time bucket numbers
 # display available months
 months_available = [x for x in all_months_avg_world_vids.keys()]
 print("Months for which averaged stimulus video data exists: ")
@@ -787,10 +786,9 @@ max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
 tbucket_to_check = 1111 # change to check different time buckets
-display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
-### END MANUAL SECTION, DO NOT RUN ABOVE AS A SCRIPT!!! ###
-### END MANUAL SECTION, DO NOT RUN ABOVE AS A SCRIPT!!! ###
+### END MANUAL SECTION ###
 # ------------------------------------------------------------------------ #
 ### RERUN THIS SECTION TO UPDATE MOMENTS OF INTEREST
 ### once found, manually insert time bucket numbers for moments of interest
@@ -871,10 +869,12 @@ for month in all_months_avg_world_vids.keys():
 ### POOL AVG LUMINANCE ACROSS CALBIRATION SEQUENCE
 all_months_cal_lum = {}
 for month in avg_monthly_world_vid_luminance.keys():
+    all_months_cal_lum[month] = {}
     this_month_cal_lum_total = []
     total_vid_count = 0
+    start_tbuckets = {}
+    end_tbuckets = {}
     for stim in avg_monthly_world_vid_luminance[month].keys():
-        #print("Collecting average luminance during calibration sequence for stimulus {s}".format(s=stim))
         total_vid_count = total_vid_count + avg_monthly_world_vid_luminance[month][stim]['Vid Count']
         this_stim_avg_lum = []
         ordered_tbuckets = sorted([tbucket for tbucket in avg_monthly_world_vid_luminance[month][stim].keys() if type(tbucket) is int])
@@ -883,6 +883,8 @@ for month in avg_monthly_world_vid_luminance.keys():
         moments_tbuckets = find_moment_tbuckets(moments_to_find, all_avg_world_moments, month, stim)
         start_tbucket = moments_tbuckets['calibration start']
         end_tbucket = moments_tbuckets['calibration end']
+        start_tbuckets[stim] = start_tbucket
+        end_tbuckets[stim] = end_tbucket
         for tbucket in ordered_tbuckets[start_tbucket:end_tbucket]:
             this_stim_avg_lum.append(avg_monthly_world_vid_luminance[month][stim][tbucket])
         this_month_cal_lum_total = this_month_cal_lum_total + this_stim_avg_lum
@@ -891,13 +893,19 @@ for month in avg_monthly_world_vid_luminance.keys():
     baseline_this_month = np.nanmean(this_month_avg_lum_cal[0:baseline_no_buckets])
     this_month_cal_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_avg_lum_cal]
     this_month_cal_lum_array = np.array(this_month_cal_lum_baselined)
-    all_months_cal_lum[month] = [total_vid_count, this_month_cal_lum_array]
+    all_months_cal_lum[month]['luminances'] = this_month_cal_lum_array
+    all_months_cal_lum[month]['Vid Count'] = total_vid_count
+    all_months_cal_lum[month]['starts'] = start_tbuckets
+    all_months_cal_lum[month]['ends'] = end_tbuckets
 ### ------------------------------ ###
 ### POOL AVG LUMINANCE ACROSS OCTOPUS CLIP
 all_months_octo_lum = {}
 for month in avg_monthly_world_vid_luminance.keys():
+    all_months_octo_lum[month] = {}
     this_month_octo_lum_total = []
     total_vid_count = 0
+    start_tbuckets = {}
+    end_tbuckets = {}
     for stim in avg_monthly_world_vid_luminance[month].keys():
         total_vid_count = total_vid_count + avg_monthly_world_vid_luminance[month][stim]['Vid Count']
         this_stim_avg_lum = []
@@ -907,6 +915,8 @@ for month in avg_monthly_world_vid_luminance.keys():
         moments_tbuckets = find_moment_tbuckets(moments_to_find, all_avg_world_moments, month, stim)
         start_tbucket = moments_tbuckets['octo start']
         end_tbucket = moments_tbuckets['octo end']
+        start_tbuckets[stim] = start_tbucket
+        end_tbuckets[stim] = end_tbucket
         for tbucket in ordered_tbuckets[start_tbucket:end_tbucket]:
             this_stim_avg_lum.append(avg_monthly_world_vid_luminance[month][stim][tbucket])
         this_month_octo_lum_total = this_month_octo_lum_total + this_stim_avg_lum
@@ -915,14 +925,18 @@ for month in avg_monthly_world_vid_luminance.keys():
     baseline_this_month = np.nanmean(this_month_avg_lum_octo[0:baseline_no_buckets])
     this_month_octo_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_avg_lum_octo]
     this_month_octo_lum_array = np.array(this_month_octo_lum_baselined)
-    all_months_octo_lum[month] = [total_vid_count, this_month_octo_lum_array]
+    all_months_octo_lum[month]['luminances'] = this_month_octo_lum_array
+    all_months_octo_lum[month]['Vid Count'] = total_vid_count
+    all_months_octo_lum[month]['starts'] = start_tbuckets
+    all_months_octo_lum[month]['ends'] = end_tbuckets
 ### ------------------------------ ###
 ### POOL AVG LUMINANCE ACROSS EACH STIMULUS UNIQUE CLIP
 all_months_unique_lum = {}
 for month in avg_monthly_world_vid_luminance.keys():
+    all_months_unique_lum[month] = {}
     for stim in avg_monthly_world_vid_luminance[month].keys():
+        all_months_unique_lum[month][stim] = {}
         this_month_unique_lum = []
-        total_vid_count = avg_monthly_world_vid_luminance[month][stim]['Vid Count']
         ordered_tbuckets = sorted([tbucket for tbucket in avg_monthly_world_vid_luminance[month][stim].keys() if type(tbucket) is int])
         # find start and end of this moment
         moments_to_find = ['unique start', 'unique end']
@@ -931,11 +945,14 @@ for month in avg_monthly_world_vid_luminance.keys():
         end_tbucket = moments_tbuckets['unique end']
         for tbucket in ordered_tbuckets[start_tbucket:end_tbucket]:
             this_month_unique_lum.append(avg_monthly_world_vid_luminance[month][stim][tbucket])
-    print("Building baselined average luminance for all unique stimulus sequences for month {m}".format(m=month))
-    baseline_this_month = np.nanmean(this_month_unique_lum[0:baseline_no_buckets])
-    this_month_unique_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_unique_lum]
-    this_month_unique_lum_array = np.array(this_month_unique_lum_baselined)
-    all_months_unique_lum[month] = [total_vid_count, this_month_unique_lum_array]
+        print("Building baselined average luminance for unique clip in stimulus {s} for month {m}".format(s=stim, m=month))
+        baseline_this_month = np.nanmean(this_month_unique_lum[0:baseline_no_buckets])
+        this_month_unique_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_unique_lum]
+        this_month_unique_lum_array = np.array(this_month_unique_lum_baselined)
+        all_months_unique_lum[month][stim]['luminances'] = this_month_unique_lum_array
+        all_months_unique_lum[month][stim]['Vid Count'] = avg_monthly_world_vid_luminance[month][stim]['Vid Count']
+        all_months_unique_lum[month][stim]['start'] = start_tbucket
+        all_months_unique_lum[month][stim]['end'] = end_tbucket
 ### ------------------------------ ###
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1101,15 +1118,108 @@ fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
 plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
 cType_names = ['Contours', 'Circles']
+plot_lum_types = {'calibration':all_months_cal_lum,'octopus':all_months_octo_lum,'unique':all_months_unique_lum}
+### ------------------------------ ###
+### GENERATE PLOTS ###
+# Plot pupil sizes
+for ptype in plot_lum_types:
+    if ptype=='unique':
+        for stim_type in stim_vids:
+            all_starts = []
+            all_ends = []
+            all_months_lum = []
+            total_lum_vid_count = 0
+            for month in plot_lum_types[ptype].keys():
+                all_starts.append(plot_lum_types[ptype][month][stim_type]['starts'])
+                all_ends.append(plot_lum_types[ptype][month][stim_type]['ends'])
+                all_months_lum.append(plot_lum_types[ptype][month][stim_type]['luminances'])
+                total_lum_vid_count = total_lum_vid_count + plot_lum_types[ptype][month][stim_type]['Vid Count']
+            plotting_start = min(all_starts)
+            plotting_end = max(all_ends)
+            for i in range(len(all_right_sizes)):
+                plot_type_right = np.array(all_right_sizes[i][stim_type])
+                plot_N_right = len(all_right_sizes[i][stim_type])
+                plot_type_left = np.array(all_left_sizes[i][stim_type])
+                plot_N_left = len(all_left_sizes[i][stim_type])
+                plot_means_right = all_right_size_means[i][stim_type]
+                plot_means_right_peaks = all_right_size_peaks[i][stim_type]
+                plot_means_left = all_left_size_means[i][stim_type]
+                plot_means_left_peaks = all_left_size_peaks[i][stim_type]
+                plot_luminance = np.array(all_months_lum) # this should be a bunch of lines/dots, like each individual pupil size trace. need to generate a mean and std dev?
+                plot_luminance_N = total_lum_vid_count
+
+#### EVERYTHING BELOW HERE IS UNDER CONSTRUCTION!!!! ###
+for stim_type in stim_vids: 
+    for i in range(len(all_right_sizes)): 
+        plot_type_right = np.array(all_right_sizes[i][stim_type])
+        plot_N_right = len(all_right_sizes[i][stim_type])
+        plot_type_left = np.array(all_left_sizes[i][stim_type])
+        plot_N_left = len(all_left_sizes[i][stim_type])
+        plot_means_right = all_right_size_means[i][stim_type]
+        plot_means_right_peaks = all_right_size_peaks[i][stim_type]
+        plot_means_left = all_left_size_means[i][stim_type]
+        plot_means_left_peaks = all_left_size_peaks[i][stim_type]
+        plot_luminance = luminances_avg[stim_type]
+        plot_luminance_peaks = luminances_peaks[stimuli]
+        plot_type_name = plot_types[i]
+        stim_name = stim_float_to_name[stim_type]
+        # fig name and path
+        figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+        figure_path = os.path.join(pupils_folder, figure_name)
+        figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
+        # draw fig
+        plt.figure(figsize=(14, 14), dpi=fig_size)
+        plt.suptitle(figure_title, fontsize=12, y=0.98)
+        # subplot: Right eye sizes
+        plt.subplot(3,1,1)
+        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[1.0, 0.98, 0.0, 0.005])
+        plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
+        for peak in plot_means_right_peaks:
+            if peak<1250:
+                plt.plot(peak, plot_means_right[peak], 'x')
+                plt.text(peak-15, plot_means_right[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.xlim(-10,1250)
+        plt.ylim(-1,1)
+        # subplot: Left eye sizes
+        plt.subplot(3,1,2)
+        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.012, 0.7, 1.0, 0.005])
+        plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
+        for peak in plot_means_left_peaks:
+            if peak<1250:
+                plt.plot(peak, plot_means_left[peak], 'x')
+                plt.text(peak-15, plot_means_left[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.xlim(-10,1250)
+        plt.ylim(-1,1)
+        # subplot: Average luminance of stimuli video
+        plt.subplot(3,1,3)
+        plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
+        plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=10, color='grey', style='italic')
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
+        for peak in plot_luminance_peaks:
+            plt.plot(peak, plot_luminance[peak], 'x')
+            plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.xlim(-10,1250)
+        plt.ylim(-1,7)
+        # save and display
+        plt.subplots_adjust(hspace=0.5)
+        plt.savefig(figure_path)
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
+# plot movement traces
 all_movement_right_plot = [(all_right_contours_movement_X, all_right_contours_movement_Y), (all_right_circles_movement_X, all_right_circles_movement_Y)]
 all_movement_left_plot = [(all_left_contours_movement_X, all_left_contours_movement_Y), (all_left_circles_movement_X, all_left_circles_movement_Y)]
 all_movements_plot = [all_movement_right_plot, all_movement_left_plot]
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-### GENERATE PLOTS ###
-# plot movement traces
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
         for stimuli in all_movements_plot[side][c_type][0]:
@@ -1166,14 +1276,13 @@ for side in range(len(all_movements_plot)):
             plt.show(block=False)
             plt.pause(1)
             plt.close()
-# next plots
+# plot MOTION traces (abs val of movement traces)
 all_avg_motion_right_plot = [(all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion), (all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion)]
 all_avg_motion_left_plot = [(all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion), (all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion)]
 all_avg_motion_plot = [all_avg_motion_right_plot, all_avg_motion_left_plot]
 all_avg_motion_right_peaks_plot = [(all_RcontoursX_avg_motion_peaks, all_RcontoursY_avg_motion_peaks), (all_RcirclesX_avg_motion_peaks, all_RcirclesY_avg_motion_peaks)]
 all_avg_motion_left_peaks_plot = [(all_LcontoursX_avg_motion_peaks, all_LcontoursY_avg_motion_peaks), (all_LcirclesX_avg_motion_peaks, all_LcirclesY_avg_motion_peaks)]
 all_avg_motion_peaks_plot = [all_avg_motion_right_peaks_plot, all_avg_motion_left_peaks_plot]
-# plot MOTION traces (abs val of movement traces)
 for side in range(len(all_movements_plot)):
     for c_type in range(len(all_movements_plot[side])):
         for stimuli in all_movements_plot[side][c_type][0]:
@@ -1314,73 +1423,4 @@ for side in range(len(all_movements_plot)):
             plt.show(block=False)
             plt.pause(1)
             plt.close()
-# Plot pupil sizes
-plot_types = ["contours", "circles"]
-for stim_type in stim_vids: 
-    for i in range(len(all_right_sizes)): 
-        plot_type_right = np.array(all_right_sizes[i][stim_type])
-        plot_N_right = len(all_right_sizes[i][stim_type])
-        plot_type_left = np.array(all_left_sizes[i][stim_type])
-        plot_N_left = len(all_left_sizes[i][stim_type])
-        plot_means_right = all_right_size_means[i][stim_type]
-        plot_means_right_peaks = all_right_size_peaks[i][stim_type]
-        plot_means_left = all_left_size_means[i][stim_type]
-        plot_means_left_peaks = all_left_size_peaks[i][stim_type]
-        plot_luminance = luminances_avg[stim_type]
-        plot_luminance_peaks = luminances_peaks[stimuli]
-        plot_type_name = plot_types[i]
-        stim_name = stim_float_to_name[stim_type]
-        # fig name and path
-        figure_name = 'AveragePupilSizes_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-        figure_path = os.path.join(pupils_folder, figure_name)
-        figure_title = "Pupil sizes of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPlotted on " + todays_datetime
-        # draw fig
-        plt.figure(figsize=(14, 14), dpi=fig_size)
-        plt.suptitle(figure_title, fontsize=12, y=0.98)
-        # subplot: Right eye sizes
-        plt.subplot(3,1,1)
-        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
-        plt.minorticks_on()
-        plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[1.0, 0.98, 0.0, 0.005])
-        plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
-        for peak in plot_means_right_peaks:
-            if peak<1250:
-                plt.plot(peak, plot_means_right[peak], 'x')
-                plt.text(peak-15, plot_means_right[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,1250)
-        plt.ylim(-1,1)
-        # subplot: Left eye sizes
-        plt.subplot(3,1,2)
-        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
-        plt.minorticks_on()
-        plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.012, 0.7, 1.0, 0.005])
-        plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
-        for peak in plot_means_left_peaks:
-            if peak<1250:
-                plt.plot(peak, plot_means_left[peak], 'x')
-                plt.text(peak-15, plot_means_left[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,1250)
-        plt.ylim(-1,1)
-        # subplot: Average luminance of stimuli video
-        plt.subplot(3,1,3)
-        plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
-        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-        plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=10, color='grey', style='italic')
-        plt.grid(b=True, which='major', linestyle='--')
-        plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
-        for peak in plot_luminance_peaks:
-            plt.plot(peak, plot_luminance[peak], 'x')
-            plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-        plt.xlim(-10,1250)
-        plt.ylim(-1,7)
-        # save and display
-        plt.subplots_adjust(hspace=0.5)
-        plt.savefig(figure_path)
-        plt.show(block=False)
-        plt.pause(1)
-        plt.close()
 #FIN
