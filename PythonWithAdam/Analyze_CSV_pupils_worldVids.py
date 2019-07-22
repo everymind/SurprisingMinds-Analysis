@@ -177,69 +177,6 @@ def filter_to_nan(list_of_dicts, upper_threshold, lower_threshold):
                 trial = threshold_to_nan(trial, lower_threshold, 'lower')
     return list_of_dicts
 
-def make_luminance_time_buckets(start_timestamp, bucket_size_ms, end_timestamp): 
-    start_timestamp = start_timestamp.split('+')[0][:-3]
-    end_timestamp = end_timestamp.split('+')[0][:-3]
-    buckets_start_time = datetime.datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-    buckets_end_time = datetime.datetime.strptime(end_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-
-    current_bucket = buckets_start_time
-    time_buckets = []
-    window = datetime.timedelta(milliseconds=bucket_size_ms)
-    while current_bucket <= buckets_end_time:
-        time_buckets.append(current_bucket)
-        current_bucket = current_bucket + window
-
-    bucket_list = dict.fromkeys(time_buckets)
-
-    for key in time_buckets: 
-        bucket_list[key] = [-5]
-    # -5 remains in a time bucket, this means no 'near-enough timestamp' frame was found in video
-
-    return bucket_list
-
-def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_window):
-    for key in dict_of_timestamps.keys():
-        if key <= timestamp_to_check <= (key + time_window):
-            return key
-
-def build_timebucket_avg_luminance(timestamps_and_luminance_array, bucket_size_ms, max_no_of_timebuckets):
-    bucket_window = datetime.timedelta(milliseconds=bucket_size_ms)
-    max_no_of_timebuckets = int(max_no_of_timebuckets)
-    avg_luminance_by_timebucket = []
-    index = 0
-    for trial in timestamps_and_luminance_array:
-        first_timestamp = trial[0][0]
-        end_timestamp = trial[-1][0]
-        this_trial_timebuckets = make_luminance_time_buckets(first_timestamp, bucket_size_ms, end_timestamp)
-        this_trial = np.empty(max_no_of_timebuckets)
-        this_trial[:] = np.nan
-        for frame in trial:
-            timestamp = frame[0]
-            lum_val = int(frame[1])
-            timestamp = timestamp.split('+')[0][:-3]
-            timestamp_dt = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-            this_bucket = find_nearest_timestamp_key(timestamp_dt, this_trial_timebuckets, bucket_window)
-            if this_trial_timebuckets[this_bucket] == [-5]:
-                this_trial_timebuckets[this_bucket] = [lum_val]
-            else:
-                this_trial_timebuckets[this_bucket].append(lum_val)
-        sorted_keys = sorted(list(this_trial_timebuckets.keys()))
-        key_index = 0
-        for key in sorted_keys:
-            avg_luminance_for_this_bucket = np.mean(this_trial_timebuckets[key])
-            this_trial[key_index] = avg_luminance_for_this_bucket
-            key_index = key_index + 1
-        avg_luminance_by_timebucket.append(this_trial)
-        index = index + 1
-    avg_lum_by_tb_thresholded = []
-    for lum_array in avg_luminance_by_timebucket:
-        lum_array_thresholded = threshold_to_nan(lum_array, 0, 'lower')
-        avg_lum_by_tb_thresholded.append(lum_array_thresholded)
-    avg_lum_by_tb_thresh_array = np.array(avg_lum_by_tb_thresholded)
-    avg_lum_final = np.nanmean(avg_lum_by_tb_thresh_array, axis=0)
-    return avg_lum_final
-
 def find_windowed_peaks(time_bucket_dict, window, threshold):
     windowed_peaks = {}
     key_list = []
@@ -517,7 +454,8 @@ def find_moment_tbuckets(list_of_moments_to_find, all_moments_dict, year_month, 
                         tbuckets_of_moments[m] = tbucket_num
     return tbuckets_of_moments
 
-def monthly_avg_pooled_across_stims_for_moment_of_interest(full_avg_world_vids_dict, all_moments_dict, moment_start_str, moment_end_str):
+def pooled_for_global_moment_of_interest(full_avg_world_vids_dict, all_moments_dict, moment_start_str, moment_end_str):
+    all_pooled_tbuckets = {}
     monthly_pooled_avg_tbuckets = {}
     for month in full_avg_world_vids_dict.keys():
         monthly_pooled_avg_tbuckets[month] = {}
@@ -534,7 +472,7 @@ def monthly_avg_pooled_across_stims_for_moment_of_interest(full_avg_world_vids_d
             # find start and end of this moment
             moments_to_find = [moment_start_str, moment_end_str]
             moments_tbuckets = find_moment_tbuckets(moments_to_find, all_moments_dict, month, stim)
-            start_tbucket = moments_tbuckets[moment_start_str]
+            start_tbucket = moments_tbuckets[moment_start_str] - 1
             end_tbucket = moments_tbuckets[moment_end_str] + 1
             start_tbuckets[stim] = start_tbucket
             end_tbuckets[stim] = end_tbucket
@@ -561,9 +499,41 @@ def monthly_avg_pooled_across_stims_for_moment_of_interest(full_avg_world_vids_d
         monthly_pooled_avg_tbuckets[month]['Vid Count'] = total_vid_count
         monthly_pooled_avg_tbuckets[month]['starts'] = start_tbuckets
         monthly_pooled_avg_tbuckets[month]['ends'] = end_tbuckets
-    return monthly_pooled_avg_tbuckets
+    print("Averaging across all months...")
+    all_months = {}
+    total_vids = 0
+    all_stim_starts = {stim:{} for stim in full_avg_world_vids_dict[month].keys()}
+    all_stim_ends = {stim:{} for stim in full_avg_world_vids_dict[month].keys()}
+    for month in monthly_pooled_avg_tbuckets.keys():
+        for tbucket in monthly_pooled_avg_tbuckets[month].keys():
+            all_months[tbucket] = {}
+    for month in monthly_pooled_avg_tbuckets.keys():
+        for tbucket in monthly_pooled_avg_tbuckets[month].keys():
+            if tbucket=='Vid Count':
+                total_vids = total_vids + monthly_pooled_avg_tbuckets[month]['Vid Count']
+                continue
+            if tbucket=='starts':
+                for stim in monthly_pooled_avg_tbuckets[month]['starts']:
+                    all_stim_starts[stim][month] = monthly_pooled_avg_tbuckets[month]['starts'][stim]
+                continue
+            if tbucket=='ends':
+                for stim in monthly_pooled_avg_tbuckets[month]['ends']:
+                    all_stim_ends[stim][month] = monthly_pooled_avg_tbuckets[month]['ends'][stim]
+                continue
+            if type(tbucket) is int:
+                all_months[tbucket]['Summed Frame'] = all_months[tbucket].get('Summed Frame',empty_frame) + monthly_pooled_avg_tbuckets[month][tbucket]
+                all_months[tbucket]['Frame Count'] = all_months[tbucket].get('Frame Count',0) + 1
+    for tbucket in all_months.keys():
+        all_pooled_tbuckets[tbucket] = {}
+    for tbucket in all_months.keys():
+        if 'Summed Frame' in all_months[tbucket].keys():
+            all_pooled_tbuckets[tbucket] = all_months[tbucket]['Summed Frame']/float(all_months[tbucket]['Frame Count'])
+    all_pooled_tbuckets['Vid Count'] = total_vids
+    all_pooled_tbuckets['starts'] = all_stim_starts
+    all_pooled_tbuckets['ends'] = all_stim_ends
+    return all_pooled_tbuckets
 
-def stims_avg_pooled_across_months_for_moment_of_interest(full_avg_world_vids_dict, all_stims_list, all_moments_dict, moment_start_str, moment_end_str):
+def pooled_for_stim_specific_moment_of_interest(full_avg_world_vids_dict, all_stims_list, all_moments_dict, moment_start_str, moment_end_str):
     stims_pooled_avg_tbuckets = {}
     for stimulus in all_stims_list:
         stims_pooled_avg_tbuckets[stimulus] = {}
@@ -577,7 +547,7 @@ def stims_avg_pooled_across_months_for_moment_of_interest(full_avg_world_vids_di
             # find start and end of this moment
             moments_to_find = [moment_start_str, moment_end_str]
             moments_tbuckets = find_moment_tbuckets(moments_to_find, all_moments_dict, month, stimulus)
-            start_tbucket = moments_tbuckets[moment_start_str]
+            start_tbucket = moments_tbuckets[moment_start_str] - 1
             end_tbucket = moments_tbuckets[moment_end_str] + 1
             start_tbuckets[month] = start_tbucket
             end_tbuckets[month] = end_tbucket
@@ -595,7 +565,8 @@ def stims_avg_pooled_across_months_for_moment_of_interest(full_avg_world_vids_di
                     this_stim_all_months[tbucket]['Frame Count'] = this_stim_all_months[tbucket].get('Frame Count',0) + 1
         print("Building average frames for stimulus {stim}, moment of interest: {s} to {e}".format(stim=stimulus,s=moment_start_str,e=moment_end_str))
         for tbucket in this_stim_all_months.keys():
-            stims_pooled_avg_tbuckets[stimulus][tbucket] = {}
+            if type(tbucket) is int:
+                stims_pooled_avg_tbuckets[stimulus][tbucket] = {}
         for tbucket in this_stim_all_months.keys():
             if 'Summed Frame' in this_stim_all_months[tbucket].keys():
                 stims_pooled_avg_tbuckets[stimulus][tbucket] = this_stim_all_months[tbucket]['Summed Frame']/float(this_stim_all_months[tbucket]['Frame Count'])
@@ -603,6 +574,22 @@ def stims_avg_pooled_across_months_for_moment_of_interest(full_avg_world_vids_di
         stims_pooled_avg_tbuckets[stimulus]['starts'] = start_tbuckets
         stims_pooled_avg_tbuckets[stimulus]['ends'] = end_tbuckets
     return stims_pooled_avg_tbuckets
+
+def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoothing_window_size, baseline_no_tbuckets):
+    total_vids = dict_of_avg_world_vid_tbuckets['Vid Count']
+    luminances_list = []
+    sorted_tbuckets = sorted([x for x in dict_of_avg_world_vid_tbuckets.keys() if type(x) is int])
+    for bucket in sorted_tbuckets:
+        if type(dict_of_avg_world_vid_tbuckets[bucket]) is not dict:
+            this_tbucket_luminance = np.nansum(dict_of_avg_world_vid_tbuckets[bucket])
+        else:
+            this_tbucket_luminance = np.nan
+        luminances_list.append(this_tbucket_luminance)
+    luminances_array = np.array(luminances_list)
+    smoothed_lum_array = savgol_filter(luminances_array, smoothing_window_size, 3)
+    baseline_this_vid = np.nanmean(smoothed_lum_array[0:baseline_no_tbuckets])
+    smoothed_baselined_lum_array = [(float(x-baseline_this_vid)/baseline_this_vid) for x in smoothed_lum_array]
+    return np.array(smoothed_baselined_lum_array)
 
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
@@ -634,6 +621,7 @@ plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")
 engagement_folder = os.path.join(plots_folder, "engagement")
 linReg_folder = os.path.join(plots_folder, "linReg")
+pooled_stim_vids_folder = os.path.join(plots_folder, "PooledStimVids")
 # Create plots folder (and sub-folders) if it (they) does (do) not exist
 if not os.path.exists(plots_folder):
     #print("Creating plots folder.")
@@ -647,6 +635,9 @@ if not os.path.exists(engagement_folder):
 if not os.path.exists(linReg_folder):
     #print("Creating engagement count folder.")
     os.makedirs(linReg_folder)
+if not os.path.exists(pooled_stim_vids_folder):
+    #print("Creating engagement count folder.")
+    os.makedirs(pooled_stim_vids_folder)
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
 ### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
@@ -810,7 +801,7 @@ for month_folder in updated_folders_to_extract:
     # downsample
     print("Downsampling monthly averaged stimulus videos for {month}".format(month=month_name)) 
     downsampled_monthly_world_vids = downsample_avg_world_vids(unraveled_monthly_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-    # save and display
+    # save 
     avg_files_this_month = os.listdir(month_folder_path)
     vids_already_made = fnmatch.filter(avg_files_this_month, '*.mp4')
     for stim in downsampled_monthly_world_vids.keys():
@@ -935,38 +926,24 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11']},
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
-# turn this into a function that sums for luminance then smooths to get rid of nans
-### SMOOTHED AVERAGE LUMINANCE PER TIME BUCKET
-avg_monthly_world_vid_luminance = {}
-for month in all_months_avg_world_vids.keys():
-    avg_monthly_world_vid_luminance[month] = {}
-    for stim in all_months_avg_world_vids[month].keys():
-        print("Calculating luminance of each frame in average video for stimulus {s} during {m}".format(s=stim, m=month))
-        avg_monthly_world_vid_luminance[month][stim] = {}
-        avg_monthly_world_vid_luminance[month][stim]['Vid Count'] = all_months_avg_world_vids[month][stim]['Vid Count']
-        avg_monthly_world_vid_luminance[month][stim]['Vid Dimensions'] = all_months_avg_world_vids[month][stim]['Vid Dimensions']
-        luminances_list = []
-        sorted_tbuckets = sorted([x for x in all_months_avg_world_vids[month][stim].keys() if type(x) is int])
-        for bucket in sorted_tbuckets:
-            this_tbucket_luminance = np.nansum(all_months_avg_world_vids[month][stim][bucket])
-            luminances_list.append(this_tbucket_luminance)
-        luminances_array = np.array(luminances_list)
-        avg_monthly_world_vid_luminance[month][stim]['luminances'] = luminances_array
-
-        this_month_avg_lum_cal = [float(x)/total_vid_count for x in this_month_cal_lum_total]
-    baseline_this_month = np.nanmean(this_month_avg_lum_cal[0:baseline_no_buckets])
-    this_month_cal_lum_baselined = [(float(x-baseline_this_month)/baseline_this_month) for x in this_month_avg_lum_cal]
-    this_month_cal_lum_array = np.array(this_month_cal_lum_baselined)
 ### ------------------------------ ###
 ### POOL AVG TBUCKETS ACROSS CALBIRATION SEQUENCE
-all_months_cal_avg_tbuckets = monthly_avg_pooled_across_stims_for_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'calibration start', 'calibration end')
+all_cal_avg_tbuckets = pooled_for_global_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'calibration start', 'calibration end')
 ### ------------------------------ ###
 ### POOL AVG TBUCKETS ACROSS OCTOPUS CLIP
-all_months_octo_avg_tbuckets = monthly_avg_pooled_across_stims_for_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'octo start', 'octo end')
+all_octo_avg_tbuckets = pooled_for_global_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'octo start', 'octo end')
 ### ------------------------------ ###
 ### POOL AVG TBUCKETS ACROSS EACH STIMULUS UNIQUE CLIP
-all_stims_unique_clip_avg_tbuckets = stims_avg_pooled_across_months_for_moment_of_interest(all_months_avg_world_vids, stim_vids, all_avg_world_moments, 'unique start', 'unique end')
+all_stims_unique_clip_avg_tbuckets = pooled_for_stim_specific_moment_of_interest(all_months_avg_world_vids, stim_vids, all_avg_world_moments, 'unique start', 'unique end')
 ### ------------------------------ ###
+### double check that the pooled avg videos make sense
+#display_avg_world_tbucket(all_months_cal_avg_tbuckets['2018-01'], 177)
+### PREPARE FOR PLOTTING
+all_cal_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_cal_avg_tbuckets, smoothing_window, baseline_no_buckets)
+all_octo_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_octo_avg_tbuckets, smoothing_window, baseline_no_buckets)
+all_stims_unique_avg_lum_smoothed_baselined = {}
+for stim in all_stims_unique_clip_avg_tbuckets.keys():
+    all_stims_unique_avg_lum_smoothed_baselined[stim] = smoothed_baselined_lum_of_tb_world_vid(all_stims_unique_clip_avg_tbuckets[stim], smoothing_window, baseline_no_buckets)
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1131,7 +1108,7 @@ fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
 plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
 cType_names = ['Contours', 'Circles']
-plot_lum_types = {'calibration':all_months_cal_avg_vids,'octopus':all_months_octo_lum,'unique':all_months_unique_lum}
+plot_lum_types = {'calibration':all_cal_avg_lum_smoothed_baselined,'octopus':all_octo_avg_lum_smoothed_baselined,'unique':all_stims_unique_avg_lum_smoothed_baselined}
 ### ------------------------------ ###
 ### GENERATE PLOTS ###
 # Plot pupil sizes
