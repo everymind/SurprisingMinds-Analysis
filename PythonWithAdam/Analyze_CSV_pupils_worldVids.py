@@ -427,7 +427,7 @@ def find_moment_tbuckets(list_of_moments_to_find, all_moments_dict, year_month, 
     for m in list_of_moments_to_find:
         if len(all_moments_dict[this_stimulus][m].keys())>1:
             for tbucket_num in all_moments_dict[this_stimulus][m].keys():
-                if month in all_moments_dict[this_stimulus][m][tbucket_num]:
+                if this_month_int in all_moments_dict[this_stimulus][m][tbucket_num]:
                     tbuckets_of_moments[m] = tbucket_num
         else:
             for tbucket_num in all_moments_dict[this_stimulus][m].keys():
@@ -601,11 +601,9 @@ class Logger(object):
         log_file = os.path.join(current_working_directory, log_filename)
         self.terminal = sys.stdout
         self.log = open(log_file, "a")
-
     def write(self, message):
         self.terminal.write(message)
         self.log.write(message)  
-
     def flush(self):
         #this flush method is needed for python 3 compatibility.
         #this handles the flush command by doing nothing.
@@ -1110,6 +1108,15 @@ plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
 cType_names = ['Contours', 'Circles']
 plot_lum_types = {'calibration':all_cal_avg_lum_smoothed_baselined,'octopus':all_octo_avg_lum_smoothed_baselined,'unique':all_stims_unique_avg_lum_smoothed_baselined}
 ### ------------------------------ ###
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+#### EVERYTHING BELOW HERE IS UNDER CONSTRUCTION!!!! ###
 ### GENERATE PLOTS ###
 # Plot pupil sizes
 for ptype in plot_lum_types:
