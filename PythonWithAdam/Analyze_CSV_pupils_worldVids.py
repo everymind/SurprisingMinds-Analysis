@@ -595,8 +595,8 @@ def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoot
     smoothed_baselined_lum_array = [(float(x-baseline_this_vid)/baseline_this_vid) for x in smoothed_lum_array]
     return np.array(smoothed_baselined_lum_array)
 
-def pool_pupil_sizes_for_global_moment_of_interest(pupil_size_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_sizes):
-    for stim in pupil_size_dict.keys():
+def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_data):
+    for stim in pupil_data_dict.keys():
         this_stim_all_months_moment_starts = []
         this_stim_all_months_moment_ends = []
         start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
@@ -606,11 +606,11 @@ def pool_pupil_sizes_for_global_moment_of_interest(pupil_size_dict, moment_of_in
                 start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
         this_stim_moment_start = min(this_stim_all_months_moment_starts)
         this_stim_moment_end = max(this_stim_all_months_moment_ends)
-        for trial in range(len(pupil_size_dict[stim])):
-            pooled_pupil_sizes.append(np.array(pupil_size_dict[stim][trial][this_stim_moment_start:this_stim_moment_end]))
+        for trial in range(len(pupil_data_dict[stim])):
+            pooled_pupil_data.append(np.array(pupil_data_dict[stim][trial][this_stim_moment_start:this_stim_moment_end]))
 
-def pool_pupil_size_means_for_global_moment_of_interest(pupil_size_means_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_size_means):
-    for stim in pupil_size_means_dict.keys():
+def pool_pupil_means_for_global_moment_of_interest(pupil_means_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_means):
+    for stim in pupil_means_dict.keys():
         this_stim_all_months_moment_starts = []
         this_stim_all_months_moment_ends = []
         start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
@@ -620,10 +620,10 @@ def pool_pupil_size_means_for_global_moment_of_interest(pupil_size_means_dict, m
                 start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
         this_stim_moment_start = min(this_stim_all_months_moment_starts)
         this_stim_moment_end = max(this_stim_all_months_moment_ends)
-        pooled_pupil_size_means.append(np.array(pupil_size_means_dict[stim][this_stim_moment_start:this_stim_moment_end]))
+        pooled_pupil_means.append(np.array(pupil_means_dict[stim][this_stim_moment_start:this_stim_moment_end]))
 
-def pool_pupil_size_peaks_for_global_moment_of_interest(pupil_size_peaks_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_size_peaks):
-    for stim in pupil_size_peaks_dict.keys():
+def pool_pupil_peaks_for_global_moment_of_interest(pupil_peaks_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_peaks):
+    for stim in pupil_peaks_dict.keys():
         this_stim_all_months_moment_starts = []
         this_stim_all_months_moment_ends = []
         start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
@@ -633,9 +633,25 @@ def pool_pupil_size_peaks_for_global_moment_of_interest(pupil_size_peaks_dict, m
                 start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
         this_stim_moment_start = min(this_stim_all_months_moment_starts)
         this_stim_moment_end = max(this_stim_all_months_moment_ends)
-        for peak in pupil_size_peaks_dict[stim]:
+        for peak in pupil_peaks_dict[stim]:
             if this_stim_moment_start<=peak<=this_stim_moment_end:
-                pooled_pupil_size_peaks.append(peak)
+                pooled_pupil_peaks.append(peak)
+
+def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
+    for stim in pupil_saccades_dict.keys():
+        this_stim_all_months_moment_starts = []
+        this_stim_all_months_moment_ends = []
+        start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+        start_end_keys = ['starts', 'ends']
+        for x in range(len(start_end_keys)):
+            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
+                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
+        this_stim_moment_start = min(this_stim_all_months_moment_starts)
+        this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        for threshold in pupil_saccades_dict[stim]:
+            for s_tbucket in pupil_saccades_dict[stim][threshold]:
+                if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
+                    pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim][threshold][s_tbucket]
 
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
@@ -1083,32 +1099,32 @@ for side in range(len(all_movements)):
             all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
             all_avg_motion_peaks[side][c_axis][stimuli] = peaks_this_stim
 ### mark saccades: setup
-all_right_contours_X_peaks = {key:{} for key in stim_vids}
-all_right_circles_X_peaks = {key:{} for key in stim_vids}
-all_right_contours_Y_peaks = {key:{} for key in stim_vids}
-all_right_circles_Y_peaks = {key:{} for key in stim_vids}
-all_left_contours_X_peaks = {key:{} for key in stim_vids}
-all_left_circles_X_peaks = {key:{} for key in stim_vids}
-all_left_contours_Y_peaks = {key:{} for key in stim_vids}
-all_left_circles_Y_peaks = {key:{} for key in stim_vids}
-all_peaks_right = [all_right_contours_X_peaks, all_right_contours_Y_peaks, all_right_circles_X_peaks, all_right_circles_Y_peaks]
-all_peaks_left = [all_left_contours_X_peaks, all_left_contours_Y_peaks, all_left_circles_X_peaks, all_left_circles_Y_peaks]
-all_peaks = [all_peaks_right, all_peaks_left]
+all_right_contours_X_saccades = {key:{} for key in stim_vids}
+all_right_circles_X_saccades = {key:{} for key in stim_vids}
+all_right_contours_Y_saccades = {key:{} for key in stim_vids}
+all_right_circles_Y_saccades = {key:{} for key in stim_vids}
+all_left_contours_X_saccades = {key:{} for key in stim_vids}
+all_left_circles_X_saccades = {key:{} for key in stim_vids}
+all_left_contours_Y_saccades = {key:{} for key in stim_vids}
+all_left_circles_Y_saccades = {key:{} for key in stim_vids}
+all_saccades_right = [all_right_contours_X_saccades, all_right_contours_Y_saccades, all_right_circles_X_saccades, all_right_circles_Y_saccades]
+all_saccades_left = [all_left_contours_X_saccades, all_left_contours_Y_saccades, all_left_circles_X_saccades, all_left_circles_Y_saccades]
+all_saccades = [all_saccades_right, all_saccades_left]
 ### FILTER INDIVIDUAL EYE MOVEMENTS FOR SACCADES ###
+saccade_thresholds = [2.5, 5, 10, 20, 30, 40, 50, 60] # pixels
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stim in all_movements[side][c_axis]:
-            saccade_thresholds = [2.5, 5, 10, 20, 30, 40, 50, 60] # pixels
-            all_peaks[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
+            all_saccades[side][c_axis][stim] = {key:{} for key in saccade_thresholds}
             this_stim_N = len(all_movements[side][c_axis][stim])
             count_threshold = this_stim_N/10
             windowed_count_thresholds = [this_stim_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
-                peaks_window = 40 # timebuckets
+                saccades_window = 40 # timebuckets
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
-                all_peaks[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, peaks_window, w_thresh)
+                all_saccades[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, saccades_window, w_thresh)
 ### PUPIL SIZE ###
 # average pupil diameters: setup
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
@@ -1141,6 +1157,67 @@ for side in range(len(all_sizes)):
             all_size_peaks[side][i][stimulus] = avg_pupil_size_peaks
 ### ------------------------------ ###
 ### POOL ACROSS CALBIRATION SEQUENCE
+# all pupil movements
+all_right_contours_movement_X_cal = []
+all_right_circles_movement_X_cal = []
+all_right_contours_movement_Y_cal = []
+all_right_circles_movement_Y_cal = []
+all_left_contours_movement_X_cal = []
+all_left_circles_movement_X_cal = []
+all_left_contours_movement_Y_cal = []
+all_left_circles_movement_Y_cal = []
+all_movement_right_cal = [all_right_contours_movement_X_cal, all_right_contours_movement_Y_cal, all_right_circles_movement_X_cal, all_right_circles_movement_Y_cal]
+all_movement_left_cal = [all_left_contours_movement_X_cal, all_left_contours_movement_Y_cal, all_left_circles_movement_X_cal, all_left_circles_movement_Y_cal]
+all_movements_cal = [all_movement_right_cal, all_movement_left_cal]
+for side in range(len(all_movements_cal)):
+    for i in range(len(all_movements_cal[side])):
+        pool_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_cal_avg_tbuckets, all_movements_cal[side][i])
+# pupil avg motion
+all_right_contours_X_avg_motion_cal = []
+all_right_circles_X_avg_motion_cal = []
+all_right_contours_Y_avg_motion_cal = []
+all_right_circles_Y_avg_motion_cal = []
+all_left_contours_X_avg_motion_cal = []
+all_left_circles_X_avg_motion_cal = []
+all_left_contours_Y_avg_motion_cal = []
+all_left_circles_Y_avg_motion_cal = []
+all_avg_motion_right_cal = [all_right_contours_X_avg_motion_cal, all_right_contours_Y_avg_motion_cal, all_right_circles_X_avg_motion_cal, all_right_circles_Y_avg_motion_cal]
+all_avg_motion_left_cal = [all_left_contours_X_avg_motion_cal, all_left_contours_Y_avg_motion_cal, all_left_circles_X_avg_motion_cal, all_left_circles_Y_avg_motion_cal]
+all_avg_motion_cal = [all_avg_motion_right_cal, all_avg_motion_left_cal]
+for side in range(len(all_avg_motion_cal)):
+    for i in range(len(all_avg_motion_cal[side])):
+        pool_pupil_means_for_global_moment_of_interest(all_avg_motion[side][i], all_cal_avg_tbuckets, all_avg_motion_cal[side][i])
+# pupil avg motion peaks - NOT SORTED, WITH DUPLICATES
+all_RcontoursX_avg_motion_peaks_cal = []
+all_RcirclesX_avg_motion_peaks_cal = []
+all_RcontoursY_avg_motion_peaks_cal = []
+all_RcirclesY_avg_motion_peaks_cal = []
+all_LcontoursX_avg_motion_peaks_cal = []
+all_LcirclesX_avg_motion_peaks_cal = []
+all_LcontoursY_avg_motion_peaks_cal = []
+all_LcirclesY_avg_motion_peaks_cal = []
+all_avg_motion_right_peaks_cal = [all_RcontoursX_avg_motion_peaks_cal, all_RcontoursY_avg_motion_peaks_cal, all_RcirclesX_avg_motion_peaks_cal, all_RcirclesY_avg_motion_peaks_cal]
+all_avg_motion_left_peaks_cal = [all_LcontoursX_avg_motion_peaks_cal, all_LcontoursY_avg_motion_peaks_cal, all_LcirclesX_avg_motion_peaks_cal, all_LcirclesY_avg_motion_peaks_cal]
+all_avg_motion_peaks_cal = [all_avg_motion_right_peaks_cal, all_avg_motion_left_peaks_cal]
+for side in range(len(all_avg_motion_peaks_cal)):
+    for i in range(len(all_avg_motion_peaks_cal[side])):
+        pool_pupil_peaks_for_global_moment_of_interest(all_avg_motion_peaks[side][i], all_cal_avg_tbuckets, all_avg_motion_peaks_cal[side][i])
+# pupil saccades
+all_right_contours_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_cal = [all_right_contours_X_saccades_cal, all_right_contours_Y_saccades_cal, all_right_circles_X_saccades_cal, all_right_circles_Y_saccades_cal]
+all_saccades_left_cal = [all_left_contours_X_saccades_cal, all_left_contours_Y_saccades_cal, all_left_circles_X_saccades_cal, all_left_circles_Y_saccades_cal]
+all_saccades_cal = [all_saccades_right_cal, all_saccades_left_cal]
+for side in range(len(all_saccades_cal)):
+    for i in range(len(all_saccades_cal[side])):
+        pool_pupil_saccades_for_global_moment_of_interest(all_saccades[side][i], all_cal_avg_tbuckets, all_saccades_cal[side][i])
+# all pupil sizes
 all_right_contours_calibration = []
 all_right_circles_calibration = []
 all_left_contours_calibration = []
@@ -1150,7 +1227,8 @@ all_left_sizes_calibration = [all_left_contours_calibration, all_left_circles_ca
 all_sizes_calibration = [all_right_sizes_calibration, all_left_sizes_calibration]
 for side in range(len(all_sizes_calibration)):
     for i in range(len(all_sizes_calibration[side])):
-        pool_pupil_sizes_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_calibration[side][i])
+        pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_calibration[side][i])
+# pupil size means
 all_right_contours_means_calibration = []
 all_right_circles_means_calibration = []
 all_left_contours_means_calibration = []
@@ -1160,7 +1238,8 @@ all_left_sizes_means_cal = [all_left_contours_means_calibration, all_left_circle
 all_sizes_means_cal = [all_right_sizes_means_cal, all_left_sizes_means_cal]
 for side in range(len(all_sizes_means_cal)):
     for i in range(len(all_sizes_means_cal[side])):
-        pool_pupil_size_means_for_global_moment_of_interest(all_size_means[side][i], all_cal_avg_tbuckets, all_sizes_means_cal[side][i])
+        pool_pupil_means_for_global_moment_of_interest(all_size_means[side][i], all_cal_avg_tbuckets, all_sizes_means_cal[side][i])
+# pupil size mean peaks
 all_right_contours_peaks_calibration = []
 all_right_circles_peaks_calibration = []
 all_left_contours_peaks_calibration = []
@@ -1170,7 +1249,7 @@ all_left_peaks_cal = [all_left_contours_peaks_calibration, all_left_circles_peak
 all_sizes_peaks_cal = [all_right_peaks_cal, all_left_peaks_cal]
 for side in range(len(all_sizes_peaks_cal)):
     for i in range(len(all_sizes_peaks_cal[side])):
-        pool_pupil_size_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_cal_avg_tbuckets, all_sizes_peaks_cal[side][i])
+        pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_cal_avg_tbuckets, all_sizes_peaks_cal[side][i])
 
 
 # ------------------------------------------------------------------------ #
@@ -1180,7 +1259,7 @@ for side in range(len(all_sizes_peaks_cal)):
 ### GLOBAL VARIABLES FOR PLOTTING DATA ###
 fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
-plotting_peaks_window = 40 # MAKE SURE THIS ==peaks_window!!
+plotting_saccades_window = 40 # MAKE SURE THIS ==saccades_window!!
 cType_names = ['Contours', 'Circles']
 plot_lum_types = {'calibration':all_cal_avg_lum_smoothed_baselined,'octopus':all_octo_avg_lum_smoothed_baselined,'unique':all_stims_unique_avg_lum_smoothed_baselined}
 ### ------------------------------ ###
@@ -1409,9 +1488,9 @@ for side in range(len(all_movements_plot)):
             plot_luminance = luminances_avg[stimuli]
             plot_luminance_peaks = luminances_peaks[stimuli]
             # fig name and path
-            figure_name = 'MotionTraces-AvgMotionPeaks' + str(plotting_peaks_window) + '_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_name = 'MotionTraces-AvgMotionPeaks' + str(plotting_saccades_window) + '_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeak finding window: " + str(plotting_peaks_window) + "\nPlotted on " + todays_datetime
+            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeak finding window: " + str(plotting_saccades_window) + "\nPlotted on " + todays_datetime
             # draw fig
             plt.figure(figsize=(14, 14), dpi=fig_size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
@@ -1481,9 +1560,9 @@ for side in range(len(all_movements_plot)):
             plot_luminance = luminances_avg[stimuli]
             plot_luminance_peaks = luminances_peaks[stimuli]
             # fig name and path
-            figure_name = 'MotionTraces-Saccades' + str(plotting_peaks_window) + '_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+            figure_name = 'MotionTraces-Saccades' + str(plotting_saccades_window) + '_' + plot_type_name + '_' + stim_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeaks plotted at height of pixel movement threshold, peak finding window: " + str(plotting_peaks_window) + "\nPlotted on " + todays_datetime
+            figure_title = "Pupil motion of participants \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nStimulus type: " + stim_name + "\nPeaks plotted at height of pixel movement threshold, peak finding window: " + str(plotting_saccades_window) + "\nPlotted on " + todays_datetime
             # begin drawing fig
             plt.figure(figsize=(14, 14), dpi=fig_size)
             plt.suptitle(figure_title, fontsize=12, y=0.98)
