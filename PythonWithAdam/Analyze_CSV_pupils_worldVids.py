@@ -1155,6 +1155,10 @@ for side in range(len(all_sizes)):
             all_size_means[side][i][stimulus] = avg_pupil_size_smoothed
             avg_pupil_size_peaks, _ = find_peaks(avg_pupil_size_smoothed, prominence=0.125)
             all_size_peaks[side][i][stimulus] = avg_pupil_size_peaks
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 ### ------------------------------ ###
 ### POOL ACROSS CALBIRATION SEQUENCE
 # all pupil movements
@@ -1218,39 +1222,133 @@ for side in range(len(all_saccades_cal)):
     for i in range(len(all_saccades_cal[side])):
         pool_pupil_saccades_for_global_moment_of_interest(all_saccades[side][i], all_cal_avg_tbuckets, all_saccades_cal[side][i])
 # all pupil sizes
-all_right_contours_calibration = []
-all_right_circles_calibration = []
-all_left_contours_calibration = []
-all_left_circles_calibration = []
-all_right_sizes_calibration = [all_right_contours_calibration, all_right_circles_calibration]
-all_left_sizes_calibration = [all_left_contours_calibration, all_left_circles_calibration]
-all_sizes_calibration = [all_right_sizes_calibration, all_left_sizes_calibration]
-for side in range(len(all_sizes_calibration)):
-    for i in range(len(all_sizes_calibration[side])):
-        pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_calibration[side][i])
+all_right_contours_cal = []
+all_right_circles_cal = []
+all_left_contours_cal = []
+all_left_circles_cal = []
+all_right_sizes_cal = [all_right_contours_cal, all_right_circles_cal]
+all_left_sizes_cal = [all_left_contours_cal, all_left_circles_cal]
+all_sizes_cal = [all_right_sizes_cal, all_left_sizes_cal]
+for side in range(len(all_sizes_cal)):
+    for i in range(len(all_sizes_cal[side])):
+        pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_cal[side][i])
 # pupil size means
-all_right_contours_means_calibration = []
-all_right_circles_means_calibration = []
-all_left_contours_means_calibration = []
-all_left_circles_means_calibration = []
-all_right_sizes_means_cal = [all_right_contours_means_calibration, all_right_circles_means_calibration]
-all_left_sizes_means_cal = [all_left_contours_means_calibration, all_left_circles_means_calibration]
+all_right_contours_means_cal = []
+all_right_circles_means_cal = []
+all_left_contours_means_cal = []
+all_left_circles_means_cal = []
+all_right_sizes_means_cal = [all_right_contours_means_cal, all_right_circles_means_cal]
+all_left_sizes_means_cal = [all_left_contours_means_cal, all_left_circles_means_cal]
 all_sizes_means_cal = [all_right_sizes_means_cal, all_left_sizes_means_cal]
 for side in range(len(all_sizes_means_cal)):
     for i in range(len(all_sizes_means_cal[side])):
         pool_pupil_means_for_global_moment_of_interest(all_size_means[side][i], all_cal_avg_tbuckets, all_sizes_means_cal[side][i])
 # pupil size mean peaks
-all_right_contours_peaks_calibration = []
-all_right_circles_peaks_calibration = []
-all_left_contours_peaks_calibration = []
-all_left_circles_peaks_calibration = []
-all_right_peaks_cal = [all_right_contours_peaks_calibration, all_right_circles_peaks_calibration]
-all_left_peaks_cal = [all_left_contours_peaks_calibration, all_left_circles_peaks_calibration]
+all_right_contours_peaks_cal = []
+all_right_circles_peaks_cal = []
+all_left_contours_peaks_cal = []
+all_left_circles_peaks_cal = []
+all_right_peaks_cal = [all_right_contours_peaks_cal, all_right_circles_peaks_cal]
+all_left_peaks_cal = [all_left_contours_peaks_cal, all_left_circles_peaks_cal]
 all_sizes_peaks_cal = [all_right_peaks_cal, all_left_peaks_cal]
 for side in range(len(all_sizes_peaks_cal)):
     for i in range(len(all_sizes_peaks_cal[side])):
         pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_cal_avg_tbuckets, all_sizes_peaks_cal[side][i])
-
+### ------------------------------ ###
+### POOL ACROSS OCTO SEQUENCE
+# all pupil movements
+all_right_contours_movement_X_octo = []
+all_right_circles_movement_X_octo = []
+all_right_contours_movement_Y_octo = []
+all_right_circles_movement_Y_octo = []
+all_left_contours_movement_X_octo = []
+all_left_circles_movement_X_octo = []
+all_left_contours_movement_Y_octo = []
+all_left_circles_movement_Y_octo = []
+all_movement_right_octo = [all_right_contours_movement_X_octo, all_right_contours_movement_Y_octo, all_right_circles_movement_X_octo, all_right_circles_movement_Y_octo]
+all_movement_left_octo = [all_left_contours_movement_X_octo, all_left_contours_movement_Y_octo, all_left_circles_movement_X_octo, all_left_circles_movement_Y_octo]
+all_movements_octo = [all_movement_right_octo, all_movement_left_octo]
+for side in range(len(all_movements_octo)):
+    for i in range(len(all_movements_octo[side])):
+        pool_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_octo_avg_tbuckets, all_movements_octo[side][i])
+# pupil avg motion
+all_right_contours_X_avg_motion_octo = []
+all_right_circles_X_avg_motion_octo = []
+all_right_contours_Y_avg_motion_octo = []
+all_right_circles_Y_avg_motion_octo = []
+all_left_contours_X_avg_motion_octo = []
+all_left_circles_X_avg_motion_octo = []
+all_left_contours_Y_avg_motion_octo = []
+all_left_circles_Y_avg_motion_octo = []
+all_avg_motion_right_octo = [all_right_contours_X_avg_motion_octo, all_right_contours_Y_avg_motion_octo, all_right_circles_X_avg_motion_octo, all_right_circles_Y_avg_motion_octo]
+all_avg_motion_left_octo = [all_left_contours_X_avg_motion_octo, all_left_contours_Y_avg_motion_octo, all_left_circles_X_avg_motion_octo, all_left_circles_Y_avg_motion_octo]
+all_avg_motion_octo = [all_avg_motion_right_octo, all_avg_motion_left_octo]
+for side in range(len(all_avg_motion_octo)):
+    for i in range(len(all_avg_motion_octo[side])):
+        pool_pupil_means_for_global_moment_of_interest(all_avg_motion[side][i], all_octo_avg_tbuckets, all_avg_motion_octo[side][i])
+# pupil avg motion peaks - NOT SORTED, WITH DUPLICATES
+all_RcontoursX_avg_motion_peaks_octo = []
+all_RcirclesX_avg_motion_peaks_octo = []
+all_RcontoursY_avg_motion_peaks_octo = []
+all_RcirclesY_avg_motion_peaks_octo = []
+all_LcontoursX_avg_motion_peaks_octo = []
+all_LcirclesX_avg_motion_peaks_octo = []
+all_LcontoursY_avg_motion_peaks_octo = []
+all_LcirclesY_avg_motion_peaks_octo = []
+all_avg_motion_right_peaks_octo = [all_RcontoursX_avg_motion_peaks_octo, all_RcontoursY_avg_motion_peaks_octo, all_RcirclesX_avg_motion_peaks_octo, all_RcirclesY_avg_motion_peaks_octo]
+all_avg_motion_left_peaks_octo = [all_LcontoursX_avg_motion_peaks_octo, all_LcontoursY_avg_motion_peaks_octo, all_LcirclesX_avg_motion_peaks_octo, all_LcirclesY_avg_motion_peaks_octo]
+all_avg_motion_peaks_octo = [all_avg_motion_right_peaks_octo, all_avg_motion_left_peaks_octo]
+for side in range(len(all_avg_motion_peaks_octo)):
+    for i in range(len(all_avg_motion_peaks_octo[side])):
+        pool_pupil_peaks_for_global_moment_of_interest(all_avg_motion_peaks[side][i], all_octo_avg_tbuckets, all_avg_motion_peaks_octo[side][i])
+# pupil saccades
+all_right_contours_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_octo = [all_right_contours_X_saccades_octo, all_right_contours_Y_saccades_octo, all_right_circles_X_saccades_octo, all_right_circles_Y_saccades_octo]
+all_saccades_left_octo = [all_left_contours_X_saccades_octo, all_left_contours_Y_saccades_octo, all_left_circles_X_saccades_octo, all_left_circles_Y_saccades_octo]
+all_saccades_octo = [all_saccades_right_octo, all_saccades_left_octo]
+for side in range(len(all_saccades_octo)):
+    for i in range(len(all_saccades_octo[side])):
+        pool_pupil_saccades_for_global_moment_of_interest(all_saccades[side][i], all_octo_avg_tbuckets, all_saccades_octo[side][i])
+# all pupil sizes
+all_right_contours_octo = []
+all_right_circles_octo = []
+all_left_contours_octo = []
+all_left_circles_octo = []
+all_right_sizes_octo = [all_right_contours_octo, all_right_circles_octo]
+all_left_sizes_octo = [all_left_contours_octo, all_left_circles_octo]
+all_sizes_octo = [all_right_sizes_octo, all_left_sizes_octo]
+for side in range(len(all_sizes_octo)):
+    for i in range(len(all_sizes_octo[side])):
+        pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_octo_avg_tbuckets, all_sizes_octo[side][i])
+# pupil size means
+all_right_contours_means_octo = []
+all_right_circles_means_octo = []
+all_left_contours_means_octo = []
+all_left_circles_means_octo = []
+all_right_sizes_means_octo = [all_right_contours_means_octo, all_right_circles_means_octo]
+all_left_sizes_means_octo = [all_left_contours_means_octo, all_left_circles_means_octo]
+all_sizes_means_octo = [all_right_sizes_means_octo, all_left_sizes_means_octo]
+for side in range(len(all_sizes_means_octo)):
+    for i in range(len(all_sizes_means_octo[side])):
+        pool_pupil_means_for_global_moment_of_interest(all_size_means[side][i], all_octo_avg_tbuckets, all_sizes_means_octo[side][i])
+# pupil size mean peaks
+all_right_contours_peaks_octo = []
+all_right_circles_peaks_octo = []
+all_left_contours_peaks_octo = []
+all_left_circles_peaks_octo = []
+all_right_peaks_octo = [all_right_contours_peaks_octo, all_right_circles_peaks_octo]
+all_left_peaks_octo = [all_left_contours_peaks_octo, all_left_circles_peaks_octo]
+all_sizes_peaks_octo = [all_right_peaks_octo, all_left_peaks_octo]
+for side in range(len(all_sizes_peaks_octo)):
+    for i in range(len(all_sizes_peaks_octo[side])):
+        pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_octo_avg_tbuckets, all_sizes_peaks_octo[side][i])
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
