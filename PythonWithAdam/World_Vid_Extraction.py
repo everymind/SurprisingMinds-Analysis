@@ -556,10 +556,10 @@ for item in zipped_data:
             continue
         # if no monthly stim vid average made yet for this month
         # check that the full month has been extracted
-        this_month_analysed = fnmatch.filter(analysed_folders, 'SurprisingMinds_' + item_year_month + '*')
+        this_month_extracted = fnmatch.filter(already_extracted_daily, 'SurprisingMinds_' + item_year_month + '*')
         this_month_data = fnmatch.filter(zipped_data, 'SurprisingMinds_' + item_year_month + '*')
         this_month_invalid = fnmatch.filter(invalid_zipped, item_year_month)
-        if len(this_month_analysed) != len(this_month_data) + len(this_month_invalid):
+        if len(this_month_extracted) != len(this_month_data) + len(this_month_invalid):
             print("World vid frames for {month} not yet completed".format(month=item_year_month))
             continue
         # full month extracted?
