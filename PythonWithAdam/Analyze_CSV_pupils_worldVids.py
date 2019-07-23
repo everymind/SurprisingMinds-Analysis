@@ -595,6 +595,48 @@ def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoot
     smoothed_baselined_lum_array = [(float(x-baseline_this_vid)/baseline_this_vid) for x in smoothed_lum_array]
     return np.array(smoothed_baselined_lum_array)
 
+def pool_pupil_sizes_for_global_moment_of_interest(pupil_size_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_sizes):
+    for stim in pupil_size_dict.keys():
+        this_stim_all_months_moment_starts = []
+        this_stim_all_months_moment_ends = []
+        start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+        start_end_keys = ['starts', 'ends']
+        for x in range(len(start_end_keys)):
+            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
+                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
+        this_stim_moment_start = min(this_stim_all_months_moment_starts)
+        this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        for trial in range(len(pupil_size_dict[stim])):
+            pooled_pupil_sizes.append(np.array(pupil_size_dict[stim][trial][this_stim_moment_start:this_stim_moment_end]))
+
+def pool_pupil_size_means_for_global_moment_of_interest(pupil_size_means_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_size_means):
+    for stim in pupil_size_means_dict.keys():
+        this_stim_all_months_moment_starts = []
+        this_stim_all_months_moment_ends = []
+        start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+        start_end_keys = ['starts', 'ends']
+        for x in range(len(start_end_keys)):
+            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
+                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
+        this_stim_moment_start = min(this_stim_all_months_moment_starts)
+        this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        pooled_pupil_size_means.append(np.array(pupil_size_means_dict[stim][this_stim_moment_start:this_stim_moment_end]))
+
+def pool_pupil_size_peaks_for_global_moment_of_interest(pupil_size_peaks_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_size_peaks):
+    for stim in pupil_size_peaks_dict.keys():
+        this_stim_all_months_moment_starts = []
+        this_stim_all_months_moment_ends = []
+        start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+        start_end_keys = ['starts', 'ends']
+        for x in range(len(start_end_keys)):
+            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
+                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
+        this_stim_moment_start = min(this_stim_all_months_moment_starts)
+        this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        for peak in pupil_size_peaks_dict[stim]:
+            if this_stim_moment_start<=peak<=this_stim_moment_end:
+                pooled_pupil_size_peaks.append(peak)
+
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
 class Logger(object):
@@ -1071,12 +1113,14 @@ for side in range(len(all_movements)):
 # average pupil diameters: setup
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
 all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
+all_sizes = [all_right_sizes, all_left_sizes]
 all_right_size_contours_means = {key:[] for key in stim_vids}
 all_left_size_contours_means = {key:[] for key in stim_vids}
 all_right_size_circles_means = {key:[] for key in stim_vids}
 all_left_size_circles_means = {key:[] for key in stim_vids}
 all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
 all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
+all_size_means = [all_right_size_means, all_left_size_means]
 # find peaks in pupil diameter sizes: setup
 all_right_size_contours_peaks = {key:[] for key in stim_vids}
 all_left_size_contours_peaks = {key:[] for key in stim_vids}
@@ -1084,23 +1128,51 @@ all_right_size_circles_peaks = {key:[] for key in stim_vids}
 all_left_size_circles_peaks = {key:[] for key in stim_vids}
 all_right_size_peaks = [all_right_size_contours_peaks, all_right_size_circles_peaks]
 all_left_size_peaks = [all_left_size_contours_peaks, all_left_size_circles_peaks]
+all_size_peaks = [all_right_size_peaks, all_left_size_peaks]
 # Compute global mean
-for i in range(len(all_right_sizes)):
-    for stimulus in all_right_sizes[i]: 
-        print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
-        avg_right_pupil_size = np.nanmean(all_right_sizes[i][stimulus], 0)
-        avg_right_pupil_size_smoothed = savgol_filter(avg_right_pupil_size, smoothing_window-10, 3)
-        all_right_size_means[i][stimulus] = avg_right_pupil_size_smoothed
-        avg_right_pupil_size_peaks, _ = find_peaks(avg_right_pupil_size_smoothed, prominence=0.125)
-        all_right_size_peaks[i][stimulus] = avg_right_pupil_size_peaks
-for i in range(len(all_left_sizes)):
-    for stimulus in all_left_sizes[i]: 
-        print('Calculating average pupil sizes for left camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
-        avg_left_pupil_size = np.nanmean(all_left_sizes[i][stimulus], 0)
-        avg_left_pupil_size_smoothed = savgol_filter(avg_left_pupil_size, smoothing_window-10, 3)
-        all_left_size_means[i][stimulus] = avg_left_pupil_size_smoothed
-        avg_left_pupil_size_peaks, _ = find_peaks(avg_left_pupil_size_smoothed, prominence=0.125)
-        all_left_size_peaks[i][stimulus] = avg_left_pupil_size_peaks
+for side in range(len(all_sizes)):
+    for i in range(len(all_sizes[side])):
+        for stimulus in all_sizes[side][i].keys(): 
+            print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
+            avg_pupil_size = np.nanmean(all_sizes[side][i][stimulus], 0)
+            avg_pupil_size_smoothed = savgol_filter(avg_pupil_size, smoothing_window, 3)
+            all_size_means[side][i][stimulus] = avg_pupil_size_smoothed
+            avg_pupil_size_peaks, _ = find_peaks(avg_pupil_size_smoothed, prominence=0.125)
+            all_size_peaks[side][i][stimulus] = avg_pupil_size_peaks
+### ------------------------------ ###
+### POOL ACROSS CALBIRATION SEQUENCE
+all_right_contours_calibration = []
+all_right_circles_calibration = []
+all_left_contours_calibration = []
+all_left_circles_calibration = []
+all_right_sizes_calibration = [all_right_contours_calibration, all_right_circles_calibration]
+all_left_sizes_calibration = [all_left_contours_calibration, all_left_circles_calibration]
+all_sizes_calibration = [all_right_sizes_calibration, all_left_sizes_calibration]
+for side in range(len(all_sizes_calibration)):
+    for i in range(len(all_sizes_calibration[side])):
+        pool_pupil_sizes_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_calibration[side][i])
+all_right_contours_means_calibration = []
+all_right_circles_means_calibration = []
+all_left_contours_means_calibration = []
+all_left_circles_means_calibration = []
+all_right_sizes_means_cal = [all_right_contours_means_calibration, all_right_circles_means_calibration]
+all_left_sizes_means_cal = [all_left_contours_means_calibration, all_left_circles_means_calibration]
+all_sizes_means_cal = [all_right_sizes_means_cal, all_left_sizes_means_cal]
+for side in range(len(all_sizes_means_cal)):
+    for i in range(len(all_sizes_means_cal[side])):
+        pool_pupil_size_means_for_global_moment_of_interest(all_size_means[side][i], all_cal_avg_tbuckets, all_sizes_means_cal[side][i])
+all_right_contours_peaks_calibration = []
+all_right_circles_peaks_calibration = []
+all_left_contours_peaks_calibration = []
+all_left_circles_peaks_calibration = []
+all_right_peaks_cal = [all_right_contours_peaks_calibration, all_right_circles_peaks_calibration]
+all_left_peaks_cal = [all_left_contours_peaks_calibration, all_left_circles_peaks_calibration]
+all_sizes_peaks_cal = [all_right_peaks_cal, all_left_peaks_cal]
+for side in range(len(all_sizes_peaks_cal)):
+    for i in range(len(all_sizes_peaks_cal[side])):
+        pool_pupil_size_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_cal_avg_tbuckets, all_sizes_peaks_cal[side][i])
+
+
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1124,11 +1196,18 @@ plot_lum_types = {'calibration':all_cal_avg_lum_smoothed_baselined,'octopus':all
 ### GENERATE PLOTS ###
 # Plot pupil sizes
 # calibration
-plot_type_name = cType_names[0]
+pupil_analysis_type_name = cType_names[0]
+plot_type_right = all_right_trials_contours
+plot_means_right = all_right_size_contours_means
+plot_means_right_peaks = all_right_size_contours_peaks
+plot_type_left = all_left_trials_contours
+plot_means_left = all_left_size_contours_means
+plot_means_left_peaks = all_left_size_contours_peaks
+plot_luminance = all_cal_avg_lum_smoothed_baselined
 # fig name and path
-figure_name = 'PupilSizes_' + 'calibration' + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+figure_name = 'PupilSizes_' + 'calibration' + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
 figure_path = os.path.join(pupils_folder, figure_name)
-figure_title = "Pupil sizes of participants during calibration sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + plot_type_name + "\nPlotted on " + todays_datetime
+figure_title = "Pupil sizes of participants during calibration sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
 # draw fig
 plt.figure(figsize=(14, 14), dpi=fig_size)
 plt.suptitle(figure_title, fontsize=12, y=0.98)
