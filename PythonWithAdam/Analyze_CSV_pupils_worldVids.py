@@ -16,10 +16,9 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from collections import defaultdict
-from scipy.signal import savgol_filter
+from scipy import signal
 from itertools import groupby
 from operator import itemgetter
-from scipy.signal import find_peaks
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
     if (new_bucket_size % original_bucket_size == 0):
@@ -263,7 +262,7 @@ def calc_mvmnt_from_pos(list_of_positon_arrays, nans_threshold, movement_thresho
     output = [x for x in this_stim_movements if len(x)>=trial_movements_min_len]
     return output
 
-def calc_avg_motion_and_peaks(list_of_movement_arrays, window):
+def calc_avg_motion_smoothed(list_of_movement_arrays):
     total_motion = np.zeros(len(list_of_movement_arrays[0]))
     nan_count = np.zeros(len(list_of_movement_arrays[0]))
     # for each frame, sum the abs(movements) on that frame
@@ -280,10 +279,8 @@ def calc_avg_motion_and_peaks(list_of_movement_arrays, window):
     # smooth the average motion
     # smoothing window must be odd!
     # apply savitzky-golay filter to smooth
-    avg_motion_smoothed = savgol_filter(avg_motion, window, 3)
-    # find peaks in average motion
-    peaks, _ = find_peaks(avg_motion_smoothed, height=(2,10), prominence=0.75)
-    return avg_motion_smoothed, peaks
+    avg_motion_smoothed = signal.savgol_filter(avg_motion, window, 3)
+    return avg_motion_smoothed
 
 def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshold, window_size, windowed_count_threshold):
     all_trials_peaks = []
@@ -590,7 +587,7 @@ def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoot
             this_tbucket_luminance = np.nan
         luminances_list.append(this_tbucket_luminance)
     luminances_array = np.array(luminances_list)
-    smoothed_lum_array = savgol_filter(luminances_array, smoothing_window_size, 3)
+    smoothed_lum_array = signal.savgol_filter(luminances_array, smoothing_window_size, 3)
     baseline_this_vid = np.nanmean(smoothed_lum_array[0:baseline_no_tbuckets])
     smoothed_baselined_lum_array = [(float(x-baseline_this_vid)/baseline_this_vid) for x in smoothed_lum_array]
     return np.array(smoothed_baselined_lum_array)
@@ -609,34 +606,6 @@ def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_int
         for trial in range(len(pupil_data_dict[stim])):
             pooled_pupil_data.append(np.array(pupil_data_dict[stim][trial][this_stim_moment_start:this_stim_moment_end]))
 
-def pool_pupil_means_for_global_moment_of_interest(pupil_means_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_means):
-    for stim in pupil_means_dict.keys():
-        this_stim_all_months_moment_starts = []
-        this_stim_all_months_moment_ends = []
-        start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-        start_end_keys = ['starts', 'ends']
-        for x in range(len(start_end_keys)):
-            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
-                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
-        this_stim_moment_start = min(this_stim_all_months_moment_starts)
-        this_stim_moment_end = max(this_stim_all_months_moment_ends)
-        pooled_pupil_means.append(np.array(pupil_means_dict[stim][this_stim_moment_start:this_stim_moment_end]))
-
-def pool_pupil_peaks_for_global_moment_of_interest(pupil_peaks_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_peaks):
-    for stim in pupil_peaks_dict.keys():
-        this_stim_all_months_moment_starts = []
-        this_stim_all_months_moment_ends = []
-        start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-        start_end_keys = ['starts', 'ends']
-        for x in range(len(start_end_keys)):
-            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
-                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
-        this_stim_moment_start = min(this_stim_all_months_moment_starts)
-        this_stim_moment_end = max(this_stim_all_months_moment_ends)
-        for peak in pupil_peaks_dict[stim]:
-            if this_stim_moment_start<=peak<=this_stim_moment_end:
-                pooled_pupil_peaks.append(peak)
-
 def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
     for stim in pupil_saccades_dict.keys():
         this_stim_all_months_moment_starts = []
@@ -652,6 +621,60 @@ def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, momen
             for s_tbucket in pupil_saccades_dict[stim][threshold]:
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
                     pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim][threshold][s_tbucket]
+
+def pool_pupil_data_for_stim_specific_moment_of_interest(pupil_data_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_data):
+    this_stim_all_months_moment_starts = []
+    this_stim_all_months_moment_ends = []
+    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+    start_end_keys = ['starts', 'ends']
+    for x in range(len(start_end_keys)):
+        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
+            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
+    this_stim_moment_start = min(this_stim_all_months_moment_starts)
+    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+    for trial in range(len(pupil_data_dict[stim_number])):
+        pooled_pupil_data.append(np.array(pupil_data_dict[stim_number][trial][this_stim_moment_start:this_stim_moment_end]))
+
+def pool_pupil_means_for_stim_specific_moment_of_interest(pupil_means_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_means):
+    this_stim_all_months_moment_starts = []
+    this_stim_all_months_moment_ends = []
+    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+    start_end_keys = ['starts', 'ends']
+    for x in range(len(start_end_keys)):
+        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
+            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
+    this_stim_moment_start = min(this_stim_all_months_moment_starts)
+    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+    pooled_pupil_means.append(np.array(pupil_means_dict[stim_number][this_stim_moment_start:this_stim_moment_end]))
+
+def pool_pupil_peaks_for_stim_specific_moment_of_interest(pupil_peaks_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_peaks):
+    this_stim_all_months_moment_starts = []
+    this_stim_all_months_moment_ends = []
+    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+    start_end_keys = ['starts', 'ends']
+    for x in range(len(start_end_keys)):
+        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
+            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
+    this_stim_moment_start = min(this_stim_all_months_moment_starts)
+    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+    for peak in pupil_peaks_dict[stim_number]:
+        if this_stim_moment_start<=peak<=this_stim_moment_end:
+            pooled_pupil_peaks.append(peak)
+
+def pool_pupil_saccades_for_stim_specific_moment_of_interest(pupil_saccades_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
+    this_stim_all_months_moment_starts = []
+    this_stim_all_months_moment_ends = []
+    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
+    start_end_keys = ['starts', 'ends']
+    for x in range(len(start_end_keys)):
+        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
+            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
+    this_stim_moment_start = min(this_stim_all_months_moment_starts)
+    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+    for threshold in pupil_saccades_dict[stim_number]:
+            for s_tbucket in pupil_saccades_dict[stim_number][threshold]:
+                if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
+                    pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim_number][threshold][s_tbucket]
 
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
@@ -891,8 +914,11 @@ for month_folder in updated_folders_to_extract:
 # ------------------------------------------------------------------------ #
 ### CSV DATA EXTRACTION COMPLETE ###
 ### GLOBAL VARIABLES FOR CLEANING AND PROCESSING EXTRACTED DATA ###
-smoothing_window = 25 # in time buckets, must be odd! for savgol_filter
+smoothing_window = 25 # in time buckets, must be odd! for signal.savgol_filter
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+side_names = ['Right', 'Left']
+cType_names = ['Contours', 'Circles']
+cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -999,11 +1025,26 @@ all_stims_unique_clip_avg_tbuckets = pooled_for_stim_specific_moment_of_interest
 ### double check that the pooled avg videos make sense
 display_avg_world_tbucket(all_octo_avg_tbuckets, 300)
 ### PREPARE FOR PLOTTING
+# calibration
 all_cal_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_cal_avg_tbuckets, smoothing_window, baseline_no_buckets)
+all_cal_avg_lum_peaks = signal.argrelextrema(all_cal_avg_lum_smoothed_baselined, np.greater)
+all_cal_avg_lum_valleys = signal.argrelextrema(all_cal_avg_lum_smoothed_baselined, np.less)
+all_cal_avg_lum_valleys = all_cal_avg_lum_valleys[0]
+# octo
 all_octo_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_octo_avg_tbuckets, smoothing_window, baseline_no_buckets)
+all_octo_avg_lum_peaks = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.greater)
+all_octo_avg_lum_valleys = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.less)
+all_octo_avg_lum_valleys = all_octo_avg_lum_valleys[0]
+# stim-unique
 all_stims_unique_avg_lum_smoothed_baselined = {}
 for stim in all_stims_unique_clip_avg_tbuckets.keys():
-    all_stims_unique_avg_lum_smoothed_baselined[stim] = smoothed_baselined_lum_of_tb_world_vid(all_stims_unique_clip_avg_tbuckets[stim], smoothing_window, baseline_no_buckets)
+    all_stims_unique_avg_lum_smoothed_baselined[stim] = {}
+    this_stim_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_stims_unique_clip_avg_tbuckets[stim], smoothing_window, baseline_no_buckets)
+    all_stims_unique_avg_lum_smoothed_baselined[stim]['SB lum'] = this_stim_smoothed_baselined
+    this_stim_avg_lum_peaks = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.greater)
+    all_stims_unique_avg_lum_smoothed_baselined[stim]['SB peaks'] = this_stim_avg_lum_peaks
+    this_stim_avg_lum_valleys = signal.argrelextrema(this_stim_smoothed_baselined, np.less)
+    all_stims_unique_avg_lum_smoothed_baselined[stim]['SB valleys'] = this_stim_avg_lum_valleys[0]
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1056,8 +1097,6 @@ all_left_circles_movement_Y = {key:[] for key in stim_vids}
 all_movement_right = [all_right_contours_movement_X, all_right_contours_movement_Y, all_right_circles_movement_X, all_right_circles_movement_Y]
 all_movement_left = [all_left_contours_movement_X, all_left_contours_movement_Y, all_left_circles_movement_X, all_left_circles_movement_Y]
 all_movements = [all_movement_right, all_movement_left]
-side_names = ['Right', 'Left']
-cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
 ### CALCULATE MOVEMENT ###
 for side in range(len(all_positions)):
     for c_axis in range(len(all_positions[side])):
@@ -1066,7 +1105,7 @@ for side in range(len(all_positions)):
             # if there are nans (dropped frames) for more than 2 seconds of video time, then toss that trial
             dropped_frames_threshold = 2000/downsampled_bucket_size_ms
             all_movements[side][c_axis][stimuli] = calc_mvmnt_from_pos(all_positions[side][c_axis][stimuli], dropped_frames_threshold, 100, -100)
-# measure motion: setup
+# measure motion (absolute value of movement): setup
 all_right_contours_X_avg_motion = {key:[] for key in stim_vids}
 all_right_circles_X_avg_motion = {key:[] for key in stim_vids}
 all_right_contours_Y_avg_motion = {key:[] for key in stim_vids}
@@ -1078,26 +1117,13 @@ all_left_circles_Y_avg_motion = {key:[] for key in stim_vids}
 all_avg_motion_right = [all_right_contours_X_avg_motion, all_right_contours_Y_avg_motion, all_right_circles_X_avg_motion, all_right_circles_Y_avg_motion]
 all_avg_motion_left = [all_left_contours_X_avg_motion, all_left_contours_Y_avg_motion, all_left_circles_X_avg_motion, all_left_circles_Y_avg_motion]
 all_avg_motion = [all_avg_motion_right, all_avg_motion_left]
-# mark motion peaks: setup
-all_RcontoursX_avg_motion_peaks = {key:[] for key in stim_vids}
-all_RcirclesX_avg_motion_peaks = {key:[] for key in stim_vids}
-all_RcontoursY_avg_motion_peaks = {key:[] for key in stim_vids}
-all_RcirclesY_avg_motion_peaks = {key:[] for key in stim_vids}
-all_LcontoursX_avg_motion_peaks = {key:[] for key in stim_vids}
-all_LcirclesX_avg_motion_peaks = {key:[] for key in stim_vids}
-all_LcontoursY_avg_motion_peaks = {key:[] for key in stim_vids}
-all_LcirclesY_avg_motion_peaks = {key:[] for key in stim_vids}
-all_avg_motion_right_peaks = [all_RcontoursX_avg_motion_peaks, all_RcontoursY_avg_motion_peaks, all_RcirclesX_avg_motion_peaks, all_RcirclesY_avg_motion_peaks]
-all_avg_motion_left_peaks = [all_LcontoursX_avg_motion_peaks, all_LcontoursY_avg_motion_peaks, all_LcirclesX_avg_motion_peaks, all_LcirclesY_avg_motion_peaks]
-all_avg_motion_peaks = [all_avg_motion_right_peaks, all_avg_motion_left_peaks]
 ### CALCULATE AVERAGE PIXEL MOTION PER TIME BUCKET FOR EACH STIM ###
 for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stimuli in all_movements[side][c_axis]:
             print('Calculating average motion for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
-            avg_motion_this_stim, peaks_this_stim = calc_avg_motion_and_peaks(all_movements[side][c_axis][stimuli], smoothing_window)
+            avg_motion_this_stim = calc_avg_motion_smoothed(all_movements[side][c_axis][stimuli])
             all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
-            all_avg_motion_peaks[side][c_axis][stimuli] = peaks_this_stim
 ### mark saccades: setup
 all_right_contours_X_saccades = {key:{} for key in stim_vids}
 all_right_circles_X_saccades = {key:{} for key in stim_vids}
@@ -1137,24 +1163,18 @@ all_left_size_circles_means = {key:[] for key in stim_vids}
 all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
 all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
 all_size_means = [all_right_size_means, all_left_size_means]
-# find peaks in pupil diameter sizes: setup
-all_right_size_contours_peaks = {key:[] for key in stim_vids}
-all_left_size_contours_peaks = {key:[] for key in stim_vids}
-all_right_size_circles_peaks = {key:[] for key in stim_vids}
-all_left_size_circles_peaks = {key:[] for key in stim_vids}
-all_right_size_peaks = [all_right_size_contours_peaks, all_right_size_circles_peaks]
-all_left_size_peaks = [all_left_size_contours_peaks, all_left_size_circles_peaks]
-all_size_peaks = [all_right_size_peaks, all_left_size_peaks]
 # Compute global mean
 for side in range(len(all_sizes)):
     for i in range(len(all_sizes[side])):
         for stimulus in all_sizes[side][i].keys(): 
             print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
             avg_pupil_size = np.nanmean(all_sizes[side][i][stimulus], 0)
-            avg_pupil_size_smoothed = savgol_filter(avg_pupil_size, smoothing_window, 3)
+            avg_pupil_size_smoothed = signal.savgol_filter(avg_pupil_size, smoothing_window, 3)
             all_size_means[side][i][stimulus] = avg_pupil_size_smoothed
-            avg_pupil_size_peaks, _ = find_peaks(avg_pupil_size_smoothed, prominence=0.125)
-            all_size_peaks[side][i][stimulus] = avg_pupil_size_peaks
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1190,8 +1210,10 @@ all_avg_motion_left_cal = [all_left_contours_X_avg_motion_cal, all_left_contours
 all_avg_motion_cal = [all_avg_motion_right_cal, all_avg_motion_left_cal]
 for side in range(len(all_avg_motion_cal)):
     for i in range(len(all_avg_motion_cal[side])):
-        pool_pupil_means_for_global_moment_of_interest(all_avg_motion[side][i], all_cal_avg_tbuckets, all_avg_motion_cal[side][i])
-# pupil avg motion peaks - NOT SORTED, WITH DUPLICATES
+        this_avg_motion_cal = np.nanmean(all_movements_cal[side][i],0)
+        this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_cal, smoothing_window, 3)
+        all_avg_motion_cal[side][i].append(this_avg_motion_smoothed)
+# pupil avg motion peaks
 all_RcontoursX_avg_motion_peaks_cal = []
 all_RcirclesX_avg_motion_peaks_cal = []
 all_RcontoursY_avg_motion_peaks_cal = []
@@ -1205,7 +1227,11 @@ all_avg_motion_left_peaks_cal = [all_LcontoursX_avg_motion_peaks_cal, all_Lconto
 all_avg_motion_peaks_cal = [all_avg_motion_right_peaks_cal, all_avg_motion_left_peaks_cal]
 for side in range(len(all_avg_motion_peaks_cal)):
     for i in range(len(all_avg_motion_peaks_cal[side])):
-        pool_pupil_peaks_for_global_moment_of_interest(all_avg_motion_peaks[side][i], all_cal_avg_tbuckets, all_avg_motion_peaks_cal[side][i])
+        this_mean_peaks, _ = signal.find_peaks(all_avg_motion_cal[side][i][0], prominence=0.05)
+        all_avg_motion_peaks_cal[side][i].append(this_mean_peaks)
+### --------------------------- ###
+### --------------------------- ###
+### NOT SURE ABOUT THIS SECTION ###
 # pupil saccades
 all_right_contours_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
 all_right_circles_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
@@ -1221,6 +1247,8 @@ all_saccades_cal = [all_saccades_right_cal, all_saccades_left_cal]
 for side in range(len(all_saccades_cal)):
     for i in range(len(all_saccades_cal[side])):
         pool_pupil_saccades_for_global_moment_of_interest(all_saccades[side][i], all_cal_avg_tbuckets, all_saccades_cal[side][i])
+### --------------------------- ###
+### --------------------------- ###
 # all pupil sizes
 all_right_contours_cal = []
 all_right_circles_cal = []
@@ -1242,18 +1270,26 @@ all_left_sizes_means_cal = [all_left_contours_means_cal, all_left_circles_means_
 all_sizes_means_cal = [all_right_sizes_means_cal, all_left_sizes_means_cal]
 for side in range(len(all_sizes_means_cal)):
     for i in range(len(all_sizes_means_cal[side])):
-        pool_pupil_means_for_global_moment_of_interest(all_size_means[side][i], all_cal_avg_tbuckets, all_sizes_means_cal[side][i])
-# pupil size mean peaks
+        this_size_mean_cal = np.nanmean(all_sizes_cal[side][i],0)
+        this_size_mean_smoothed = signal.savgol_filter(this_size_mean_cal, smoothing_window, 3)
+        all_sizes_means_cal[side][i].append(this_size_mean_smoothed)
+# pupil size mean peaks and valleys
 all_right_contours_peaks_cal = []
 all_right_circles_peaks_cal = []
 all_left_contours_peaks_cal = []
 all_left_circles_peaks_cal = []
 all_right_peaks_cal = [all_right_contours_peaks_cal, all_right_circles_peaks_cal]
 all_left_peaks_cal = [all_left_contours_peaks_cal, all_left_circles_peaks_cal]
-all_sizes_peaks_cal = [all_right_peaks_cal, all_left_peaks_cal]
-for side in range(len(all_sizes_peaks_cal)):
-    for i in range(len(all_sizes_peaks_cal[side])):
-        pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_cal_avg_tbuckets, all_sizes_peaks_cal[side][i])
+all_size_peaks_cal = [all_right_peaks_cal, all_left_peaks_cal]
+for side in range(len(all_size_peaks_cal)):
+    for i in range(len(all_size_peaks_cal[side])):
+        this_mean_peaks = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.greater)
+        this_mean_valleys = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.less)
+        all_size_peaks_cal[side][i].append(this_mean_peaks)
+        all_size_peaks_cal[side][i].append(this_mean_valleys)
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
 ### ------------------------------ ###
 ### POOL ACROSS OCTO SEQUENCE
 # all pupil movements
@@ -1345,11 +1381,503 @@ all_left_contours_peaks_octo = []
 all_left_circles_peaks_octo = []
 all_right_peaks_octo = [all_right_contours_peaks_octo, all_right_circles_peaks_octo]
 all_left_peaks_octo = [all_left_contours_peaks_octo, all_left_circles_peaks_octo]
-all_sizes_peaks_octo = [all_right_peaks_octo, all_left_peaks_octo]
-for side in range(len(all_sizes_peaks_octo)):
-    for i in range(len(all_sizes_peaks_octo[side])):
-        pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_octo_avg_tbuckets, all_sizes_peaks_octo[side][i])
-
+all_size_peaks_octo = [all_right_peaks_octo, all_left_peaks_octo]
+for side in range(len(all_size_peaks_octo)):
+    for i in range(len(all_size_peaks_octo[side])):
+        pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_octo_avg_tbuckets, all_size_peaks_octo[side][i])
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### POOL ACROSS UNIQUE CLIPS
+# all pupil movements
+# stim 24
+all_right_contours_movement_X_24 = []
+all_right_circles_movement_X_24 = []
+all_right_contours_movement_Y_24 = []
+all_right_circles_movement_Y_24 = []
+all_left_contours_movement_X_24 = []
+all_left_circles_movement_X_24 = []
+all_left_contours_movement_Y_24 = []
+all_left_circles_movement_Y_24 = []
+all_movement_right_24 = [all_right_contours_movement_X_24, all_right_contours_movement_Y_24, all_right_circles_movement_X_24, all_right_circles_movement_Y_24]
+all_movement_left_24 = [all_left_contours_movement_X_24, all_left_contours_movement_Y_24, all_left_circles_movement_X_24, all_left_circles_movement_Y_24]
+all_movements_24 = [all_movement_right_24, all_movement_left_24]
+# stim 25
+all_right_contours_movement_X_25 = []
+all_right_circles_movement_X_25 = []
+all_right_contours_movement_Y_25 = []
+all_right_circles_movement_Y_25 = []
+all_left_contours_movement_X_25 = []
+all_left_circles_movement_X_25 = []
+all_left_contours_movement_Y_25 = []
+all_left_circles_movement_Y_25 = []
+all_movement_right_25 = [all_right_contours_movement_X_25, all_right_contours_movement_Y_25, all_right_circles_movement_X_25, all_right_circles_movement_Y_25]
+all_movement_left_25 = [all_left_contours_movement_X_25, all_left_contours_movement_Y_25, all_left_circles_movement_X_25, all_left_circles_movement_Y_25]
+all_movements_25 = [all_movement_right_25, all_movement_left_25]
+# stim 26
+all_right_contours_movement_X_26 = []
+all_right_circles_movement_X_26 = []
+all_right_contours_movement_Y_26 = []
+all_right_circles_movement_Y_26 = []
+all_left_contours_movement_X_26 = []
+all_left_circles_movement_X_26 = []
+all_left_contours_movement_Y_26 = []
+all_left_circles_movement_Y_26 = []
+all_movement_right_26 = [all_right_contours_movement_X_26, all_right_contours_movement_Y_26, all_right_circles_movement_X_26, all_right_circles_movement_Y_26]
+all_movement_left_26 = [all_left_contours_movement_X_26, all_left_contours_movement_Y_26, all_left_circles_movement_X_26, all_left_circles_movement_Y_26]
+all_movements_26 = [all_movement_right_26, all_movement_left_26]
+# stim 27
+all_right_contours_movement_X_27 = []
+all_right_circles_movement_X_27 = []
+all_right_contours_movement_Y_27 = []
+all_right_circles_movement_Y_27 = []
+all_left_contours_movement_X_27 = []
+all_left_circles_movement_X_27 = []
+all_left_contours_movement_Y_27 = []
+all_left_circles_movement_Y_27 = []
+all_movement_right_27 = [all_right_contours_movement_X_27, all_right_contours_movement_Y_27, all_right_circles_movement_X_27, all_right_circles_movement_Y_27]
+all_movement_left_27 = [all_left_contours_movement_X_27, all_left_contours_movement_Y_27, all_left_circles_movement_X_27, all_left_circles_movement_Y_27]
+all_movements_27 = [all_movement_right_27, all_movement_left_27]
+# stim 28
+all_right_contours_movement_X_28 = []
+all_right_circles_movement_X_28 = []
+all_right_contours_movement_Y_28 = []
+all_right_circles_movement_Y_28 = []
+all_left_contours_movement_X_28 = []
+all_left_circles_movement_X_28 = []
+all_left_contours_movement_Y_28 = []
+all_left_circles_movement_Y_28 = []
+all_movement_right_28 = [all_right_contours_movement_X_28, all_right_contours_movement_Y_28, all_right_circles_movement_X_28, all_right_circles_movement_Y_28]
+all_movement_left_28 = [all_left_contours_movement_X_28, all_left_contours_movement_Y_28, all_left_circles_movement_X_28, all_left_circles_movement_Y_28]
+all_movements_28 = [all_movement_right_28, all_movement_left_28]
+# stim 29
+all_right_contours_movement_X_29 = []
+all_right_circles_movement_X_29 = []
+all_right_contours_movement_Y_29 = []
+all_right_circles_movement_Y_29 = []
+all_left_contours_movement_X_29 = []
+all_left_circles_movement_X_29 = []
+all_left_contours_movement_Y_29 = []
+all_left_circles_movement_Y_29 = []
+all_movement_right_29 = [all_right_contours_movement_X_29, all_right_contours_movement_Y_29, all_right_circles_movement_X_29, all_right_circles_movement_Y_29]
+all_movement_left_29 = [all_left_contours_movement_X_29, all_left_contours_movement_Y_29, all_left_circles_movement_X_29, all_left_circles_movement_Y_29]
+all_movements_29 = [all_movement_right_29, all_movement_left_29]
+# all stims
+all_movements_unique = [all_movements_24, all_movements_25, all_movements_26, all_movements_27, all_movements_28, all_movements_29]
+for stim_order in range(len(all_movements_unique)):
+    for side in range(len(all_movements_unique[stim_order])):
+        for i in range(len(all_movements_unique[stim_order][side])):
+            print("Pooling pupil movement data for stimulus {st}, {s} side, {caxis}".format(st=stim_vids[stim_order], s=side_names[side], caxis=cAxis_names[i]))
+            pool_pupil_data_for_stim_specific_moment_of_interest(all_movements[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_movements_unique[stim_order][side][i])
+# pupil avg motion
+# stim 24
+all_right_contours_X_avg_motion_24 = []
+all_right_circles_X_avg_motion_24 = []
+all_right_contours_Y_avg_motion_24 = []
+all_right_circles_Y_avg_motion_24 = []
+all_left_contours_X_avg_motion_24 = []
+all_left_circles_X_avg_motion_24 = []
+all_left_contours_Y_avg_motion_24 = []
+all_left_circles_Y_avg_motion_24 = []
+all_avg_motion_right_24 = [all_right_contours_X_avg_motion_24, all_right_contours_Y_avg_motion_24, all_right_circles_X_avg_motion_24, all_right_circles_Y_avg_motion_24]
+all_avg_motion_left_24 = [all_left_contours_X_avg_motion_24, all_left_contours_Y_avg_motion_24, all_left_circles_X_avg_motion_24, all_left_circles_Y_avg_motion_24]
+all_avg_motion_24 = [all_avg_motion_right_24, all_avg_motion_left_24]
+# stim 25
+all_right_contours_X_avg_motion_25 = []
+all_right_circles_X_avg_motion_25 = []
+all_right_contours_Y_avg_motion_25 = []
+all_right_circles_Y_avg_motion_25 = []
+all_left_contours_X_avg_motion_25 = []
+all_left_circles_X_avg_motion_25 = []
+all_left_contours_Y_avg_motion_25 = []
+all_left_circles_Y_avg_motion_25 = []
+all_avg_motion_right_25 = [all_right_contours_X_avg_motion_25, all_right_contours_Y_avg_motion_25, all_right_circles_X_avg_motion_25, all_right_circles_Y_avg_motion_25]
+all_avg_motion_left_25 = [all_left_contours_X_avg_motion_25, all_left_contours_Y_avg_motion_25, all_left_circles_X_avg_motion_25, all_left_circles_Y_avg_motion_25]
+all_avg_motion_25 = [all_avg_motion_right_25, all_avg_motion_left_25]
+# stim 26
+all_right_contours_X_avg_motion_26 = []
+all_right_circles_X_avg_motion_26 = []
+all_right_contours_Y_avg_motion_26 = []
+all_right_circles_Y_avg_motion_26 = []
+all_left_contours_X_avg_motion_26 = []
+all_left_circles_X_avg_motion_26 = []
+all_left_contours_Y_avg_motion_26 = []
+all_left_circles_Y_avg_motion_26 = []
+all_avg_motion_right_26 = [all_right_contours_X_avg_motion_26, all_right_contours_Y_avg_motion_26, all_right_circles_X_avg_motion_26, all_right_circles_Y_avg_motion_26]
+all_avg_motion_left_26 = [all_left_contours_X_avg_motion_26, all_left_contours_Y_avg_motion_26, all_left_circles_X_avg_motion_26, all_left_circles_Y_avg_motion_26]
+all_avg_motion_26 = [all_avg_motion_right_26, all_avg_motion_left_26]
+# stim 27
+all_right_contours_X_avg_motion_27 = []
+all_right_circles_X_avg_motion_27 = []
+all_right_contours_Y_avg_motion_27 = []
+all_right_circles_Y_avg_motion_27 = []
+all_left_contours_X_avg_motion_27 = []
+all_left_circles_X_avg_motion_27 = []
+all_left_contours_Y_avg_motion_27 = []
+all_left_circles_Y_avg_motion_27 = []
+all_avg_motion_right_27 = [all_right_contours_X_avg_motion_27, all_right_contours_Y_avg_motion_27, all_right_circles_X_avg_motion_27, all_right_circles_Y_avg_motion_27]
+all_avg_motion_left_27 = [all_left_contours_X_avg_motion_27, all_left_contours_Y_avg_motion_27, all_left_circles_X_avg_motion_27, all_left_circles_Y_avg_motion_27]
+all_avg_motion_27 = [all_avg_motion_right_27, all_avg_motion_left_27]
+# stim 28
+all_right_contours_X_avg_motion_28 = []
+all_right_circles_X_avg_motion_28 = []
+all_right_contours_Y_avg_motion_28 = []
+all_right_circles_Y_avg_motion_28 = []
+all_left_contours_X_avg_motion_28 = []
+all_left_circles_X_avg_motion_28 = []
+all_left_contours_Y_avg_motion_28 = []
+all_left_circles_Y_avg_motion_28 = []
+all_avg_motion_right_28 = [all_right_contours_X_avg_motion_28, all_right_contours_Y_avg_motion_28, all_right_circles_X_avg_motion_28, all_right_circles_Y_avg_motion_28]
+all_avg_motion_left_28 = [all_left_contours_X_avg_motion_28, all_left_contours_Y_avg_motion_28, all_left_circles_X_avg_motion_28, all_left_circles_Y_avg_motion_28]
+all_avg_motion_28 = [all_avg_motion_right_28, all_avg_motion_left_28]
+# stim 29
+all_right_contours_X_avg_motion_29 = []
+all_right_circles_X_avg_motion_29 = []
+all_right_contours_Y_avg_motion_29 = []
+all_right_circles_Y_avg_motion_29 = []
+all_left_contours_X_avg_motion_29 = []
+all_left_circles_X_avg_motion_29 = []
+all_left_contours_Y_avg_motion_29 = []
+all_left_circles_Y_avg_motion_29 = []
+all_avg_motion_right_29 = [all_right_contours_X_avg_motion_29, all_right_contours_Y_avg_motion_29, all_right_circles_X_avg_motion_29, all_right_circles_Y_avg_motion_29]
+all_avg_motion_left_29 = [all_left_contours_X_avg_motion_29, all_left_contours_Y_avg_motion_29, all_left_circles_X_avg_motion_29, all_left_circles_Y_avg_motion_29]
+all_avg_motion_29 = [all_avg_motion_right_29, all_avg_motion_left_29]
+# all stims
+all_avg_motion_unique = [all_avg_motion_24, all_avg_motion_25, all_avg_motion_26, all_avg_motion_27, all_avg_motion_28, all_avg_motion_29]
+for stim_order in range(len(all_avg_motion_unique)):
+    for side in range(len(all_avg_motion_unique[stim_order])):
+        for i in range(len(all_avg_motion_unique[stim_order][side])):
+            print("Pooling pupil average motion data for stimulus {st}, {s} side, {caxis}".format(st=stim_vids[stim_order], s=side_names[side], caxis=cAxis_names[i]))
+            pool_pupil_means_for_stim_specific_moment_of_interest(all_avg_motion[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_avg_motion_unique[stim_order][side][i])
+# pupil avg motion peaks - NOT SORTED, WITH DUPLICATES
+# stim 24
+all_RcontoursX_avg_motion_peaks_24 = []
+all_RcirclesX_avg_motion_peaks_24 = []
+all_RcontoursY_avg_motion_peaks_24 = []
+all_RcirclesY_avg_motion_peaks_24 = []
+all_LcontoursX_avg_motion_peaks_24 = []
+all_LcirclesX_avg_motion_peaks_24 = []
+all_LcontoursY_avg_motion_peaks_24 = []
+all_LcirclesY_avg_motion_peaks_24 = []
+all_avg_motion_right_peaks_24 = [all_RcontoursX_avg_motion_peaks_24, all_RcontoursY_avg_motion_peaks_24, all_RcirclesX_avg_motion_peaks_24, all_RcirclesY_avg_motion_peaks_24]
+all_avg_motion_left_peaks_24 = [all_LcontoursX_avg_motion_peaks_24, all_LcontoursY_avg_motion_peaks_24, all_LcirclesX_avg_motion_peaks_24, all_LcirclesY_avg_motion_peaks_24]
+all_avg_motion_peaks_24 = [all_avg_motion_right_peaks_24, all_avg_motion_left_peaks_24]
+# stim 25
+all_RcontoursX_avg_motion_peaks_25 = []
+all_RcirclesX_avg_motion_peaks_25 = []
+all_RcontoursY_avg_motion_peaks_25 = []
+all_RcirclesY_avg_motion_peaks_25 = []
+all_LcontoursX_avg_motion_peaks_25 = []
+all_LcirclesX_avg_motion_peaks_25 = []
+all_LcontoursY_avg_motion_peaks_25 = []
+all_LcirclesY_avg_motion_peaks_25 = []
+all_avg_motion_right_peaks_25 = [all_RcontoursX_avg_motion_peaks_25, all_RcontoursY_avg_motion_peaks_25, all_RcirclesX_avg_motion_peaks_25, all_RcirclesY_avg_motion_peaks_25]
+all_avg_motion_left_peaks_25 = [all_LcontoursX_avg_motion_peaks_25, all_LcontoursY_avg_motion_peaks_25, all_LcirclesX_avg_motion_peaks_25, all_LcirclesY_avg_motion_peaks_25]
+all_avg_motion_peaks_25 = [all_avg_motion_right_peaks_25, all_avg_motion_left_peaks_25]
+# stim 26
+all_RcontoursX_avg_motion_peaks_26 = []
+all_RcirclesX_avg_motion_peaks_26 = []
+all_RcontoursY_avg_motion_peaks_26 = []
+all_RcirclesY_avg_motion_peaks_26 = []
+all_LcontoursX_avg_motion_peaks_26 = []
+all_LcirclesX_avg_motion_peaks_26 = []
+all_LcontoursY_avg_motion_peaks_26 = []
+all_LcirclesY_avg_motion_peaks_26 = []
+all_avg_motion_right_peaks_26 = [all_RcontoursX_avg_motion_peaks_26, all_RcontoursY_avg_motion_peaks_26, all_RcirclesX_avg_motion_peaks_26, all_RcirclesY_avg_motion_peaks_26]
+all_avg_motion_left_peaks_26 = [all_LcontoursX_avg_motion_peaks_26, all_LcontoursY_avg_motion_peaks_26, all_LcirclesX_avg_motion_peaks_26, all_LcirclesY_avg_motion_peaks_26]
+all_avg_motion_peaks_26 = [all_avg_motion_right_peaks_26, all_avg_motion_left_peaks_26]
+# stim 27
+all_RcontoursX_avg_motion_peaks_27 = []
+all_RcirclesX_avg_motion_peaks_27 = []
+all_RcontoursY_avg_motion_peaks_27 = []
+all_RcirclesY_avg_motion_peaks_27 = []
+all_LcontoursX_avg_motion_peaks_27 = []
+all_LcirclesX_avg_motion_peaks_27 = []
+all_LcontoursY_avg_motion_peaks_27 = []
+all_LcirclesY_avg_motion_peaks_27 = []
+all_avg_motion_right_peaks_27 = [all_RcontoursX_avg_motion_peaks_27, all_RcontoursY_avg_motion_peaks_27, all_RcirclesX_avg_motion_peaks_27, all_RcirclesY_avg_motion_peaks_27]
+all_avg_motion_left_peaks_27 = [all_LcontoursX_avg_motion_peaks_27, all_LcontoursY_avg_motion_peaks_27, all_LcirclesX_avg_motion_peaks_27, all_LcirclesY_avg_motion_peaks_27]
+all_avg_motion_peaks_27 = [all_avg_motion_right_peaks_27, all_avg_motion_left_peaks_27]
+# stim 28
+all_RcontoursX_avg_motion_peaks_28 = []
+all_RcirclesX_avg_motion_peaks_28 = []
+all_RcontoursY_avg_motion_peaks_28 = []
+all_RcirclesY_avg_motion_peaks_28 = []
+all_LcontoursX_avg_motion_peaks_28 = []
+all_LcirclesX_avg_motion_peaks_28 = []
+all_LcontoursY_avg_motion_peaks_28 = []
+all_LcirclesY_avg_motion_peaks_28 = []
+all_avg_motion_right_peaks_28 = [all_RcontoursX_avg_motion_peaks_28, all_RcontoursY_avg_motion_peaks_28, all_RcirclesX_avg_motion_peaks_28, all_RcirclesY_avg_motion_peaks_28]
+all_avg_motion_left_peaks_28 = [all_LcontoursX_avg_motion_peaks_28, all_LcontoursY_avg_motion_peaks_28, all_LcirclesX_avg_motion_peaks_28, all_LcirclesY_avg_motion_peaks_28]
+all_avg_motion_peaks_28 = [all_avg_motion_right_peaks_28, all_avg_motion_left_peaks_28]
+# stim 29
+all_RcontoursX_avg_motion_peaks_29 = []
+all_RcirclesX_avg_motion_peaks_29 = []
+all_RcontoursY_avg_motion_peaks_29 = []
+all_RcirclesY_avg_motion_peaks_29 = []
+all_LcontoursX_avg_motion_peaks_29 = []
+all_LcirclesX_avg_motion_peaks_29 = []
+all_LcontoursY_avg_motion_peaks_29 = []
+all_LcirclesY_avg_motion_peaks_29 = []
+all_avg_motion_right_peaks_29 = [all_RcontoursX_avg_motion_peaks_29, all_RcontoursY_avg_motion_peaks_29, all_RcirclesX_avg_motion_peaks_29, all_RcirclesY_avg_motion_peaks_29]
+all_avg_motion_left_peaks_29 = [all_LcontoursX_avg_motion_peaks_29, all_LcontoursY_avg_motion_peaks_29, all_LcirclesX_avg_motion_peaks_29, all_LcirclesY_avg_motion_peaks_29]
+all_avg_motion_peaks_29 = [all_avg_motion_right_peaks_29, all_avg_motion_left_peaks_29]
+# all stims
+all_avg_motion_peaks_unique = [all_avg_motion_peaks_24, all_avg_motion_peaks_25, all_avg_motion_peaks_26, all_avg_motion_peaks_27, all_avg_motion_peaks_28, all_avg_motion_peaks_29]
+for stim_order in range(len(all_avg_motion_peaks_unique)):
+    for side in range(len(all_avg_motion_peaks_unique[stim_order])):
+        for i in range(len(all_avg_motion_peaks_unique[stim_order][side])):
+            print("Pooling pupil average motion peaks data for stimulus {st}, {s} side, {caxis}".format(st=stim_vids[stim_order], s=side_names[side], caxis=cAxis_names[i]))
+            pool_pupil_peaks_for_stim_specific_moment_of_interest(all_avg_motion_peaks[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_avg_motion_peaks_unique[stim_order][side][i])
+# pupil saccades
+# stim 24
+all_right_contours_X_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_24 = [all_right_contours_X_saccades_24, all_right_contours_Y_saccades_24, all_right_circles_X_saccades_24, all_right_circles_Y_saccades_24]
+all_saccades_left_24 = [all_left_contours_X_saccades_24, all_left_contours_Y_saccades_24, all_left_circles_X_saccades_24, all_left_circles_Y_saccades_24]
+all_saccades_24 = [all_saccades_right_24, all_saccades_left_24]
+# stim 25
+all_right_contours_X_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_25 = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_25 = [all_right_contours_X_saccades_25, all_right_contours_Y_saccades_25, all_right_circles_X_saccades_25, all_right_circles_Y_saccades_25]
+all_saccades_left_25 = [all_left_contours_X_saccades_25, all_left_contours_Y_saccades_25, all_left_circles_X_saccades_25, all_left_circles_Y_saccades_25]
+all_saccades_25 = [all_saccades_right_25, all_saccades_left_25]
+# stim 26
+all_right_contours_X_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_26 = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_26 = [all_right_contours_X_saccades_26, all_right_contours_Y_saccades_26, all_right_circles_X_saccades_26, all_right_circles_Y_saccades_26]
+all_saccades_left_26 = [all_left_contours_X_saccades_26, all_left_contours_Y_saccades_26, all_left_circles_X_saccades_26, all_left_circles_Y_saccades_26]
+all_saccades_26 = [all_saccades_right_26, all_saccades_left_26]
+# stim 27
+all_right_contours_X_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_27 = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_27 = [all_right_contours_X_saccades_27, all_right_contours_Y_saccades_27, all_right_circles_X_saccades_27, all_right_circles_Y_saccades_27]
+all_saccades_left_27 = [all_left_contours_X_saccades_27, all_left_contours_Y_saccades_27, all_left_circles_X_saccades_27, all_left_circles_Y_saccades_27]
+all_saccades_27 = [all_saccades_right_27, all_saccades_left_27]
+# stim 28
+all_right_contours_X_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_28 = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_28 = [all_right_contours_X_saccades_28, all_right_contours_Y_saccades_28, all_right_circles_X_saccades_28, all_right_circles_Y_saccades_28]
+all_saccades_left_28 = [all_left_contours_X_saccades_28, all_left_contours_Y_saccades_28, all_left_circles_X_saccades_28, all_left_circles_Y_saccades_28]
+all_saccades_28 = [all_saccades_right_28, all_saccades_left_28]
+# stim 29
+all_right_contours_X_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_X_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_right_contours_Y_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_right_circles_Y_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_X_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_X_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_left_contours_Y_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_left_circles_Y_saccades_29 = {thresh:{} for thresh in saccade_thresholds}
+all_saccades_right_29 = [all_right_contours_X_saccades_29, all_right_contours_Y_saccades_29, all_right_circles_X_saccades_29, all_right_circles_Y_saccades_29]
+all_saccades_left_29 = [all_left_contours_X_saccades_29, all_left_contours_Y_saccades_29, all_left_circles_X_saccades_29, all_left_circles_Y_saccades_29]
+all_saccades_29 = [all_saccades_right_29, all_saccades_left_29]
+# all stims
+all_saccades_unique = [all_saccades_24, all_saccades_25, all_saccades_26, all_saccades_27, all_saccades_28, all_saccades_29]
+for stim_order in range(len(all_saccades_unique)):
+    for side in range(len(all_saccades_unique[stim_order])):
+        for i in range(len(all_saccades_unique[stim_order][side])):
+            print("Pooling pupil saccades data for stimulus {st}, {s} side, {caxis}".format(st=stim_vids[stim_order], s=side_names[side], caxis=cAxis_names[i]))
+            pool_pupil_saccades_for_stim_specific_moment_of_interest(all_saccades[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_saccades_unique[stim_order][side][i])
+# all pupil sizes
+# stim 24
+all_right_contours_24 = []
+all_right_circles_24 = []
+all_left_contours_24 = []
+all_left_circles_24 = []
+all_right_sizes_24 = [all_right_contours_24, all_right_circles_24]
+all_left_sizes_24 = [all_left_contours_24, all_left_circles_24]
+all_sizes_24 = [all_right_sizes_24, all_left_sizes_24]
+# stim 25
+all_right_contours_25 = []
+all_right_circles_25 = []
+all_left_contours_25 = []
+all_left_circles_25 = []
+all_right_sizes_25 = [all_right_contours_25, all_right_circles_25]
+all_left_sizes_25 = [all_left_contours_25, all_left_circles_25]
+all_sizes_25 = [all_right_sizes_25, all_left_sizes_25]
+# stim 26
+all_right_contours_26 = []
+all_right_circles_26 = []
+all_left_contours_26 = []
+all_left_circles_26 = []
+all_right_sizes_26 = [all_right_contours_26, all_right_circles_26]
+all_left_sizes_26 = [all_left_contours_26, all_left_circles_26]
+all_sizes_26 = [all_right_sizes_26, all_left_sizes_26]
+# stim 27
+all_right_contours_27 = []
+all_right_circles_27 = []
+all_left_contours_27 = []
+all_left_circles_27 = []
+all_right_sizes_27 = [all_right_contours_27, all_right_circles_27]
+all_left_sizes_27 = [all_left_contours_27, all_left_circles_27]
+all_sizes_27 = [all_right_sizes_27, all_left_sizes_27]
+# stim 28
+all_right_contours_28 = []
+all_right_circles_28 = []
+all_left_contours_28 = []
+all_left_circles_28 = []
+all_right_sizes_28 = [all_right_contours_28, all_right_circles_28]
+all_left_sizes_28 = [all_left_contours_28, all_left_circles_28]
+all_sizes_28 = [all_right_sizes_28, all_left_sizes_28]
+# stim 29
+all_right_contours_29 = []
+all_right_circles_29 = []
+all_left_contours_29 = []
+all_left_circles_29 = []
+all_right_sizes_29 = [all_right_contours_29, all_right_circles_29]
+all_left_sizes_29 = [all_left_contours_29, all_left_circles_29]
+all_sizes_29 = [all_right_sizes_29, all_left_sizes_29]
+# all stims
+all_sizes_unique = [all_sizes_24, all_sizes_25, all_sizes_26, all_sizes_27, all_sizes_28, all_sizes_29]
+for stim_order in range(len(all_sizes_unique)):
+    for side in range(len(all_sizes_unique[stim_order])):
+        for i in range(len(all_sizes_unique[stim_order][side])):
+            print("Pooling pupil size data for stimulus {st}, {s} side, {ctype}".format(st=stim_vids[stim_order], s=side_names[side], ctype=cType_names[i]))
+            pool_pupil_data_for_stim_specific_moment_of_interest(all_sizes[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_sizes_unique[stim_order][side][i])
+# pupil size means
+# stim 24
+all_right_contours_means_24 = []
+all_right_circles_means_24 = []
+all_left_contours_means_24 = []
+all_left_circles_means_24 = []
+all_right_size_means_24 = [all_right_contours_means_24, all_right_circles_means_24]
+all_left_size_means_24 = [all_left_contours_means_24, all_left_circles_means_24]
+all_size_means_24 = [all_right_size_means_24, all_left_size_means_24]
+# stim 25
+all_right_contours_means_25 = []
+all_right_circles_means_25 = []
+all_left_contours_means_25 = []
+all_left_circles_means_25 = []
+all_right_size_means_25 = [all_right_contours_means_25, all_right_circles_means_25]
+all_left_size_means_25 = [all_left_contours_means_25, all_left_circles_means_25]
+all_size_means_25 = [all_right_size_means_25, all_left_size_means_25]
+# stim 26
+all_right_contours_means_26 = []
+all_right_circles_means_26 = []
+all_left_contours_means_26 = []
+all_left_circles_means_26 = []
+all_right_size_means_26 = [all_right_contours_means_26, all_right_circles_means_26]
+all_left_size_means_26 = [all_left_contours_means_26, all_left_circles_means_26]
+all_size_means_26 = [all_right_size_means_26, all_left_size_means_26]
+# stim 27
+all_right_contours_means_27 = []
+all_right_circles_means_27 = []
+all_left_contours_means_27 = []
+all_left_circles_means_27 = []
+all_right_size_means_27 = [all_right_contours_means_27, all_right_circles_means_27]
+all_left_size_means_27 = [all_left_contours_means_27, all_left_circles_means_27]
+all_size_means_27 = [all_right_size_means_27, all_left_size_means_27]
+# stim 28
+all_right_contours_means_28 = []
+all_right_circles_means_28 = []
+all_left_contours_means_28 = []
+all_left_circles_means_28 = []
+all_right_size_means_28 = [all_right_contours_means_28, all_right_circles_means_28]
+all_left_size_means_28 = [all_left_contours_means_28, all_left_circles_means_28]
+all_size_means_28 = [all_right_size_means_28, all_left_size_means_28]
+# stim 29
+all_right_contours_means_29 = []
+all_right_circles_means_29 = []
+all_left_contours_means_29 = []
+all_left_circles_means_29 = []
+all_right_size_means_29 = [all_right_contours_means_29, all_right_circles_means_29]
+all_left_size_means_29 = [all_left_contours_means_29, all_left_circles_means_29]
+all_size_means_29 = [all_right_size_means_29, all_left_size_means_29]
+# all stims
+all_size_means_unique = [all_size_means_24, all_size_means_25, all_size_means_26, all_size_means_27, all_size_means_28, all_size_means_29]
+for stim_order in range(len(all_size_means_unique)):
+    for side in range(len(all_size_means_unique[stim_order])):
+        for i in range(len(all_size_means_unique[stim_order][side])):
+            print("Pooling pupil size means for stimulus {st}, {s} side, {ctype}".format(st=stim_vids[stim_order], s=side_names[side], ctype=cType_names[i]))
+            pool_pupil_means_for_stim_specific_moment_of_interest(all_size_means[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_size_means_unique[stim_order][side][i])
+# pupil size mean peaks
+# stim 24
+all_right_contours_peaks_24 = []
+all_right_circles_peaks_24 = []
+all_left_contours_peaks_24 = []
+all_left_circles_peaks_24 = []
+all_right_peaks_24 = [all_right_contours_peaks_24, all_right_circles_peaks_24]
+all_left_peaks_24 = [all_left_contours_peaks_24, all_left_circles_peaks_24]
+all_size_peaks_24 = [all_right_peaks_24, all_left_peaks_24]
+# stim 25
+all_right_contours_peaks_25 = []
+all_right_circles_peaks_25 = []
+all_left_contours_peaks_25 = []
+all_left_circles_peaks_25 = []
+all_right_peaks_25 = [all_right_contours_peaks_25, all_right_circles_peaks_25]
+all_left_peaks_25 = [all_left_contours_peaks_25, all_left_circles_peaks_25]
+all_size_peaks_25 = [all_right_peaks_25, all_left_peaks_25]
+# stim 26
+all_right_contours_peaks_26 = []
+all_right_circles_peaks_26 = []
+all_left_contours_peaks_26 = []
+all_left_circles_peaks_26 = []
+all_right_peaks_26 = [all_right_contours_peaks_26, all_right_circles_peaks_26]
+all_left_peaks_26 = [all_left_contours_peaks_26, all_left_circles_peaks_26]
+all_size_peaks_26 = [all_right_peaks_26, all_left_peaks_26]
+# stim 27
+all_right_contours_peaks_27 = []
+all_right_circles_peaks_27 = []
+all_left_contours_peaks_27 = []
+all_left_circles_peaks_27 = []
+all_right_peaks_27 = [all_right_contours_peaks_27, all_right_circles_peaks_27]
+all_left_peaks_27 = [all_left_contours_peaks_27, all_left_circles_peaks_27]
+all_size_peaks_27 = [all_right_peaks_27, all_left_peaks_27]
+# stim 28
+all_right_contours_peaks_28 = []
+all_right_circles_peaks_28 = []
+all_left_contours_peaks_28 = []
+all_left_circles_peaks_28 = []
+all_right_peaks_28 = [all_right_contours_peaks_28, all_right_circles_peaks_28]
+all_left_peaks_28 = [all_left_contours_peaks_28, all_left_circles_peaks_28]
+all_size_peaks_28 = [all_right_peaks_28, all_left_peaks_28]
+# stim 29
+all_right_contours_peaks_29 = []
+all_right_circles_peaks_29 = []
+all_left_contours_peaks_29 = []
+all_left_circles_peaks_29 = []
+all_right_peaks_29 = [all_right_contours_peaks_29, all_right_circles_peaks_29]
+all_left_peaks_29 = [all_left_contours_peaks_29, all_left_circles_peaks_29]
+all_size_peaks_29 = [all_right_peaks_29, all_left_peaks_29]
+# all stims
+all_size_peaks_unique = [all_size_peaks_24, all_size_peaks_25, all_size_peaks_26, all_size_peaks_27, all_size_peaks_28, all_size_peaks_29]
+for stim_order in range(len(all_size_peaks_unique)):
+    for side in range(len(all_size_peaks_unique[stim_order])):
+        for i in range(len(all_size_peaks_unique[stim_order][side])):
+            print("Pooling pupil size peaks data for stimulus {st}, {s} side, {ctype}".format(st=stim_vids[stim_order], s=side_names[side], ctype=cType_names[i]))
+            pool_pupil_peaks_for_stim_specific_moment_of_interest(all_size_peaks[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_size_peaks_unique[stim_order][side][i])
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1358,8 +1886,9 @@ for side in range(len(all_sizes_peaks_octo)):
 fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
 plotting_saccades_window = 40 # MAKE SURE THIS ==saccades_window!!
-cType_names = ['Contours', 'Circles']
-plot_lum_types = {'calibration':all_cal_avg_lum_smoothed_baselined,'octopus':all_octo_avg_lum_smoothed_baselined,'unique':all_stims_unique_avg_lum_smoothed_baselined}
+plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_lum_peaks,all_cal_avg_lum_valleys],
+'octopus':[all_octo_avg_lum_smoothed_baselined,all_octo_avg_lum_peaks,all_octo_avg_lum_valleys],
+'unique':all_stims_unique_avg_lum_smoothed_baselined}
 ### ------------------------------ ###
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1371,69 +1900,92 @@ plot_lum_types = {'calibration':all_cal_avg_lum_smoothed_baselined,'octopus':all
 # ------------------------------------------------------------------------ #
 #### EVERYTHING BELOW HERE IS UNDER CONSTRUCTION!!!! ###
 ### GENERATE PLOTS ###
+### ------------------------------ ###
 # Plot pupil sizes
 # calibration
-pupil_analysis_type_name = cType_names[0]
-plot_type_right = all_right_trials_contours
-plot_means_right = all_right_size_contours_means
-plot_means_right_peaks = all_right_size_contours_peaks
-plot_type_left = all_left_trials_contours
-plot_means_left = all_left_size_contours_means
-plot_means_left_peaks = all_left_size_contours_peaks
-plot_luminance = all_cal_avg_lum_smoothed_baselined
-# fig name and path
-figure_name = 'PupilSizes_' + 'calibration' + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-figure_path = os.path.join(pupils_folder, figure_name)
-figure_title = "Pupil sizes of participants during calibration sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-# draw fig
-plt.figure(figsize=(14, 14), dpi=fig_size)
-plt.suptitle(figure_title, fontsize=12, y=0.98)
-# subplot: Right eye sizes
-plt.subplot(3,1,1)
-plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
-plt.minorticks_on()
-plt.grid(b=True, which='major', linestyle='--')
-plt.plot(plot_type_right.T, '.', MarkerSize=1, color=[1.0, 0.98, 0.0, 0.005])
-plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
-for peak in plot_means_right_peaks:
-    if peak<1250:
+plot_type = 'calibration'
+peak_label_x_offset = 2.5
+peak_label_y_offset = 0.15
+valley_label_x_offset = 2.5
+valley_label_y_offset = 0.15
+for ctype in range(len(cType_names)):
+    pupil_analysis_type_name = cType_names[ctype]
+    plot_type_right = all_sizes_cal[0][ctype]
+    plot_N_right = len(plot_type_right)
+    plot_means_right = all_sizes_means_cal[0][ctype][0]
+    plot_means_right_peaks = all_size_peaks_cal[0][ctype][0]
+    plot_means_right_valleys = all_size_peaks_cal[0][ctype][1]
+    plot_type_left = all_sizes_cal[1][ctype]
+    plot_N_left = len(plot_type_left)
+    plot_means_left = all_sizes_means_cal[1][ctype][0]
+    plot_means_left_peaks = all_size_peaks_cal[1][ctype][0]
+    plot_means_left_valleys = all_size_peaks_cal[1][ctype][1]
+    plot_luminance = plot_lum_types[plot_type][0]
+    plot_lum_N = len(plot_luminance)
+    plot_luminance_peaks = plot_lum_types[plot_type][1]
+    plot_luminance_valleys = plot_lum_types[plot_type][2]
+    # fig name and path
+    figure_name = 'PupilSizes_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+    figure_path = os.path.join(pupils_folder, figure_name)
+    figure_title = "Pupil sizes of participants during calibration sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+    # draw fig
+    plt.figure(figsize=(14, 14), dpi=fig_size)
+    plt.suptitle(figure_title, fontsize=12, y=0.98)
+    # subplot: Right eye sizes
+    plt.subplot(3,1,1)
+    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+    plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plot_type_right)):
+        plt.plot(plot_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.98, 0.0, 0.005])
+    plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
+    for peak in plot_means_right_peaks:
         plt.plot(peak, plot_means_right[peak], 'x')
-        plt.text(peak-15, plot_means_right[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-plt.xlim(-10,1250)
-plt.ylim(-1,1)
-# subplot: Left eye sizes
-plt.subplot(3,1,2)
-plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
-plt.minorticks_on()
-plt.grid(b=True, which='major', linestyle='--')
-plt.plot(plot_type_left.T, '.', MarkerSize=1, color=[0.012, 0.7, 1.0, 0.005])
-plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
-for peak in plot_means_left_peaks:
-    if peak<1250:
+        plt.text(peak-peak_label_x_offset, plot_means_right[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+    for valley in plot_means_right_valleys:
+        plt.plot(valley, plot_means_right[valley], 'x')
+        plt.text(valley-valley_label_x_offset, plot_means_right[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+    #plt.xlim(-10,1250)
+    plt.ylim(-0.6,0.6)
+    # subplot: Left eye sizes
+    plt.subplot(3,1,2)
+    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+    plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plot_type_left)):
+        plt.plot(plot_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, 0.005])
+    plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
+    for peak in plot_means_left_peaks:
         plt.plot(peak, plot_means_left[peak], 'x')
-        plt.text(peak-15, plot_means_left[peak]+0.25, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-plt.xlim(-10,1250)
-plt.ylim(-1,1)
-# subplot: Average luminance of stimuli video
-plt.subplot(3,1,3)
-plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
-plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-plt.title('Average luminance of ' + stim_name + ' as seen by world camera, grayscaled; N = ' + str(len(luminances[stim_type])), fontsize=10, color='grey', style='italic')
-plt.grid(b=True, which='major', linestyle='--')
-plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
-for peak in plot_luminance_peaks:
-    plt.plot(peak, plot_luminance[peak], 'x')
-    plt.text(peak-15, plot_luminance[peak]+0.5, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-plt.xlim(-10,1250)
-plt.ylim(-1,7)
-# save and display
-plt.subplots_adjust(hspace=0.5)
-plt.savefig(figure_path)
-plt.show(block=False)
-plt.pause(1)
-plt.close()
+        plt.text(peak-peak_label_x_offset, plot_means_left[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+    for valley in plot_means_left_valleys:
+        plt.plot(valley, plot_means_left[valley], 'x')
+        plt.text(valley-valley_label_x_offset, plot_means_left[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+    #plt.xlim(-10,1250)
+    plt.ylim(-0.6,0.6)
+    # subplot: Average luminance of stimuli video
+    plt.subplot(3,1,3)
+    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+    plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
+    plt.title('Average luminance of calibration sequence as seen by world camera, grayscaled; N = ' + str(plot_lum_N), fontsize=10, color='grey', style='italic')
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
+    for peak in plot_luminance_peaks:
+        plt.plot(peak, plot_luminance[peak], 'x')
+        plt.text(peak-peak_label_x_offset, plot_luminance[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+    for valley in plot_luminance_valleys:
+        plt.plot(valley, plot_luminance[valley], 'x')
+        plt.text(valley-valley_label_x_offset, plot_luminance[valley]-valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+    #plt.xlim(-10,1250)
+    #plt.ylim(-1,7)
+    # save and display
+    plt.subplots_adjust(hspace=0.5)
+    plt.savefig(figure_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
 #### EVERYTHING BELOW HERE IS UNDER CONSTRUCTION!!!! ###
 for stim_type in stim_vids: 
