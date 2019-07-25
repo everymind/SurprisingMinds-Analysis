@@ -628,7 +628,7 @@ def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_int
     all_stims_moment_end = max(all_stims_moment_ends)
     for stim in pupil_data_dict.keys():
         for trial in range(len(pupil_data_dict[stim])):
-            pooled_pupil_data.append(np.array(pupil_data_dict[stim][trial][this_stim_moment_start:this_stim_moment_end]))
+            pooled_pupil_data.append(np.array(pupil_data_dict[stim][trial][all_stims_moment_start:all_stims_moment_end]))
 
 def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
     for stim in pupil_saccades_dict.keys():
@@ -726,6 +726,7 @@ if not os.path.exists(linReg_folder):
 if not os.path.exists(pooled_stim_vids_folder):
     #print("Creating engagement count folder.")
     os.makedirs(pooled_stim_vids_folder)
+
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
 ### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
@@ -866,6 +867,7 @@ for day_folder in pupil_folders:
     except Exception:
         failed_days.append(day_name)
         print("Day {day} failed!".format(day=day_name))
+
 ### END PUPIL EXTRACTION ###
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -882,6 +884,7 @@ for avg_world_vid_folder in avg_world_vid_folders:
     folder_year_month = avg_world_vid_folder.split('_')[1]
     if folder_year_month not in all_months_avg_world_vids.keys():
         updated_folders_to_extract.append(avg_world_vid_folder)
+
 # extract, unravel, write to video, and save
 for month_folder in updated_folders_to_extract:
     month_name = month_folder.split('_')[1]
@@ -915,6 +918,7 @@ for month_folder in updated_folders_to_extract:
             write_avg_world_vid(downsampled_monthly_world_vids[stim], start_bucket, end_bucket, write_path)
         else:
             print("Monthly averaged stimulus videos already made for stimulus {s}".format(s=stim))
+
 ### END MONTHLY AVERAGE DATA EXTRACTION ###
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -938,6 +942,7 @@ moments_of_interest = ['calibration start', 'calibration end', 'unique start', '
 all_avg_world_moments = {key:{} for key in stim_vids}
 for stim in all_avg_world_moments.keys():
     all_avg_world_moments[stim] = {moment:{} for moment in moments_of_interest}
+
 # ------------------------------------------------------------------------ #
 ### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
 # ------------------------------------------------------------------------ #
@@ -1056,6 +1061,7 @@ for stim in all_stims_unique_clip_avg_tbuckets.keys():
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB peaks'] = this_stim_avg_lum_peaks[0]
     this_stim_avg_lum_valleys = signal.argrelextrema(this_stim_smoothed_baselined, np.less)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB valleys'] = this_stim_avg_lum_valleys[0]
+
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1067,6 +1073,7 @@ engagement_data_folder = os.path.join(current_working_directory, 'Exhibit-Engage
 if not os.path.exists(engagement_data_folder):
     #print("Creating plots folder.")
     os.makedirs(engagement_data_folder)
+
 csv_file = os.path.join(engagement_data_folder, engagement_count_filename)
 np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
 # activation count
@@ -1116,6 +1123,7 @@ for side in range(len(all_positions)):
             # if there are nans (dropped frames) for more than 2 seconds of video time, then toss that trial
             dropped_frames_threshold = 2000/downsampled_bucket_size_ms
             all_movements[side][c_axis][stimuli] = calc_mvmnt_from_pos(all_positions[side][c_axis][stimuli], dropped_frames_threshold, 100, -100)
+
 # measure motion (absolute value of movement): setup
 all_right_contours_X_avg_motion = {key:[] for key in stim_vids}
 all_right_circles_X_avg_motion = {key:[] for key in stim_vids}
@@ -1135,6 +1143,7 @@ for side in range(len(all_movements)):
             print('Calculating average motion for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
             avg_motion_this_stim = calc_avg_motion_smoothed(all_movements[side][c_axis][stimuli])
             all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
+
 ### mark saccades: setup
 all_right_contours_X_saccades = {key:{} for key in stim_vids}
 all_right_circles_X_saccades = {key:{} for key in stim_vids}
@@ -1161,6 +1170,7 @@ for side in range(len(all_movements)):
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
                 all_saccades[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, saccades_window, w_thresh)
+
 ### PUPIL SIZE ###
 # average pupil diameters: setup
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
@@ -1181,6 +1191,7 @@ for side in range(len(all_sizes)):
             avg_pupil_size = np.nanmean(all_sizes[side][i][stimulus], 0)
             avg_pupil_size_smoothed = signal.savgol_filter(avg_pupil_size, smoothing_window, 3)
             all_size_means[side][i][stimulus] = avg_pupil_size_smoothed
+
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1206,6 +1217,7 @@ all_movements_cal = [all_movement_right_cal, all_movement_left_cal]
 for side in range(len(all_movements_cal)):
     for i in range(len(all_movements_cal[side])):
         pool_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_cal_avg_tbuckets, all_movements_cal[side][i])
+
 # pupil avg motion
 all_right_contours_X_avg_motion_cal = []
 all_right_circles_X_avg_motion_cal = []
@@ -1223,6 +1235,7 @@ for side in range(len(all_avg_motion_cal)):
         this_avg_motion_cal = np.nanmean(all_movements_cal[side][i],0)
         this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_cal, smoothing_window, 3)
         all_avg_motion_cal[side][i].append(this_avg_motion_smoothed)
+
 # pupil avg motion peaks and valleys
 all_RcontoursX_avg_motion_pv_cal = []
 all_RcirclesX_avg_motion_pv_cal = []
@@ -1241,6 +1254,7 @@ for side in range(len(all_avg_motion_pv_cal)):
         this_mean_valleys = signal.argrelextrema(all_avg_motion_cal[side][i][0], np.less)
         all_avg_motion_pv_cal[side][i].append(this_mean_peaks[0])
         all_avg_motion_pv_cal[side][i].append(this_mean_valleys[0])
+
 # pupil saccades
 all_right_contours_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
 all_right_circles_X_saccades_cal = {thresh:{} for thresh in saccade_thresholds}
@@ -1260,10 +1274,11 @@ for side in range(len(all_saccades_cal)):
         windowed_count_thresholds = [this_cal_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
         for thresh in range(len(saccade_thresholds)):
             print('Looking for movements greater than {p} pixels in pooled calibration clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis]))
-                saccades_window = 40 # timebuckets
-                s_thresh = saccade_thresholds[thresh]
-                w_thresh = windowed_count_thresholds[thresh]
-                all_saccades_cal[side][i][s_thresh] = find_saccades(all_movements_cal[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
+            saccades_window = 40 # timebuckets
+            s_thresh = saccade_thresholds[thresh]
+            w_thresh = windowed_count_thresholds[thresh]
+            all_saccades_cal[side][i][s_thresh] = find_saccades(all_movements_cal[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
+
 # all pupil sizes
 all_right_contours_cal = []
 all_right_circles_cal = []
@@ -1275,6 +1290,7 @@ all_sizes_cal = [all_right_sizes_cal, all_left_sizes_cal]
 for side in range(len(all_sizes_cal)):
     for i in range(len(all_sizes_cal[side])):
         pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_cal[side][i])
+
 # pupil size means
 all_right_contours_means_cal = []
 all_right_circles_means_cal = []
@@ -1288,6 +1304,7 @@ for side in range(len(all_sizes_means_cal)):
         this_size_mean_cal = np.nanmean(all_sizes_cal[side][i],0)
         this_size_mean_smoothed = signal.savgol_filter(this_size_mean_cal, smoothing_window, 3)
         all_sizes_means_cal[side][i].append(this_size_mean_smoothed)
+
 # pupil size mean peaks and valleys
 all_right_contours_pv_cal = []
 all_right_circles_pv_cal = []
@@ -1302,6 +1319,7 @@ for side in range(len(all_size_pv_cal)):
         this_mean_valleys = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.less)
         all_size_pv_cal[side][i].append(this_mean_peaks[0])
         all_size_pv_cal[side][i].append(this_mean_valleys[0])
+
 ### ------------------------------ ###
 ### ------------------------------ ###
 ### ------------------------------ ###
@@ -1322,6 +1340,7 @@ all_movements_octo = [all_movement_right_octo, all_movement_left_octo]
 for side in range(len(all_movements_octo)):
     for i in range(len(all_movements_octo[side])):
         pool_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_octo_avg_tbuckets, all_movements_octo[side][i])
+
 # pupil avg motion
 all_right_contours_X_avg_motion_octo = []
 all_right_circles_X_avg_motion_octo = []
@@ -1339,6 +1358,7 @@ for side in range(len(all_avg_motion_octo)):
         this_avg_motion_octo = np.nanmean(all_movements_octo[side][i],0)
         this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_octo, smoothing_window, 3)
         all_avg_motion_octo[side][i].append(this_avg_motion_smoothed)
+
 # pupil avg motion peaks and valleys
 all_RcontoursX_avg_motion_pv_octo = []
 all_RcirclesX_avg_motion_pv_octo = []
@@ -1357,6 +1377,7 @@ for side in range(len(all_avg_motion_pv_octo)):
         this_mean_valleys = signal.argrelextrema(all_avg_motion_octo[side][i][0], np.less)
         all_avg_motion_pv_octo[side][i].append(this_mean_peaks[0])
         all_avg_motion_pv_octo[side][i].append(this_mean_valleys[0])
+
 # pupil saccades
 all_right_contours_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
 all_right_circles_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
@@ -1376,10 +1397,11 @@ for side in range(len(all_saccades_octo)):
         windowed_count_thresholds = [this_octo_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
         for thresh in range(len(saccade_thresholds)):
             print('Looking for movements greater than {p} pixels in pooled octo clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis]))
-                saccades_window = 40 # timebuckets
-                s_thresh = saccade_thresholds[thresh]
-                w_thresh = windowed_count_thresholds[thresh]
-                all_saccades_octo[side][i][s_thresh] = find_saccades(all_movements_octo[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
+            saccades_window = 40 # timebuckets
+            s_thresh = saccade_thresholds[thresh]
+            w_thresh = windowed_count_thresholds[thresh]
+            all_saccades_octo[side][i][s_thresh] = find_saccades(all_movements_octo[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
+
 # all pupil sizes
 all_right_contours_octo = []
 all_right_circles_octo = []
@@ -1391,6 +1413,7 @@ all_sizes_octo = [all_right_sizes_octo, all_left_sizes_octo]
 for side in range(len(all_sizes_octo)):
     for i in range(len(all_sizes_octo[side])):
         pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_octo_avg_tbuckets, all_sizes_octo[side][i])
+
 # pupil size means
 all_right_contours_means_octo = []
 all_right_circles_means_octo = []
@@ -1404,6 +1427,7 @@ for side in range(len(all_sizes_means_octo)):
         this_size_mean_octo = np.nanmean(all_sizes_octo[side][i],0)
         this_size_mean_smoothed = signal.savgol_filter(this_size_mean_octo, smoothing_window, 3)
         all_sizes_means_octo[side][i].append(this_size_mean_smoothed)
+
 # pupil size mean peaks and valleys
 all_right_contours_pv_octo = []
 all_right_circles_pv_octo = []
@@ -1418,6 +1442,7 @@ for side in range(len(all_size_pv_octo)):
         this_mean_valleys = signal.argrelextrema(all_sizes_means_octo[side][i][0], np.less)
         all_size_pv_octo[side][i].append(this_mean_peaks[0])
         all_size_pv_octo[side][i].append(this_mean_valleys[0])
+
 ### ------------------------------ ###
 ### ------------------------------ ###
 ### ------------------------------ ###
@@ -1502,6 +1527,7 @@ for stim_order in range(len(all_movements_unique)):
     for side in range(len(all_movements_unique[stim_order])):
         for i in range(len(all_movements_unique[stim_order][side])):
             pool_pupil_data_for_stim_specific_moment_of_interest(all_movements[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_movements_unique[stim_order][side][i])
+
 # pupil avg motion
 # stim 24
 all_right_contours_X_avg_motion_24 = []
@@ -1583,6 +1609,7 @@ for stim_order in range(len(all_avg_motion_unique)):
             this_avg_motion_unique = np.nanmean(all_movements_unique[stim_order][side][i],0)
             this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_unique, smoothing_window, 3)
             all_avg_motion_unique[stim_order][side][i].append(this_avg_motion_smoothed)
+
 # pupil avg motion peaks and valleys
 # stim 24
 all_RcontoursX_avg_motion_pv_24 = []
@@ -1665,6 +1692,7 @@ for stim_order in range(len(all_avg_motion_pv_unique)):
             this_mean_valleys = signal.argrelextrema(all_avg_motion_unique[stim_order][side][i][0], np.less)
             all_avg_motion_pv_unique[stim_order][side][i].append(this_mean_peaks[0])
             all_avg_motion_pv_unique[stim_order][side][i].append(this_mean_valleys[0])
+
 # pupil saccades
 # stim 24
 all_right_contours_X_saccades_24 = {thresh:{} for thresh in saccade_thresholds}
@@ -1748,10 +1776,11 @@ for stim_order in range(len(all_saccades_unique)):
             windowed_count_thresholds = [this_unique_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in stim-specific unique clips for stimulus {s}, {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], s=stim_vids[stim_order], side=side_names[side], cAxis_type=cAxis_names[c_axis]))
-                    saccades_window = 40 # timebuckets
-                    s_thresh = saccade_thresholds[thresh]
-                    w_thresh = windowed_count_thresholds[thresh]
-                    all_saccades_unique[stim_order][side][i][s_thresh] = find_saccades(all_movements_unique[stim_order][side][i], s_thresh, count_threshold, saccades_window, w_thresh)
+                saccades_window = 40 # timebuckets
+                s_thresh = saccade_thresholds[thresh]
+                w_thresh = windowed_count_thresholds[thresh]
+                all_saccades_unique[stim_order][side][i][s_thresh] = find_saccades(all_movements_unique[stim_order][side][i], s_thresh, count_threshold, saccades_window, w_thresh)
+
 # all pupil sizes
 # stim 24
 all_right_contours_24 = []
@@ -1807,6 +1836,7 @@ for stim_order in range(len(all_sizes_unique)):
     for side in range(len(all_sizes_unique[stim_order])):
         for i in range(len(all_sizes_unique[stim_order][side])):
             pool_pupil_data_for_stim_specific_moment_of_interest(all_sizes[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_sizes_unique[stim_order][side][i])
+
 # pupil size means
 # stim 24
 all_right_contours_means_24 = []
@@ -1863,7 +1893,8 @@ for stim_order in range(len(all_size_means_unique)):
         for i in range(len(all_size_means_unique[stim_order][side])):
             this_size_mean_unique = np.nanmean(all_sizes_unique[stim_order][side][i],0)
             this_size_mean_smoothed = signal.savgol_filter(this_size_mean_unique, smoothing_window, 3)
-            all_sizes_means_unique[stim_order][side][i].append(this_size_mean_smoothed)
+            all_size_means_unique[stim_order][side][i].append(this_size_mean_smoothed)
+
 # pupil size mean peaks and valleys
 # stim 24
 all_right_contours_pv_24 = []
@@ -1918,10 +1949,11 @@ all_size_pv_unique = [all_size_pv_24, all_size_pv_25, all_size_pv_26, all_size_p
 for stim_order in range(len(all_size_pv_unique)):
     for side in range(len(all_size_pv_unique[stim_order])):
         for i in range(len(all_size_pv_unique[stim_order][side])):
-            this_mean_peaks = signal.argrelextrema(all_sizes_means_unique[stim_order][side][i][0], np.greater)
-            this_mean_valleys = signal.argrelextrema(all_sizes_means_unique[stim_order][side][i][0], np.less)
+            this_mean_peaks = signal.argrelextrema(all_size_means_unique[stim_order][side][i][0], np.greater)
+            this_mean_valleys = signal.argrelextrema(all_size_means_unique[stim_order][side][i][0], np.less)
             all_size_pv_unique[stim_order][side][i].append(this_mean_peaks[0])
             all_size_pv_unique[stim_order][side][i].append(this_mean_valleys[0])
+
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1938,20 +1970,15 @@ plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-#### EVERYTHING BELOW HERE IS UNDER CONSTRUCTION!!!! ###
 ### GENERATE PLOTS ###
 ### ------------------------------ ###
 # Plot pupil sizes
 # calibration
-plot_type = 'calibration'
-peak_label_x_offset = 2.5
-peak_label_y_offset = 0.15
-valley_label_x_offset = 2.5
-valley_label_y_offset = 0.15
+plot_type = 'octopus'
+peak_label_x_offset = 2.25
+peak_label_y_offset = 0.08
+valley_label_x_offset = 2.25
+valley_label_y_offset = -0.08
 for ctype in range(len(cType_names)):
     pupil_analysis_type_name = cType_names[ctype]
     plot_type_right = all_sizes_cal[0][ctype]
@@ -2021,9 +2048,9 @@ for ctype in range(len(cType_names)):
         plt.text(peak-peak_label_x_offset, plot_luminance[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
     for valley in plot_luminance_valleys:
         plt.plot(valley, plot_luminance[valley], 'x')
-        plt.text(valley-valley_label_x_offset, plot_luminance[valley]-valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        plt.text(valley-valley_label_x_offset, plot_luminance[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
     #plt.xlim(-10,1250)
-    #plt.ylim(-1,7)
+    plt.ylim(-0.6,0.6)
     # save and display
     plt.subplots_adjust(hspace=0.5)
     plt.savefig(figure_path)
@@ -2031,6 +2058,14 @@ for ctype in range(len(cType_names)):
     plt.pause(1)
     plt.close()
 
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
 #### EVERYTHING BELOW HERE IS UNDER CONSTRUCTION!!!! ###
 for stim_type in stim_vids: 
     for i in range(len(all_right_sizes)): 
