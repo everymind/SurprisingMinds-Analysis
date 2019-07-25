@@ -593,6 +593,8 @@ def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoot
     return np.array(smoothed_baselined_lum_array)
 
 def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_data):
+    all_stims_moment_starts = []
+    all_stims_moment_ends = []
     for stim in pupil_data_dict.keys():
         this_stim_all_months_moment_starts = []
         this_stim_all_months_moment_ends = []
@@ -601,8 +603,11 @@ def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_int
         for x in range(len(start_end_keys)):
             for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
                 start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
-        this_stim_moment_start = min(this_stim_all_months_moment_starts)
-        this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        all_stims_moment_starts.append(min(this_stim_all_months_moment_starts))
+        all_stims_moment_ends.append(max(this_stim_all_months_moment_ends))
+    all_stims_moment_start = min(all_stims_moment_starts)
+    all_stims_moment_end = max(all_stims_moment_ends)
+    for stim in pupil_data_dict.keys():
         for trial in range(len(pupil_data_dict[stim])):
             pooled_pupil_data.append(np.array(pupil_data_dict[stim][trial][this_stim_moment_start:this_stim_moment_end]))
 
@@ -1023,16 +1028,18 @@ all_octo_avg_tbuckets = pooled_for_global_moment_of_interest(all_months_avg_worl
 all_stims_unique_clip_avg_tbuckets = pooled_for_stim_specific_moment_of_interest(all_months_avg_world_vids, stim_vids, all_avg_world_moments, 'unique start', 'unique end')
 ### ------------------------------ ###
 ### double check that the pooled avg videos make sense
-display_avg_world_tbucket(all_octo_avg_tbuckets, 300)
+#display_avg_world_tbucket(all_octo_avg_tbuckets, 300)
 ### PREPARE FOR PLOTTING
 # calibration
 all_cal_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_cal_avg_tbuckets, smoothing_window, baseline_no_buckets)
 all_cal_avg_lum_peaks = signal.argrelextrema(all_cal_avg_lum_smoothed_baselined, np.greater)
+all_cal_avg_lum_peaks = all_cal_avg_lum_peaks[0]
 all_cal_avg_lum_valleys = signal.argrelextrema(all_cal_avg_lum_smoothed_baselined, np.less)
 all_cal_avg_lum_valleys = all_cal_avg_lum_valleys[0]
 # octo
 all_octo_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_octo_avg_tbuckets, smoothing_window, baseline_no_buckets)
 all_octo_avg_lum_peaks = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.greater)
+all_octo_avg_lum_peaks = all_octo_avg_lum_peaks[0]
 all_octo_avg_lum_valleys = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.less)
 all_octo_avg_lum_valleys = all_octo_avg_lum_valleys[0]
 # stim-unique
@@ -1042,7 +1049,7 @@ for stim in all_stims_unique_clip_avg_tbuckets.keys():
     this_stim_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_stims_unique_clip_avg_tbuckets[stim], smoothing_window, baseline_no_buckets)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB lum'] = this_stim_smoothed_baselined
     this_stim_avg_lum_peaks = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.greater)
-    all_stims_unique_avg_lum_smoothed_baselined[stim]['SB peaks'] = this_stim_avg_lum_peaks
+    all_stims_unique_avg_lum_smoothed_baselined[stim]['SB peaks'] = this_stim_avg_lum_peaks[0]
     this_stim_avg_lum_valleys = signal.argrelextrema(this_stim_smoothed_baselined, np.less)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB valleys'] = this_stim_avg_lum_valleys[0]
 # ------------------------------------------------------------------------ #
@@ -1213,22 +1220,24 @@ for side in range(len(all_avg_motion_cal)):
         this_avg_motion_cal = np.nanmean(all_movements_cal[side][i],0)
         this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_cal, smoothing_window, 3)
         all_avg_motion_cal[side][i].append(this_avg_motion_smoothed)
-# pupil avg motion peaks
-all_RcontoursX_avg_motion_peaks_cal = []
-all_RcirclesX_avg_motion_peaks_cal = []
-all_RcontoursY_avg_motion_peaks_cal = []
-all_RcirclesY_avg_motion_peaks_cal = []
-all_LcontoursX_avg_motion_peaks_cal = []
-all_LcirclesX_avg_motion_peaks_cal = []
-all_LcontoursY_avg_motion_peaks_cal = []
-all_LcirclesY_avg_motion_peaks_cal = []
-all_avg_motion_right_peaks_cal = [all_RcontoursX_avg_motion_peaks_cal, all_RcontoursY_avg_motion_peaks_cal, all_RcirclesX_avg_motion_peaks_cal, all_RcirclesY_avg_motion_peaks_cal]
-all_avg_motion_left_peaks_cal = [all_LcontoursX_avg_motion_peaks_cal, all_LcontoursY_avg_motion_peaks_cal, all_LcirclesX_avg_motion_peaks_cal, all_LcirclesY_avg_motion_peaks_cal]
-all_avg_motion_peaks_cal = [all_avg_motion_right_peaks_cal, all_avg_motion_left_peaks_cal]
-for side in range(len(all_avg_motion_peaks_cal)):
-    for i in range(len(all_avg_motion_peaks_cal[side])):
-        this_mean_peaks, _ = signal.find_peaks(all_avg_motion_cal[side][i][0], prominence=0.05)
-        all_avg_motion_peaks_cal[side][i].append(this_mean_peaks)
+# pupil avg motion peaks and valleys
+all_RcontoursX_avg_motion_pv_cal = []
+all_RcirclesX_avg_motion_pv_cal = []
+all_RcontoursY_avg_motion_pv_cal = []
+all_RcirclesY_avg_motion_pv_cal = []
+all_LcontoursX_avg_motion_pv_cal = []
+all_LcirclesX_avg_motion_pv_cal = []
+all_LcontoursY_avg_motion_pv_cal = []
+all_LcirclesY_avg_motion_pv_cal = []
+all_avg_motion_right_pv_cal = [all_RcontoursX_avg_motion_pv_cal, all_RcontoursY_avg_motion_pv_cal, all_RcirclesX_avg_motion_pv_cal, all_RcirclesY_avg_motion_pv_cal]
+all_avg_motion_left_pv_cal = [all_LcontoursX_avg_motion_pv_cal, all_LcontoursY_avg_motion_pv_cal, all_LcirclesX_avg_motion_pv_cal, all_LcirclesY_avg_motion_pv_cal]
+all_avg_motion_pv_cal = [all_avg_motion_right_pv_cal, all_avg_motion_left_pv_cal]
+for side in range(len(all_avg_motion_pv_cal)):
+    for i in range(len(all_avg_motion_pv_cal[side])):
+        this_mean_peaks = signal.argrelextrema(all_avg_motion_cal[side][i][0], np.greater)
+        this_mean_valleys = signal.argrelextrema(all_avg_motion_cal[side][i][0], np.less)
+        all_avg_motion_pv_cal[side][i].append(this_mean_peaks[0])
+        all_avg_motion_pv_cal[side][i].append(this_mean_valleys[0])
 ### --------------------------- ###
 ### --------------------------- ###
 ### NOT SURE ABOUT THIS SECTION ###
@@ -1274,19 +1283,19 @@ for side in range(len(all_sizes_means_cal)):
         this_size_mean_smoothed = signal.savgol_filter(this_size_mean_cal, smoothing_window, 3)
         all_sizes_means_cal[side][i].append(this_size_mean_smoothed)
 # pupil size mean peaks and valleys
-all_right_contours_peaks_cal = []
-all_right_circles_peaks_cal = []
-all_left_contours_peaks_cal = []
-all_left_circles_peaks_cal = []
-all_right_peaks_cal = [all_right_contours_peaks_cal, all_right_circles_peaks_cal]
-all_left_peaks_cal = [all_left_contours_peaks_cal, all_left_circles_peaks_cal]
-all_size_peaks_cal = [all_right_peaks_cal, all_left_peaks_cal]
-for side in range(len(all_size_peaks_cal)):
-    for i in range(len(all_size_peaks_cal[side])):
+all_right_contours_pv_cal = []
+all_right_circles_pv_cal = []
+all_left_contours_pv_cal = []
+all_left_circles_pv_cal = []
+all_right_pv_cal = [all_right_contours_pv_cal, all_right_circles_pv_cal]
+all_left_pv_cal = [all_left_contours_pv_cal, all_left_circles_pv_cal]
+all_size_pv_cal = [all_right_pv_cal, all_left_pv_cal]
+for side in range(len(all_size_pv_cal)):
+    for i in range(len(all_size_pv_cal[side])):
         this_mean_peaks = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.greater)
         this_mean_valleys = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.less)
-        all_size_peaks_cal[side][i].append(this_mean_peaks)
-        all_size_peaks_cal[side][i].append(this_mean_valleys)
+        all_size_pv_cal[side][i].append(this_mean_peaks[0])
+        all_size_pv_cal[side][i].append(this_mean_valleys[0])
 ### ------------------------------ ###
 ### ------------------------------ ###
 ### ------------------------------ ###
@@ -1321,22 +1330,30 @@ all_avg_motion_left_octo = [all_left_contours_X_avg_motion_octo, all_left_contou
 all_avg_motion_octo = [all_avg_motion_right_octo, all_avg_motion_left_octo]
 for side in range(len(all_avg_motion_octo)):
     for i in range(len(all_avg_motion_octo[side])):
-        pool_pupil_means_for_global_moment_of_interest(all_avg_motion[side][i], all_octo_avg_tbuckets, all_avg_motion_octo[side][i])
-# pupil avg motion peaks - NOT SORTED, WITH DUPLICATES
-all_RcontoursX_avg_motion_peaks_octo = []
-all_RcirclesX_avg_motion_peaks_octo = []
-all_RcontoursY_avg_motion_peaks_octo = []
-all_RcirclesY_avg_motion_peaks_octo = []
-all_LcontoursX_avg_motion_peaks_octo = []
-all_LcirclesX_avg_motion_peaks_octo = []
-all_LcontoursY_avg_motion_peaks_octo = []
-all_LcirclesY_avg_motion_peaks_octo = []
-all_avg_motion_right_peaks_octo = [all_RcontoursX_avg_motion_peaks_octo, all_RcontoursY_avg_motion_peaks_octo, all_RcirclesX_avg_motion_peaks_octo, all_RcirclesY_avg_motion_peaks_octo]
-all_avg_motion_left_peaks_octo = [all_LcontoursX_avg_motion_peaks_octo, all_LcontoursY_avg_motion_peaks_octo, all_LcirclesX_avg_motion_peaks_octo, all_LcirclesY_avg_motion_peaks_octo]
-all_avg_motion_peaks_octo = [all_avg_motion_right_peaks_octo, all_avg_motion_left_peaks_octo]
-for side in range(len(all_avg_motion_peaks_octo)):
-    for i in range(len(all_avg_motion_peaks_octo[side])):
-        pool_pupil_peaks_for_global_moment_of_interest(all_avg_motion_peaks[side][i], all_octo_avg_tbuckets, all_avg_motion_peaks_octo[side][i])
+        this_avg_motion_octo = np.nanmean(all_movements_octo[side][i],0)
+        this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_octo, smoothing_window, 3)
+        all_avg_motion_octo[side][i].append(this_avg_motion_smoothed)
+# pupil avg motion peaks and valleys
+all_RcontoursX_avg_motion_pv_octo = []
+all_RcirclesX_avg_motion_pv_octo = []
+all_RcontoursY_avg_motion_pv_octo = []
+all_RcirclesY_avg_motion_pv_octo = []
+all_LcontoursX_avg_motion_pv_octo = []
+all_LcirclesX_avg_motion_pv_octo = []
+all_LcontoursY_avg_motion_pv_octo = []
+all_LcirclesY_avg_motion_pv_octo = []
+all_avg_motion_right_pv_octo = [all_RcontoursX_avg_motion_pv_octo, all_RcontoursY_avg_motion_pv_octo, all_RcirclesX_avg_motion_pv_octo, all_RcirclesY_avg_motion_pv_octo]
+all_avg_motion_left_pv_octo = [all_LcontoursX_avg_motion_pv_octo, all_LcontoursY_avg_motion_pv_octo, all_LcirclesX_avg_motion_pv_octo, all_LcirclesY_avg_motion_pv_octo]
+all_avg_motion_pv_octo = [all_avg_motion_right_pv_octo, all_avg_motion_left_pv_octo]
+for side in range(len(all_avg_motion_pv_octo)):
+    for i in range(len(all_avg_motion_pv_octo[side])):
+        this_mean_peaks = signal.argrelextrema(all_avg_motion_octo[side][i][0], np.greater)
+        this_mean_valleys = signal.argrelextrema(all_avg_motion_octo[side][i][0], np.less)
+        all_avg_motion_pv_octo[side][i].append(this_mean_peaks[0])
+        all_avg_motion_pv_octo[side][i].append(this_mean_valleys[0])
+### --------------------------- ###
+### --------------------------- ###
+### NOT SURE ABOUT THIS SECTION ###
 # pupil saccades
 all_right_contours_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
 all_right_circles_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
@@ -1352,6 +1369,8 @@ all_saccades_octo = [all_saccades_right_octo, all_saccades_left_octo]
 for side in range(len(all_saccades_octo)):
     for i in range(len(all_saccades_octo[side])):
         pool_pupil_saccades_for_global_moment_of_interest(all_saccades[side][i], all_octo_avg_tbuckets, all_saccades_octo[side][i])
+### --------------------------- ###
+### --------------------------- ###
 # all pupil sizes
 all_right_contours_octo = []
 all_right_circles_octo = []
@@ -1373,18 +1392,23 @@ all_left_sizes_means_octo = [all_left_contours_means_octo, all_left_circles_mean
 all_sizes_means_octo = [all_right_sizes_means_octo, all_left_sizes_means_octo]
 for side in range(len(all_sizes_means_octo)):
     for i in range(len(all_sizes_means_octo[side])):
-        pool_pupil_means_for_global_moment_of_interest(all_size_means[side][i], all_octo_avg_tbuckets, all_sizes_means_octo[side][i])
-# pupil size mean peaks
-all_right_contours_peaks_octo = []
-all_right_circles_peaks_octo = []
-all_left_contours_peaks_octo = []
-all_left_circles_peaks_octo = []
-all_right_peaks_octo = [all_right_contours_peaks_octo, all_right_circles_peaks_octo]
-all_left_peaks_octo = [all_left_contours_peaks_octo, all_left_circles_peaks_octo]
-all_size_peaks_octo = [all_right_peaks_octo, all_left_peaks_octo]
-for side in range(len(all_size_peaks_octo)):
-    for i in range(len(all_size_peaks_octo[side])):
-        pool_pupil_peaks_for_global_moment_of_interest(all_size_peaks[side][i], all_octo_avg_tbuckets, all_size_peaks_octo[side][i])
+        this_size_mean_octo = np.nanmean(all_sizes_octo[side][i],0)
+        this_size_mean_smoothed = signal.savgol_filter(this_size_mean_octo, smoothing_window, 3)
+        all_sizes_means_octo[side][i].append(this_size_mean_smoothed)
+# pupil size mean peaks and valleys
+all_right_contours_pv_octo = []
+all_right_circles_pv_octo = []
+all_left_contours_pv_octo = []
+all_left_circles_pv_octo = []
+all_right_pv_octo = [all_right_contours_pv_octo, all_right_circles_pv_octo]
+all_left_pv_octo = [all_left_contours_pv_octo, all_left_circles_pv_octo]
+all_size_pv_octo = [all_right_pv_octo, all_left_pv_octo]
+for side in range(len(all_size_pv_octo)):
+    for i in range(len(all_size_pv_octo[side])):
+        this_mean_peaks = signal.argrelextrema(all_sizes_means_octo[side][i][0], np.greater)
+        this_mean_valleys = signal.argrelextrema(all_sizes_means_octo[side][i][0], np.less)
+        all_size_pv_octo[side][i].append(this_mean_peaks[0])
+        all_size_pv_octo[side][i].append(this_mean_valleys[0])
 ### ------------------------------ ###
 ### ------------------------------ ###
 ### ------------------------------ ###
@@ -1913,13 +1937,13 @@ for ctype in range(len(cType_names)):
     plot_type_right = all_sizes_cal[0][ctype]
     plot_N_right = len(plot_type_right)
     plot_means_right = all_sizes_means_cal[0][ctype][0]
-    plot_means_right_peaks = all_size_peaks_cal[0][ctype][0]
-    plot_means_right_valleys = all_size_peaks_cal[0][ctype][1]
+    plot_means_right_peaks = all_size_pv_cal[0][ctype][0]
+    plot_means_right_valleys = all_size_pv_cal[0][ctype][1]
     plot_type_left = all_sizes_cal[1][ctype]
     plot_N_left = len(plot_type_left)
     plot_means_left = all_sizes_means_cal[1][ctype][0]
-    plot_means_left_peaks = all_size_peaks_cal[1][ctype][0]
-    plot_means_left_valleys = all_size_peaks_cal[1][ctype][1]
+    plot_means_left_peaks = all_size_pv_cal[1][ctype][0]
+    plot_means_left_valleys = all_size_pv_cal[1][ctype][1]
     plot_luminance = plot_lum_types[plot_type][0]
     plot_lum_N = len(plot_luminance)
     plot_luminance_peaks = plot_lum_types[plot_type][1]
