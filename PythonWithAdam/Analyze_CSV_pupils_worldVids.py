@@ -19,6 +19,25 @@ from collections import defaultdict
 from scipy import signal
 from itertools import groupby
 from operator import itemgetter
+# set up log file to store all printed messages
+current_working_directory = os.getcwd()
+class Logger(object):
+    def __init__(self):
+        # grab today's date
+        now = datetime.datetime.now()
+        log_filename = "data-extraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
+        log_file = os.path.join(current_working_directory, log_filename)
+        self.terminal = sys.stdout
+        self.log = open(log_file, "a")
+    def write(self, message):
+        self.terminal.write(message)
+        self.log.write(message)  
+    def flush(self):
+        #this flush method is needed for python 3 compatibility.
+        #this handles the flush command by doing nothing.
+        #you might want to specify some extra behavior here.
+        pass    
+sys.stdout = Logger()
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size): 
     if (new_bucket_size % original_bucket_size == 0):
@@ -43,7 +62,7 @@ def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, origina
         data_circles_Y[:] = -6
         data_circles = np.empty((num_trials, max_no_of_buckets+1))
         data_circles[:] = -6
-
+        # iterate through trials
         index = 0
         for trial_file in trial_files:
             trial_name = trial_file.split(os.sep)[-1]
@@ -405,7 +424,7 @@ def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket
     print("Finished writing!")
     # restore default matplotlib backend
     plt.switch_backend('TkAgg')
-       
+
 def display_avg_world_tbucket(avg_world_vid_tbucketed_dict, tbucket_to_display):
     sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
     max_tbucket = sorted_tbuckets[-1]
@@ -681,25 +700,6 @@ def pool_pupil_saccades_for_stim_specific_moment_of_interest(pupil_saccades_dict
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
                     pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim_number][threshold][s_tbucket]
 
-# set up log file to store all printed messages
-current_working_directory = os.getcwd()
-class Logger(object):
-    def __init__(self):
-        # grab today's date
-        now = datetime.datetime.now()
-        log_filename = "data-extraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
-        log_file = os.path.join(current_working_directory, log_filename)
-        self.terminal = sys.stdout
-        self.log = open(log_file, "a")
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)  
-    def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        #this handles the flush command by doing nothing.
-        #you might want to specify some extra behavior here.
-        pass    
-sys.stdout = Logger()
 ### BEGIN ANALYSIS ###
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
 #root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
