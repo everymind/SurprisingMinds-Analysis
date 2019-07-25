@@ -595,6 +595,17 @@ def pooled_for_stim_specific_moment_of_interest(full_avg_world_vids_dict, all_st
         stims_pooled_avg_tbuckets[stimulus]['ends'] = end_tbuckets
     return stims_pooled_avg_tbuckets
 
+def smoothed_baselined_mean_of_pooled_pupil_sizes(list_of_pupil_data_arrays, smoothing_window_size, baseline_no_tbuckets):
+    total_trials = len(list_of_pupil_data_arrays)
+    baselined_list_of_pupil_arrays = []
+    for trial in list_of_pupil_data_arrays:
+        baseline_this_trial = np.nanmean(trial[0:baseline_no_tbuckets])
+        baselined_trial = [(float(x-baseline_this_trial)/baseline_this_trial) for x in smoothed_trial]
+        baselined_list_of_pupil_arrays.append(np.array(baselined_trial))
+    baselined_mean = np.nanmean(baselined_list_of_pupil_arrays,0)
+    smoothed_baselined_mean = signal.savgol_filter(baselined_mean, smoothing_window_size, 3)
+    return smoothed_baselined_mean, total_trials
+
 def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoothing_window_size, baseline_no_tbuckets):
     total_vids = dict_of_avg_world_vid_tbuckets['Vid Count']
     luminances_list = []
@@ -1165,6 +1176,7 @@ for side in range(len(all_movements)):
 all_right_sizes = [all_right_trials_contours, all_right_trials_circles]
 all_left_sizes = [all_left_trials_contours, all_left_trials_circles]
 all_sizes = [all_right_sizes, all_left_sizes]
+# global mean
 all_right_size_contours_means = {key:[] for key in stim_vids}
 all_left_size_contours_means = {key:[] for key in stim_vids}
 all_right_size_circles_means = {key:[] for key in stim_vids}
@@ -1221,8 +1233,10 @@ all_avg_motion_left_cal = [all_left_contours_X_avg_motion_cal, all_left_contours
 all_avg_motion_cal = [all_avg_motion_right_cal, all_avg_motion_left_cal]
 for side in range(len(all_avg_motion_cal)):
     for i in range(len(all_avg_motion_cal[side])):
+        total_pooled_trials = len(all_movements_cal[side][i])
         this_avg_motion_cal = np.nanmean(all_movements_cal[side][i],0)
         this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_cal, smoothing_window, 3)
+        all_avg_motion_cal[side][i].append(total_pooled_trials)
         all_avg_motion_cal[side][i].append(this_avg_motion_smoothed)
 
 # pupil avg motion peaks and valleys
@@ -1285,14 +1299,14 @@ all_right_contours_means_cal = []
 all_right_circles_means_cal = []
 all_left_contours_means_cal = []
 all_left_circles_means_cal = []
-all_right_sizes_means_cal = [all_right_contours_means_cal, all_right_circles_means_cal]
-all_left_sizes_means_cal = [all_left_contours_means_cal, all_left_circles_means_cal]
-all_sizes_means_cal = [all_right_sizes_means_cal, all_left_sizes_means_cal]
-for side in range(len(all_sizes_means_cal)):
-    for i in range(len(all_sizes_means_cal[side])):
-        this_size_mean_cal = np.nanmean(all_sizes_cal[side][i],0)
-        this_size_mean_smoothed = signal.savgol_filter(this_size_mean_cal, smoothing_window, 3)
-        all_sizes_means_cal[side][i].append(this_size_mean_smoothed)
+all_right_size_means_cal = [all_right_contours_means_cal, all_right_circles_means_cal]
+all_left_size_means_cal = [all_left_contours_means_cal, all_left_circles_means_cal]
+all_size_means_cal = [all_right_size_means_cal, all_left_size_means_cal]
+for side in range(len(all_size_means_cal)):
+    for i in range(len(all_size_means_cal[side])):
+        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_baselined_mean_of_pooled_pupil_sizes(all_sizes_cal[side][i])
+        all_size_means_cal[side][i].append(total_pooled_trials)
+        all_size_means_cal[side][i].append(this_size_mean_smoothed_baselined)
 
 # pupil size mean peaks and valleys
 all_right_contours_pv_cal = []
@@ -1304,8 +1318,8 @@ all_left_pv_cal = [all_left_contours_pv_cal, all_left_circles_pv_cal]
 all_size_pv_cal = [all_right_pv_cal, all_left_pv_cal]
 for side in range(len(all_size_pv_cal)):
     for i in range(len(all_size_pv_cal[side])):
-        this_mean_peaks = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.greater)
-        this_mean_valleys = signal.argrelextrema(all_sizes_means_cal[side][i][0], np.less)
+        this_mean_peaks = signal.argrelextrema(all_size_means_cal[side][i][0], np.greater)
+        this_mean_valleys = signal.argrelextrema(all_size_means_cal[side][i][0], np.less)
         all_size_pv_cal[side][i].append(this_mean_peaks[0])
         all_size_pv_cal[side][i].append(this_mean_valleys[0])
 
@@ -1344,8 +1358,10 @@ all_avg_motion_left_octo = [all_left_contours_X_avg_motion_octo, all_left_contou
 all_avg_motion_octo = [all_avg_motion_right_octo, all_avg_motion_left_octo]
 for side in range(len(all_avg_motion_octo)):
     for i in range(len(all_avg_motion_octo[side])):
+        total_pooled_trials = len(all_movements_octo[side][i])
         this_avg_motion_octo = np.nanmean(all_movements_octo[side][i],0)
         this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_octo, smoothing_window, 3)
+        all_avg_motion_octo[side][i].append(total_pooled_trials)
         all_avg_motion_octo[side][i].append(this_avg_motion_smoothed)
 
 # pupil avg motion peaks and valleys
@@ -1408,14 +1424,14 @@ all_right_contours_means_octo = []
 all_right_circles_means_octo = []
 all_left_contours_means_octo = []
 all_left_circles_means_octo = []
-all_right_sizes_means_octo = [all_right_contours_means_octo, all_right_circles_means_octo]
-all_left_sizes_means_octo = [all_left_contours_means_octo, all_left_circles_means_octo]
-all_sizes_means_octo = [all_right_sizes_means_octo, all_left_sizes_means_octo]
-for side in range(len(all_sizes_means_octo)):
-    for i in range(len(all_sizes_means_octo[side])):
-        this_size_mean_octo = np.nanmean(all_sizes_octo[side][i],0)
-        this_size_mean_smoothed = signal.savgol_filter(this_size_mean_octo, smoothing_window, 3)
-        all_sizes_means_octo[side][i].append(this_size_mean_smoothed)
+all_right_size_means_octo = [all_right_contours_means_octo, all_right_circles_means_octo]
+all_left_size_means_octo = [all_left_contours_means_octo, all_left_circles_means_octo]
+all_size_means_octo = [all_right_size_means_octo, all_left_size_means_octo]
+for side in range(len(all_size_means_octo)):
+    for i in range(len(all_size_means_octo[side])):
+        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_baselined_mean_of_pooled_pupil_sizes(all_sizes_octo[side][i])
+        all_size_means_octo[side][i].append(total_pooled_trials)
+        all_size_means_octo[side][i].append(this_size_mean_smoothed_baselined)
 
 # pupil size mean peaks and valleys
 all_right_contours_pv_octo = []
@@ -1427,8 +1443,8 @@ all_left_pv_octo = [all_left_contours_pv_octo, all_left_circles_pv_octo]
 all_size_pv_octo = [all_right_pv_octo, all_left_pv_octo]
 for side in range(len(all_size_pv_octo)):
     for i in range(len(all_size_pv_octo[side])):
-        this_mean_peaks = signal.argrelextrema(all_sizes_means_octo[side][i][0], np.greater)
-        this_mean_valleys = signal.argrelextrema(all_sizes_means_octo[side][i][0], np.less)
+        this_mean_peaks = signal.argrelextrema(all_size_means_octo[side][i][0], np.greater)
+        this_mean_valleys = signal.argrelextrema(all_size_means_octo[side][i][0], np.less)
         all_size_pv_octo[side][i].append(this_mean_peaks[0])
         all_size_pv_octo[side][i].append(this_mean_valleys[0])
 
@@ -1595,8 +1611,10 @@ all_avg_motion_unique = [all_avg_motion_24, all_avg_motion_25, all_avg_motion_26
 for stim_order in range(len(all_avg_motion_unique)):
     for side in range(len(all_avg_motion_unique[stim_order])):
         for i in range(len(all_avg_motion_unique[stim_order][side])):
+            total_pooled_trials = len(all_movements_unique[stim_order][side][i])
             this_avg_motion_unique = np.nanmean(all_movements_unique[stim_order][side][i],0)
             this_avg_motion_smoothed = signal.savgol_filter(this_avg_motion_unique, smoothing_window, 3)
+            all_avg_motion_unique[stim_order][side][i].append(total_pooled_trials)
             all_avg_motion_unique[stim_order][side][i].append(this_avg_motion_smoothed)
 
 # pupil avg motion peaks and valleys
@@ -1880,9 +1898,9 @@ all_size_means_unique = [all_size_means_24, all_size_means_25, all_size_means_26
 for stim_order in range(len(all_size_means_unique)):
     for side in range(len(all_size_means_unique[stim_order])):
         for i in range(len(all_size_means_unique[stim_order][side])):
-            this_size_mean_unique = np.nanmean(all_sizes_unique[stim_order][side][i],0)
-            this_size_mean_smoothed = signal.savgol_filter(this_size_mean_unique, smoothing_window, 3)
-            all_size_means_unique[stim_order][side][i].append(this_size_mean_smoothed)
+            this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_baselined_mean_of_pooled_pupil_sizes(all_sizes_unique[side][i])
+            all_size_means_unique[side][i].append(total_pooled_trials)
+            all_size_means_unique[side][i].append(this_size_mean_smoothed_baselined)
 
 # pupil size mean peaks and valleys
 # stim 24
@@ -1954,8 +1972,8 @@ plotting_saccades_window = 40 # MAKE SURE THIS ==saccades_window!!
 plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_lum_peaks,all_cal_avg_lum_valleys,all_cal_avg_lum_N],
 'octopus':[all_octo_avg_lum_smoothed_baselined,all_octo_avg_lum_peaks,all_octo_avg_lum_valleys,all_octo_avg_lum_N],
 'unique':all_stims_unique_avg_lum_smoothed_baselined}
-plot_size_types = {'calibration':[all_sizes_cal, all_sizes_means_cal, all_size_pv_cal],
-'octopus':[all_sizes_octo, all_sizes_means_octo, all_size_pv_octo],
+plot_size_types = {'calibration':[all_sizes_cal, all_size_means_cal, all_size_pv_cal],
+'octopus':[all_sizes_octo, all_size_means_octo, all_size_pv_octo],
 'unique':[all_sizes_unique, all_size_means_unique, all_size_pv_unique]}
 ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.7, 0.7], 'unique': [-0.7, 0.7]}
 alphas = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
