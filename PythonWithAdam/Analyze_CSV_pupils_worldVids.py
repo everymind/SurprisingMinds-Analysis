@@ -924,7 +924,7 @@ for month_folder in updated_folders_to_extract:
 # ------------------------------------------------------------------------ #
 ### CSV DATA EXTRACTION COMPLETE ###
 ### GLOBAL VARIABLES FOR CLEANING AND PROCESSING EXTRACTED DATA ###
-smoothing_window = 25 # in time buckets, must be odd! for signal.savgol_filter
+smoothing_window = 15 # in time buckets, must be odd! for signal.savgol_filter
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 side_names = ['Right', 'Left']
 cType_names = ['Contours', 'Circles']
@@ -2076,12 +2076,12 @@ for ctype in range(len(cType_names)):
         pupil_analysis_type_name = cType_names[ctype]
         plot_type_right = plot_size_types[plot_type][0][stim_order][0][ctype]
         plot_N_right = len(plot_type_right)
-        plot_means_right = plot_size_types[plot_type][1][stim_order][0][ctype][0]
+        plot_means_right = plot_size_types[plot_type][1][stim_order][0][ctype][1]
         plot_means_right_peaks = plot_size_types[plot_type][2][stim_order][0][ctype][0]
         plot_means_right_valleys = plot_size_types[plot_type][2][stim_order][0][ctype][1]
         plot_type_left = plot_size_types[plot_type][0][stim_order][1][ctype]
         plot_N_left = len(plot_type_left)
-        plot_means_left = plot_size_types[plot_type][1][stim_order][1][ctype][0]
+        plot_means_left = plot_size_types[plot_type][1][stim_order][1][ctype][1]
         plot_means_left_peaks = plot_size_types[plot_type][2][stim_order][1][ctype][0]
         plot_means_left_valleys = plot_size_types[plot_type][2][stim_order][1][ctype][1]
         plot_luminance = plot_lum_types[plot_type][stim_vids[stim_order]]['SB lum']
