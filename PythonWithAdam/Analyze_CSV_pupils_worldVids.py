@@ -666,7 +666,7 @@ def pool_baseline_pupil_size_for_stim_specific_moment_of_interest(pupil_size_dic
     start_end_collected = []
     start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        start_end_collected.append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
     this_stim_moment_start = start_end_collected[0]
     this_stim_moment_end = start_end_collected[1]
     for trial in range(len(pupil_size_dict[stim_number])):
@@ -679,7 +679,7 @@ def pool_pupil_movements_for_stim_specific_moment_of_interest(pupil_movement_dic
     start_end_collected = []
     start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        start_end_collected.append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
     this_stim_moment_start = start_end_collected[0]
     this_stim_moment_end = start_end_collected[1]
     for trial in range(len(pupil_movement_dict[stim_number])):
@@ -690,7 +690,7 @@ def pool_pupil_means_for_stim_specific_moment_of_interest(pupil_means_dict, stim
     start_end_collected = []
     start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        start_end_collected.append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
     this_stim_moment_start = start_end_collected[0]
     this_stim_moment_end = start_end_collected[1]
     pooled_pupil_means.append(np.array(pupil_means_dict[stim_number][this_stim_moment_start:this_stim_moment_end]))
@@ -699,7 +699,7 @@ def pool_pupil_peaks_for_stim_specific_moment_of_interest(pupil_peaks_dict, stim
     start_end_collected = []
     start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        start_end_collected.append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
     this_stim_moment_start = start_end_collected[0]
     this_stim_moment_end = start_end_collected[1]
     for peak in pupil_peaks_dict[stim_number]:
@@ -710,7 +710,7 @@ def pool_pupil_saccades_for_stim_specific_moment_of_interest(pupil_saccades_dict
     start_end_collected = []
     start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        start_end_collected.append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
     this_stim_moment_start = start_end_collected[0]
     this_stim_moment_end = start_end_collected[1]
     for threshold in pupil_saccades_dict[stim_number]:
