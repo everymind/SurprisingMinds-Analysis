@@ -1976,8 +1976,12 @@ plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_
 plot_size_types = {'calibration':[all_sizes_cal, all_size_means_cal, all_size_pv_cal],
 'octopus':[all_sizes_octo, all_size_means_octo, all_size_pv_octo],
 'unique':[all_sizes_unique, all_size_means_unique, all_size_pv_unique]}
+plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all_avg_motion_pv_cal],
+'octopus':[all_movements_octo, all_avg_motion_octo, all_avg_motion_pv_octo],
+'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_pv_unique]}
 lum_ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.8, 0.8], 'unique': [-0.7, 0.7]}
 pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 'unique': [-0.4,0.4]}
+pupil_movement_ylimits = {'calibration': [-60,60], 'octopus': [-60,60], 'unique': [-60,60]}
 alphas = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
 peak_label_x_offset = 2.25
 peak_label_y_offset = 0.08
@@ -2151,6 +2155,70 @@ for ctype in range(len(cType_names)):
         plt.show(block=False)
         plt.pause(1)
         plt.close()
+
+# Plot pupil movement
+# calibration and octopus
+plot_types = ['calibration', 'octopus']
+for plot_type in plot_types:
+    for ctype in range(len(cType_names)):
+        pupil_analysis_type_name = cType_names[ctype]
+        plot_type_right = plot_movement_types[plot_type][0][0][ctype]
+        plot_N_right = len(plot_type_right)
+        plot_type_left = plot_movement_types[plot_type][0][1][ctype]
+        plot_N_left = len(plot_type_left)
+        plot_luminance = plot_lum_types[plot_type][0]
+        plot_luminance_peaks = plot_lum_types[plot_type][1]
+        plot_luminance_valleys = plot_lum_types[plot_type][2]
+        plot_lum_N = plot_lum_types[plot_type][3]
+        # fig name and path
+        figure_name = 'PupilMovement_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+        figure_path = os.path.join(pupils_folder, figure_name)
+        figure_title = "Pupil movement of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+        # draw fig
+        plt.figure(figsize=(14, 14), dpi=fig_size)
+        plt.suptitle(figure_title, fontsize=12, y=0.98)
+        # subplot: Right eye sizes
+        plt.subplot(3,1,1)
+        plt.ylabel('Pupil movement in pixels', fontsize=11)
+        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='--')
+        for trial in range(len(plot_type_right)):
+            plt.plot(plot_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.98, 0.0, alphas[plot_type]])
+        #plt.xlim(-10,1250)
+        plt.ylim(pupil_movement_ylimits[plot_type][0],pupil_movement_ylimits[plot_type][1])
+        # subplot: Left eye sizes
+        plt.subplot(3,1,2)
+        plt.ylabel('Pupil movement in pixels', fontsize=11)
+        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='--')
+        for trial in range(len(plot_type_left)):
+            plt.plot(plot_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, alphas[plot_type]])
+        #plt.xlim(-10,1250)
+        plt.ylim(pupil_movement_ylimits[plot_type][0],pupil_movement_ylimits[plot_type][1])
+        # subplot: Average luminance of stimuli video
+        plt.subplot(3,1,3)
+        plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
+        plt.title('Average luminance of ' + plot_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plot_lum_N), fontsize=10, color='grey', style='italic')
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
+        for peak in plot_luminance_peaks:
+            plt.plot(peak, plot_luminance[peak], 'x')
+            plt.text(peak-peak_label_x_offset, plot_luminance[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        for valley in plot_luminance_valleys:
+            plt.plot(valley, plot_luminance[valley], 'x')
+            plt.text(valley-valley_label_x_offset, plot_luminance[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        #plt.xlim(-10,1250)
+        plt.ylim(lum_ylimits[plot_type][0],lum_ylimits[plot_type][1])
+        # save and display
+        plt.subplots_adjust(hspace=0.5)
+        plt.savefig(figure_path)
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
+
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
