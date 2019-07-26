@@ -1057,7 +1057,7 @@ for stim in all_stims_unique_clip_avg_tbuckets.keys():
     all_stims_unique_avg_lum_smoothed_baselined[stim] = {}
     this_stim_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_stims_unique_clip_avg_tbuckets[stim], smoothing_window, baseline_no_buckets)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB lum'] = this_stim_smoothed_baselined
-    this_stim_avg_lum_peaks = signal.argrelextrema(all_octo_avg_lum_smoothed_baselined, np.greater)
+    this_stim_avg_lum_peaks = signal.argrelextrema(this_stim_smoothed_baselined, np.greater)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB peaks'] = this_stim_avg_lum_peaks[0]
     this_stim_avg_lum_valleys = signal.argrelextrema(this_stim_smoothed_baselined, np.less)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB valleys'] = this_stim_avg_lum_valleys[0]
@@ -1189,7 +1189,7 @@ all_size_means = [all_right_size_means, all_left_size_means]
 for side in range(len(all_sizes)):
     for i in range(len(all_sizes[side])):
         for stimulus in all_sizes[side][i].keys(): 
-            print('Calculating average pupil sizes for right camera, {c}, stimulus {s}'.format(c=cType_names[i],s=stimulus))
+            print('Calculating average pupil sizes for {side} camera, {c}, stimulus {s}'.format(side=side_names[side], c=cType_names[i],s=stimulus))
             avg_pupil_size = np.nanmean(all_sizes[side][i][stimulus], 0)
             avg_pupil_size_smoothed = signal.savgol_filter(avg_pupil_size, smoothing_window, 3)
             all_size_means[side][i][stimulus] = avg_pupil_size_smoothed
@@ -1978,7 +1978,7 @@ plot_size_types = {'calibration':[all_sizes_cal, all_size_means_cal, all_size_pv
 'unique':[all_sizes_unique, all_size_means_unique, all_size_pv_unique]}
 lum_ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.8, 0.8], 'unique': [-0.7, 0.7]}
 pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 'unique': [-0.4,0.4]}
-alphas = {'calibration': 0.01, 'octopus': 0.01, 'unique': 0.05}
+alphas = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
 peak_label_x_offset = 2.25
 peak_label_y_offset = 0.08
 valley_label_x_offset = 2.25
@@ -2112,7 +2112,7 @@ for ctype in range(len(cType_names)):
             plt.plot(valley, plot_means_right[valley], 'x')
             plt.text(valley-valley_label_x_offset, plot_means_right[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         #plt.xlim(-10,1250)
-        plt.ylim(ylimits[plot_type][0],ylimits[plot_type][1])
+        plt.ylim(pupil_size_ylimits[plot_type][0],pupil_size_ylimits[plot_type][1])
         # subplot: Left eye sizes
         plt.subplot(3,1,2)
         plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
@@ -2129,7 +2129,7 @@ for ctype in range(len(cType_names)):
             plt.plot(valley, plot_means_left[valley], 'x')
             plt.text(valley-valley_label_x_offset, plot_means_left[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         #plt.xlim(-10,1250)
-        plt.ylim(ylimits[plot_type][0],ylimits[plot_type][1])
+        plt.ylim(pupil_size_ylimits[plot_type][0],pupil_size_ylimits[plot_type][1])
         # subplot: Average luminance of stimuli video
         plt.subplot(3,1,3)
         plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
@@ -2144,7 +2144,7 @@ for ctype in range(len(cType_names)):
             plt.plot(valley, plot_luminance[valley], 'x')
             plt.text(valley-valley_label_x_offset, plot_luminance[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         #plt.xlim(-10,1250)
-        plt.ylim(ylimits[plot_type][0],ylimits[plot_type][1])
+        plt.ylim(lum_ylimits[plot_type][0],lum_ylimits[plot_type][1])
         # save and display
         plt.subplots_adjust(hspace=0.5)
         plt.savefig(figure_path)
