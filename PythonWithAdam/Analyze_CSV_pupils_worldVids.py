@@ -470,7 +470,7 @@ def find_moment_tbuckets(list_of_moments_to_find, all_moments_dict, year_month, 
                         tbuckets_of_moments[m] = tbucket_num
     return tbuckets_of_moments
 
-def pooled_for_global_moment_of_interest(full_avg_world_vids_dict, all_moments_dict, moment_start_str, moment_end_str):
+def pool_world_vids_for_global_moment_of_interest(full_avg_world_vids_dict, all_moments_dict, moment_start_str, moment_end_str):
     all_pooled_tbuckets = {}
     monthly_pooled_avg_tbuckets = {}
     for month in full_avg_world_vids_dict.keys():
@@ -551,7 +551,7 @@ def pooled_for_global_moment_of_interest(full_avg_world_vids_dict, all_moments_d
     all_pooled_tbuckets['ends'] = all_stim_ends
     return all_pooled_tbuckets
 
-def pooled_for_stim_specific_moment_of_interest(full_avg_world_vids_dict, all_stims_list, all_moments_dict, moment_start_str, moment_end_str):
+def pool_world_vids_for_stim_specific_moment_of_interest(full_avg_world_vids_dict, all_stims_list, all_moments_dict, moment_start_str, moment_end_str):
     stims_pooled_avg_tbuckets = {}
     for stimulus in all_stims_list:
         stims_pooled_avg_tbuckets[stimulus] = {}
@@ -595,16 +595,11 @@ def pooled_for_stim_specific_moment_of_interest(full_avg_world_vids_dict, all_st
         stims_pooled_avg_tbuckets[stimulus]['ends'] = end_tbuckets
     return stims_pooled_avg_tbuckets
 
-def smoothed_baselined_mean_of_pooled_pupil_sizes(list_of_pupil_data_arrays, smoothing_window_size, baseline_no_tbuckets):
+def smoothed_mean_of_pooled_pupil_sizes(list_of_pupil_data_arrays, smoothing_window_size, baseline_no_tbuckets):
     total_trials = len(list_of_pupil_data_arrays)
-    baselined_list_of_pupil_arrays = []
-    for trial in list_of_pupil_data_arrays:
-        baseline_this_trial = np.nanmean(trial[0:baseline_no_tbuckets])
-        baselined_trial = [(float(x-baseline_this_trial)/baseline_this_trial) for x in trial]
-        baselined_list_of_pupil_arrays.append(np.array(baselined_trial))
-    baselined_mean = np.nanmean(baselined_list_of_pupil_arrays,0)
-    smoothed_baselined_mean = signal.savgol_filter(baselined_mean, smoothing_window_size, 3)
-    return smoothed_baselined_mean, total_trials
+    pupil_data_mean = np.nanmean(list_of_pupil_data_arrays,0)
+    smoothed_mean = signal.savgol_filter(pupil_data_mean, smoothing_window_size, 3)
+    return smoothed_mean, total_trials
 
 def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoothing_window_size, baseline_no_tbuckets):
     total_vids = dict_of_avg_world_vid_tbuckets['Vid Count']
@@ -622,7 +617,7 @@ def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoot
     smoothed_baselined_lum_array = [(float(x-baseline_this_vid)/baseline_this_vid) for x in smoothed_lum_array]
     return np.array(smoothed_baselined_lum_array)
 
-def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_data):
+def pool_baseline_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_data, baseline_no_tbuckets):
     all_stims_moment_starts = []
     all_stims_moment_ends = []
     for stim in pupil_data_dict.keys():
@@ -639,7 +634,10 @@ def pool_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_int
     all_stims_moment_end = max(all_stims_moment_ends)
     for stim in pupil_data_dict.keys():
         for trial in range(len(pupil_data_dict[stim])):
-            pooled_pupil_data.append(np.array(pupil_data_dict[stim][trial][all_stims_moment_start:all_stims_moment_end]))
+            this_moment = pupil_data_dict[stim][trial][all_stims_moment_start:all_stims_moment_end]
+            baseline_this_moment = np.nanmean(this_moment[0:baseline_no_tbuckets])
+            baselined_moment = [(float(x-baseline_this_moment)/baseline_this_moment) for x in this_moment]
+            pooled_pupil_data.append(np.array(baselined_moment))
 
 def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
     for stim in pupil_saccades_dict.keys():
@@ -657,7 +655,7 @@ def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, momen
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
                     pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim][threshold][s_tbucket]
 
-def pool_pupil_data_for_stim_specific_moment_of_interest(pupil_data_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_data):
+def pool_baseline_pupil_data_for_stim_specific_moment_of_interest(pupil_data_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_data, baseline_no_tbuckets):
     this_stim_all_months_moment_starts = []
     this_stim_all_months_moment_ends = []
     start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
@@ -668,7 +666,10 @@ def pool_pupil_data_for_stim_specific_moment_of_interest(pupil_data_dict, stim_n
     this_stim_moment_start = min(this_stim_all_months_moment_starts)
     this_stim_moment_end = max(this_stim_all_months_moment_ends)
     for trial in range(len(pupil_data_dict[stim_number])):
-        pooled_pupil_data.append(np.array(pupil_data_dict[stim_number][trial][this_stim_moment_start:this_stim_moment_end]))
+        this_moment = pupil_data_dict[stim_number][trial][this_stim_moment_start:this_stim_moment_end]
+        baseline_this_moment = np.nanmean(this_moment[0:baseline_no_tbuckets])
+        baselined_moment = [(float(x-baseline_this_moment)/baseline_this_moment) for x in this_moment]
+        pooled_pupil_data.append(np.array(baselined_moment))
 
 def pool_pupil_means_for_stim_specific_moment_of_interest(pupil_means_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_means):
     this_stim_all_months_moment_starts = []
@@ -1025,13 +1026,13 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11']},
 # ------------------------------------------------------------------------ #
 ### ------------------------------ ###
 ### POOL AVG TBUCKETS ACROSS CALBIRATION SEQUENCE
-all_cal_avg_tbuckets = pooled_for_global_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'calibration start', 'calibration end')
+all_cal_avg_tbuckets = pool_world_vids_for_global_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'calibration start', 'calibration end')
 ### ------------------------------ ###
 ### POOL AVG TBUCKETS ACROSS OCTOPUS CLIP
-all_octo_avg_tbuckets = pooled_for_global_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'octo start', 'octo end')
+all_octo_avg_tbuckets = pool_world_vids_for_global_moment_of_interest(all_months_avg_world_vids, all_avg_world_moments, 'octo start', 'octo end')
 ### ------------------------------ ###
 ### POOL AVG TBUCKETS ACROSS EACH STIMULUS UNIQUE CLIP
-all_stims_unique_clip_avg_tbuckets = pooled_for_stim_specific_moment_of_interest(all_months_avg_world_vids, stim_vids, all_avg_world_moments, 'unique start', 'unique end')
+all_stims_unique_clip_avg_tbuckets = pool_world_vids_for_stim_specific_moment_of_interest(all_months_avg_world_vids, stim_vids, all_avg_world_moments, 'unique start', 'unique end')
 ### ------------------------------ ###
 ### double check that the pooled avg videos make sense
 #display_avg_world_tbucket(all_octo_avg_tbuckets, 300)
@@ -1217,7 +1218,7 @@ all_movement_left_cal = [all_left_contours_movement_X_cal, all_left_contours_mov
 all_movements_cal = [all_movement_right_cal, all_movement_left_cal]
 for side in range(len(all_movements_cal)):
     for i in range(len(all_movements_cal[side])):
-        pool_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_cal_avg_tbuckets, all_movements_cal[side][i])
+        pool_baseline_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_cal_avg_tbuckets, all_movements_cal[side][i], baseline_no_buckets)
 
 # pupil avg motion
 all_right_contours_X_avg_motion_cal = []
@@ -1276,13 +1277,13 @@ for side in range(len(all_saccades_cal)):
         count_threshold = this_cal_movement_N/10
         windowed_count_thresholds = [this_cal_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
         for thresh in range(len(saccade_thresholds)):
-            print('Looking for movements greater than {p} pixels in pooled calibration clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis]))
+            print('Looking for movements greater than {p} pixels in pooled calibration clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[i]))
             saccades_window = 40 # timebuckets
             s_thresh = saccade_thresholds[thresh]
             w_thresh = windowed_count_thresholds[thresh]
             all_saccades_cal[side][i][s_thresh] = find_saccades(all_movements_cal[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
 
-# all pupil sizes
+# all pupil sizes, baselined
 all_right_contours_cal = []
 all_right_circles_cal = []
 all_left_contours_cal = []
@@ -1292,7 +1293,7 @@ all_left_sizes_cal = [all_left_contours_cal, all_left_circles_cal]
 all_sizes_cal = [all_right_sizes_cal, all_left_sizes_cal]
 for side in range(len(all_sizes_cal)):
     for i in range(len(all_sizes_cal[side])):
-        pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_cal[side][i])
+        pool_baseline_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_cal[side][i], baseline_no_buckets)
 
 # pupil size means
 all_right_contours_means_cal = []
@@ -1304,7 +1305,7 @@ all_left_size_means_cal = [all_left_contours_means_cal, all_left_circles_means_c
 all_size_means_cal = [all_right_size_means_cal, all_left_size_means_cal]
 for side in range(len(all_size_means_cal)):
     for i in range(len(all_size_means_cal[side])):
-        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_baselined_mean_of_pooled_pupil_sizes(all_sizes_cal[side][i], smoothing_window, baseline_no_buckets)
+        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_cal[side][i], smoothing_window, baseline_no_buckets)
         all_size_means_cal[side][i].append(total_pooled_trials)
         all_size_means_cal[side][i].append(this_size_mean_smoothed_baselined)
 
@@ -1342,7 +1343,7 @@ all_movement_left_octo = [all_left_contours_movement_X_octo, all_left_contours_m
 all_movements_octo = [all_movement_right_octo, all_movement_left_octo]
 for side in range(len(all_movements_octo)):
     for i in range(len(all_movements_octo[side])):
-        pool_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_octo_avg_tbuckets, all_movements_octo[side][i])
+        pool_baseline_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_octo_avg_tbuckets, all_movements_octo[side][i], baseline_no_buckets)
 
 # pupil avg motion
 all_right_contours_X_avg_motion_octo = []
@@ -1401,7 +1402,7 @@ for side in range(len(all_saccades_octo)):
         count_threshold = this_octo_movement_N/10
         windowed_count_thresholds = [this_octo_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
         for thresh in range(len(saccade_thresholds)):
-            print('Looking for movements greater than {p} pixels in pooled octo clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis]))
+            print('Looking for movements greater than {p} pixels in pooled octo clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[i]))
             saccades_window = 40 # timebuckets
             s_thresh = saccade_thresholds[thresh]
             w_thresh = windowed_count_thresholds[thresh]
@@ -1417,7 +1418,7 @@ all_left_sizes_octo = [all_left_contours_octo, all_left_circles_octo]
 all_sizes_octo = [all_right_sizes_octo, all_left_sizes_octo]
 for side in range(len(all_sizes_octo)):
     for i in range(len(all_sizes_octo[side])):
-        pool_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_octo_avg_tbuckets, all_sizes_octo[side][i])
+        pool_baseline_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_octo_avg_tbuckets, all_sizes_octo[side][i], baseline_no_buckets)
 
 # pupil size means
 all_right_contours_means_octo = []
@@ -1429,7 +1430,7 @@ all_left_size_means_octo = [all_left_contours_means_octo, all_left_circles_means
 all_size_means_octo = [all_right_size_means_octo, all_left_size_means_octo]
 for side in range(len(all_size_means_octo)):
     for i in range(len(all_size_means_octo[side])):
-        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_baselined_mean_of_pooled_pupil_sizes(all_sizes_octo[side][i], smoothing_window, baseline_no_buckets)
+        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_octo[side][i], smoothing_window, baseline_no_buckets)
         all_size_means_octo[side][i].append(total_pooled_trials)
         all_size_means_octo[side][i].append(this_size_mean_smoothed_baselined)
 
@@ -1531,7 +1532,7 @@ all_movements_unique = [all_movements_24, all_movements_25, all_movements_26, al
 for stim_order in range(len(all_movements_unique)):
     for side in range(len(all_movements_unique[stim_order])):
         for i in range(len(all_movements_unique[stim_order][side])):
-            pool_pupil_data_for_stim_specific_moment_of_interest(all_movements[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_movements_unique[stim_order][side][i])
+            pool_baseline_pupil_data_for_stim_specific_moment_of_interest(all_movements[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_movements_unique[stim_order][side][i], baseline_no_buckets)
 
 # pupil avg motion
 # stim 24
@@ -1782,7 +1783,7 @@ for stim_order in range(len(all_saccades_unique)):
             count_threshold = this_unique_movement_N/10
             windowed_count_thresholds = [this_unique_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
-                print('Looking for movements greater than {p} pixels in stim-specific unique clips for stimulus {s}, {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], s=stim_vids[stim_order], side=side_names[side], cAxis_type=cAxis_names[c_axis]))
+                print('Looking for movements greater than {p} pixels in stim-specific unique clips for stimulus {s}, {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], s=stim_vids[stim_order], side=side_names[side], cAxis_type=cAxis_names[i]))
                 saccades_window = 40 # timebuckets
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
@@ -1842,7 +1843,7 @@ all_sizes_unique = [all_sizes_24, all_sizes_25, all_sizes_26, all_sizes_27, all_
 for stim_order in range(len(all_sizes_unique)):
     for side in range(len(all_sizes_unique[stim_order])):
         for i in range(len(all_sizes_unique[stim_order][side])):
-            pool_pupil_data_for_stim_specific_moment_of_interest(all_sizes[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_sizes_unique[stim_order][side][i])
+            pool_baseline_pupil_data_for_stim_specific_moment_of_interest(all_sizes[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_sizes_unique[stim_order][side][i], baseline_no_buckets)
 
 # pupil size means
 # stim 24
@@ -1898,7 +1899,7 @@ all_size_means_unique = [all_size_means_24, all_size_means_25, all_size_means_26
 for stim_order in range(len(all_size_means_unique)):
     for side in range(len(all_size_means_unique[stim_order])):
         for i in range(len(all_size_means_unique[stim_order][side])):
-            this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_baselined_mean_of_pooled_pupil_sizes(all_sizes_unique[stim_order][side][i], smoothing_window, baseline_no_buckets)
+            this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_unique[stim_order][side][i], smoothing_window, baseline_no_buckets)
             all_size_means_unique[stim_order][side][i].append(total_pooled_trials)
             all_size_means_unique[stim_order][side][i].append(this_size_mean_smoothed_baselined)
 
@@ -1975,8 +1976,9 @@ plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_
 plot_size_types = {'calibration':[all_sizes_cal, all_size_means_cal, all_size_pv_cal],
 'octopus':[all_sizes_octo, all_size_means_octo, all_size_pv_octo],
 'unique':[all_sizes_unique, all_size_means_unique, all_size_pv_unique]}
-ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.7, 0.7], 'unique': [-0.7, 0.7]}
-alphas = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
+lum_ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.8, 0.8], 'unique': [-0.7, 0.7]}
+pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 'unique': [-0.4,0.4]}
+alphas = {'calibration': 0.01, 'octopus': 0.01, 'unique': 0.05}
 peak_label_x_offset = 2.25
 peak_label_y_offset = 0.08
 valley_label_x_offset = 2.25
@@ -1985,86 +1987,87 @@ valley_label_y_offset = -0.08
 ### GENERATE PLOTS ###
 ### ------------------------------ ###
 # Plot pupil sizes
-# calibration
-plot_type = 'octopus'
-for ctype in range(len(cType_names)):
-    pupil_analysis_type_name = cType_names[ctype]
-    plot_type_right = plot_size_types[plot_type][0][0][ctype]
-    plot_N_right = len(plot_type_right)
-    plot_means_right = plot_size_types[plot_type][1][0][ctype][0]
-    plot_means_right_peaks = plot_size_types[plot_type][2][0][ctype][0]
-    plot_means_right_valleys = plot_size_types[plot_type][2][0][ctype][1]
-    plot_type_left = plot_size_types[plot_type][0][1][ctype]
-    plot_N_left = len(plot_type_left)
-    plot_means_left = plot_size_types[plot_type][1][1][ctype][0]
-    plot_means_left_peaks = plot_size_types[plot_type][2][1][ctype][0]
-    plot_means_left_valleys = plot_size_types[plot_type][2][1][ctype][1]
-    plot_luminance = plot_lum_types[plot_type][0]
-    plot_luminance_peaks = plot_lum_types[plot_type][1]
-    plot_luminance_valleys = plot_lum_types[plot_type][2]
-    plot_lum_N = plot_lum_types[plot_type][3]
-    # fig name and path
-    figure_name = 'PupilSizes_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-    figure_path = os.path.join(pupils_folder, figure_name)
-    figure_title = "Pupil sizes of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-    # draw fig
-    plt.figure(figsize=(14, 14), dpi=fig_size)
-    plt.suptitle(figure_title, fontsize=12, y=0.98)
-    # subplot: Right eye sizes
-    plt.subplot(3,1,1)
-    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-    plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
-    plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='--')
-    for trial in range(len(plot_type_right)):
-        plt.plot(plot_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.98, 0.0, alphas[plot_type]])
-    plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
-    for peak in plot_means_right_peaks:
-        plt.plot(peak, plot_means_right[peak], 'x')
-        plt.text(peak-peak_label_x_offset, plot_means_right[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plot_means_right_valleys:
-        plt.plot(valley, plot_means_right[valley], 'x')
-        plt.text(valley-valley_label_x_offset, plot_means_right[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    #plt.xlim(-10,1250)
-    plt.ylim(ylimits[plot_type][0],ylimits[plot_type][1])
-    # subplot: Left eye sizes
-    plt.subplot(3,1,2)
-    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-    plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
-    plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='--')
-    for trial in range(len(plot_type_left)):
-        plt.plot(plot_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, alphas[plot_type]])
-    plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
-    for peak in plot_means_left_peaks:
-        plt.plot(peak, plot_means_left[peak], 'x')
-        plt.text(peak-peak_label_x_offset, plot_means_left[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plot_means_left_valleys:
-        plt.plot(valley, plot_means_left[valley], 'x')
-        plt.text(valley-valley_label_x_offset, plot_means_left[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    #plt.xlim(-10,1250)
-    plt.ylim(ylimits[plot_type][0],ylimits[plot_type][1])
-    # subplot: Average luminance of stimuli video
-    plt.subplot(3,1,3)
-    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
-    plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
-    plt.title('Average luminance of ' + plot_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plot_lum_N), fontsize=10, color='grey', style='italic')
-    plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
-    for peak in plot_luminance_peaks:
-        plt.plot(peak, plot_luminance[peak], 'x')
-        plt.text(peak-peak_label_x_offset, plot_luminance[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plot_luminance_valleys:
-        plt.plot(valley, plot_luminance[valley], 'x')
-        plt.text(valley-valley_label_x_offset, plot_luminance[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    #plt.xlim(-10,1250)
-    plt.ylim(ylimits[plot_type][0],ylimits[plot_type][1])
-    # save and display
-    plt.subplots_adjust(hspace=0.5)
-    plt.savefig(figure_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
+# calibration and octopus
+plot_types = ['calibration', 'octopus']
+for plot_type in plot_types:
+    for ctype in range(len(cType_names)):
+        pupil_analysis_type_name = cType_names[ctype]
+        plot_type_right = plot_size_types[plot_type][0][0][ctype]
+        plot_N_right = len(plot_type_right)
+        plot_means_right = plot_size_types[plot_type][1][0][ctype][1]
+        plot_means_right_peaks = plot_size_types[plot_type][2][0][ctype][0]
+        plot_means_right_valleys = plot_size_types[plot_type][2][0][ctype][1]
+        plot_type_left = plot_size_types[plot_type][0][1][ctype]
+        plot_N_left = len(plot_type_left)
+        plot_means_left = plot_size_types[plot_type][1][1][ctype][1]
+        plot_means_left_peaks = plot_size_types[plot_type][2][1][ctype][0]
+        plot_means_left_valleys = plot_size_types[plot_type][2][1][ctype][1]
+        plot_luminance = plot_lum_types[plot_type][0]
+        plot_luminance_peaks = plot_lum_types[plot_type][1]
+        plot_luminance_valleys = plot_lum_types[plot_type][2]
+        plot_lum_N = plot_lum_types[plot_type][3]
+        # fig name and path
+        figure_name = 'PupilSizes_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+        figure_path = os.path.join(pupils_folder, figure_name)
+        figure_title = "Pupil sizes of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+        # draw fig
+        plt.figure(figsize=(14, 14), dpi=fig_size)
+        plt.suptitle(figure_title, fontsize=12, y=0.98)
+        # subplot: Right eye sizes
+        plt.subplot(3,1,1)
+        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+        plt.title('Right eye pupil sizes; N = ' + str(plot_N_right), fontsize=10, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='--')
+        for trial in range(len(plot_type_right)):
+            plt.plot(plot_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.98, 0.0, alphas[plot_type]])
+        plt.plot(plot_means_right, linewidth=1.5, color=[0.9686, 0.0, 1.0, 0.75])
+        for peak in plot_means_right_peaks:
+            plt.plot(peak, plot_means_right[peak], 'x')
+            plt.text(peak-peak_label_x_offset, plot_means_right[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        for valley in plot_means_right_valleys:
+            plt.plot(valley, plot_means_right[valley], 'x')
+            plt.text(valley-valley_label_x_offset, plot_means_right[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        #plt.xlim(-10,1250)
+        plt.ylim(pupil_size_ylimits[plot_type][0],pupil_size_ylimits[plot_type][1])
+        # subplot: Left eye sizes
+        plt.subplot(3,1,2)
+        plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+        plt.title('Left eye pupil sizes; N = ' + str(plot_N_left), fontsize=10, color='grey', style='italic')
+        plt.minorticks_on()
+        plt.grid(b=True, which='major', linestyle='--')
+        for trial in range(len(plot_type_left)):
+            plt.plot(plot_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, alphas[plot_type]])
+        plt.plot(plot_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
+        for peak in plot_means_left_peaks:
+            plt.plot(peak, plot_means_left[peak], 'x')
+            plt.text(peak-peak_label_x_offset, plot_means_left[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        for valley in plot_means_left_valleys:
+            plt.plot(valley, plot_means_left[valley], 'x')
+            plt.text(valley-valley_label_x_offset, plot_means_left[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        #plt.xlim(-10,1250)
+        plt.ylim(pupil_size_ylimits[plot_type][0],pupil_size_ylimits[plot_type][1])
+        # subplot: Average luminance of stimuli video
+        plt.subplot(3,1,3)
+        plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+        plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(downsampled_bucket_size_ms) + 'ms)', fontsize=11)
+        plt.title('Average luminance of ' + plot_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plot_lum_N), fontsize=10, color='grey', style='italic')
+        plt.grid(b=True, which='major', linestyle='--')
+        plt.plot(plot_luminance, linewidth=1, color=[0.192, 0.75, 0.004, 1])
+        for peak in plot_luminance_peaks:
+            plt.plot(peak, plot_luminance[peak], 'x')
+            plt.text(peak-peak_label_x_offset, plot_luminance[peak]+peak_label_y_offset, str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        for valley in plot_luminance_valleys:
+            plt.plot(valley, plot_luminance[valley], 'x')
+            plt.text(valley-valley_label_x_offset, plot_luminance[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
+        #plt.xlim(-10,1250)
+        plt.ylim(lum_ylimits[plot_type][0],lum_ylimits[plot_type][1])
+        # save and display
+        plt.subplots_adjust(hspace=0.5)
+        plt.savefig(figure_path)
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
 
 # unique
 plot_type = 'unique'
