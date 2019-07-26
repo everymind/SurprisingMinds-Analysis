@@ -281,7 +281,7 @@ def calc_mvmnt_from_pos(list_of_positon_arrays, nans_threshold, movement_thresho
     output = [x for x in this_stim_movements if len(x)>=trial_movements_min_len]
     return output
 
-def calc_avg_motion_smoothed(list_of_movement_arrays):
+def calc_avg_motion_smoothed(list_of_movement_arrays, smoothing_window_size):
     total_motion = np.zeros(len(list_of_movement_arrays[0]))
     nan_count = np.zeros(len(list_of_movement_arrays[0]))
     # for each frame, sum the abs(movements) on that frame
@@ -296,9 +296,7 @@ def calc_avg_motion_smoothed(list_of_movement_arrays):
         valid_subjects_this_tbucket = len(list_of_movement_arrays) - nan_count[f]
         avg_motion[f] = total_motion[f]/valid_subjects_this_tbucket
     # smooth the average motion
-    # smoothing window must be odd!
-    # apply savitzky-golay filter to smooth
-    avg_motion_smoothed = signal.savgol_filter(avg_motion, window, 3)
+    avg_motion_smoothed = signal.savgol_filter(avg_motion, smoothing_window_size, 3)
     return avg_motion_smoothed
 
 def find_saccades(list_of_movement_arrays, saccade_threshold, raw_count_threshold, window_size, windowed_count_threshold):
@@ -473,11 +471,22 @@ def find_moment_tbuckets(list_of_moments_to_find, all_moments_dict, year_month, 
 def pool_world_vids_for_global_moment_of_interest(full_avg_world_vids_dict, all_moments_dict, moment_start_str, moment_end_str):
     all_pooled_tbuckets = {}
     monthly_pooled_avg_tbuckets = {}
+    start_tbuckets = []
+    end_tbuckets = []
+    for month in full_avg_world_vids_dict.keys():
+        for stim in full_avg_world_vids_dict[month].keys():
+            # find start and end of this moment
+            moments_to_find = [moment_start_str, moment_end_str]
+            moments_tbuckets = find_moment_tbuckets(moments_to_find, all_moments_dict, month, stim)
+            start_tbucket = moments_tbuckets[moment_start_str] - 1
+            end_tbucket = moments_tbuckets[moment_end_str] + 1
+            start_tbuckets.append(start_tbucket)
+            end_tbuckets.append(end_tbucket)
+    this_moment_start = min(start_tbuckets)
+    this_moment_end = max(end_tbuckets)
     for month in full_avg_world_vids_dict.keys():
         monthly_pooled_avg_tbuckets[month] = {}
         total_vid_count = 0
-        start_tbuckets = {}
-        end_tbuckets = {}
         all_stims_summed = {}
         for stim in full_avg_world_vids_dict[month].keys():
             all_stims_summed[stim] = {}
@@ -485,18 +494,11 @@ def pool_world_vids_for_global_moment_of_interest(full_avg_world_vids_dict, all_
             v_height = full_avg_world_vids_dict[month][stim]['Vid Dimensions'][0]
             v_width = full_avg_world_vids_dict[month][stim]['Vid Dimensions'][1]
             empty_frame = np.zeros((v_height,v_width))
-            # find start and end of this moment
-            moments_to_find = [moment_start_str, moment_end_str]
-            moments_tbuckets = find_moment_tbuckets(moments_to_find, all_moments_dict, month, stim)
-            start_tbucket = moments_tbuckets[moment_start_str] - 1
-            end_tbucket = moments_tbuckets[moment_end_str] + 1
-            start_tbuckets[stim] = start_tbucket
-            end_tbuckets[stim] = end_tbucket
-            len_this_moment_tbuckets = end_tbucket - start_tbucket
+            len_this_moment_tbuckets = this_moment_end - this_moment_start
             for bucket in range(len_this_moment_tbuckets):
                 all_stims_summed[stim][bucket] = {}
             ordered_tbuckets = sorted([tbucket for tbucket in full_avg_world_vids_dict[month][stim].keys() if type(tbucket) is int])
-            this_moment_frames = ordered_tbuckets[start_tbucket:end_tbucket]
+            this_moment_frames = ordered_tbuckets[this_moment_start:this_moment_end]
             for t in range(len(this_moment_frames)):
                 if not np.any(np.isnan(full_avg_world_vids_dict[month][stim][this_moment_frames[t]])):
                     all_stims_summed[stim][t]['Summed Frame'] = all_stims_summed[stim][t].get('Summed Frame',empty_frame) + full_avg_world_vids_dict[month][stim][this_moment_frames[t]]
@@ -515,13 +517,9 @@ def pool_world_vids_for_global_moment_of_interest(full_avg_world_vids_dict, all_
             if 'Summed Frame' in this_month_avg_tbuckets[tbucket].keys():
                 monthly_pooled_avg_tbuckets[month][tbucket] = this_month_avg_tbuckets[tbucket]['Summed Frame']/float(this_month_avg_tbuckets[tbucket]['Frame Count'])
         monthly_pooled_avg_tbuckets[month]['Vid Count'] = total_vid_count
-        monthly_pooled_avg_tbuckets[month]['starts'] = start_tbuckets
-        monthly_pooled_avg_tbuckets[month]['ends'] = end_tbuckets
     print("Averaging across all months...")
     all_months = {}
     total_vids = 0
-    all_stim_starts = {stim:{} for stim in full_avg_world_vids_dict[month].keys()}
-    all_stim_ends = {stim:{} for stim in full_avg_world_vids_dict[month].keys()}
     for month in monthly_pooled_avg_tbuckets.keys():
         for tbucket in monthly_pooled_avg_tbuckets[month].keys():
             all_months[tbucket] = {}
@@ -529,14 +527,6 @@ def pool_world_vids_for_global_moment_of_interest(full_avg_world_vids_dict, all_
         for tbucket in monthly_pooled_avg_tbuckets[month].keys():
             if tbucket=='Vid Count':
                 total_vids = total_vids + monthly_pooled_avg_tbuckets[month]['Vid Count']
-                continue
-            if tbucket=='starts':
-                for stim in monthly_pooled_avg_tbuckets[month]['starts']:
-                    all_stim_starts[stim][month] = monthly_pooled_avg_tbuckets[month]['starts'][stim]
-                continue
-            if tbucket=='ends':
-                for stim in monthly_pooled_avg_tbuckets[month]['ends']:
-                    all_stim_ends[stim][month] = monthly_pooled_avg_tbuckets[month]['ends'][stim]
                 continue
             if type(tbucket) is int:
                 all_months[tbucket]['Summed Frame'] = all_months[tbucket].get('Summed Frame',empty_frame) + monthly_pooled_avg_tbuckets[month][tbucket]
@@ -547,29 +537,31 @@ def pool_world_vids_for_global_moment_of_interest(full_avg_world_vids_dict, all_
         if 'Summed Frame' in all_months[tbucket].keys():
             all_pooled_tbuckets[tbucket] = all_months[tbucket]['Summed Frame']/float(all_months[tbucket]['Frame Count'])
     all_pooled_tbuckets['Vid Count'] = total_vids
-    all_pooled_tbuckets['starts'] = all_stim_starts
-    all_pooled_tbuckets['ends'] = all_stim_ends
+    all_pooled_tbuckets['start'] = this_moment_start
+    all_pooled_tbuckets['end'] = this_moment_end
     return all_pooled_tbuckets
 
 def pool_world_vids_for_stim_specific_moment_of_interest(full_avg_world_vids_dict, all_stims_list, all_moments_dict, moment_start_str, moment_end_str):
     stims_pooled_avg_tbuckets = {}
+    start_tbuckets = []
+    end_tbuckets = []
     for stimulus in all_stims_list:
-        stims_pooled_avg_tbuckets[stimulus] = {}
-        this_stim_all_months = {}
-        total_vid_count = 0
-        start_tbuckets = {}
-        end_tbuckets = {}
         for month in full_avg_world_vids_dict.keys():
-            start_tbuckets[month] = {}
-            end_tbuckets[month] = {}
             # find start and end of this moment
             moments_to_find = [moment_start_str, moment_end_str]
             moments_tbuckets = find_moment_tbuckets(moments_to_find, all_moments_dict, month, stimulus)
             start_tbucket = moments_tbuckets[moment_start_str] - 1
             end_tbucket = moments_tbuckets[moment_end_str] + 1
-            start_tbuckets[month] = start_tbucket
-            end_tbuckets[month] = end_tbucket
-            len_of_this_moment_tbuckets = end_tbucket - start_tbucket
+            start_tbuckets.append(start_tbucket)
+            end_tbuckets.append(end_tbucket)
+    this_moment_start = min(start_tbuckets)
+    this_moment_end = max(end_tbuckets)
+    for stimulus in all_stims_list:
+        stims_pooled_avg_tbuckets[stimulus] = {}
+        this_stim_all_months = {}
+        total_vid_count = 0
+        for month in full_avg_world_vids_dict.keys():
+            len_of_this_moment_tbuckets = this_moment_end - this_moment_start
             for bucket in range(len_of_this_moment_tbuckets):
                 this_stim_all_months[bucket] = {}
         for month in full_avg_world_vids_dict.keys():
@@ -578,7 +570,7 @@ def pool_world_vids_for_stim_specific_moment_of_interest(full_avg_world_vids_dic
             v_width = full_avg_world_vids_dict[month][stimulus]['Vid Dimensions'][1]
             empty_frame = np.zeros((v_height,v_width))
             ordered_tbuckets = sorted([tbucket for tbucket in full_avg_world_vids_dict[month][stim].keys() if type(tbucket) is int])
-            this_moment_frames = ordered_tbuckets[start_tbucket:end_tbucket]
+            this_moment_frames = ordered_tbuckets[this_moment_start:this_moment_end]
             for t in range(len(this_moment_frames)):
                 if not np.any(np.isnan(full_avg_world_vids_dict[month][stimulus][this_moment_frames[t]])):
                     this_stim_all_months[t]['Summed Frame'] = this_stim_all_months[t].get('Summed Frame',empty_frame) + full_avg_world_vids_dict[month][stimulus][this_moment_frames[t]]
@@ -591,11 +583,11 @@ def pool_world_vids_for_stim_specific_moment_of_interest(full_avg_world_vids_dic
             if 'Summed Frame' in this_stim_all_months[tbucket].keys():
                 stims_pooled_avg_tbuckets[stimulus][tbucket] = this_stim_all_months[tbucket]['Summed Frame']/float(this_stim_all_months[tbucket]['Frame Count'])
         stims_pooled_avg_tbuckets[stimulus]['Vid Count'] = total_vid_count
-        stims_pooled_avg_tbuckets[stimulus]['starts'] = start_tbuckets
-        stims_pooled_avg_tbuckets[stimulus]['ends'] = end_tbuckets
+        stims_pooled_avg_tbuckets[stimulus]['start'] = this_moment_start
+        stims_pooled_avg_tbuckets[stimulus]['end'] = this_moment_end
     return stims_pooled_avg_tbuckets
 
-def smoothed_mean_of_pooled_pupil_sizes(list_of_pupil_data_arrays, smoothing_window_size, baseline_no_tbuckets):
+def smoothed_mean_of_pooled_pupil_sizes(list_of_pupil_data_arrays, smoothing_window_size):
     total_trials = len(list_of_pupil_data_arrays)
     pupil_data_mean = np.nanmean(list_of_pupil_data_arrays,0)
     smoothed_mean = signal.savgol_filter(pupil_data_mean, smoothing_window_size, 3)
@@ -617,96 +609,110 @@ def smoothed_baselined_lum_of_tb_world_vid(dict_of_avg_world_vid_tbuckets, smoot
     smoothed_baselined_lum_array = [(float(x-baseline_this_vid)/baseline_this_vid) for x in smoothed_lum_array]
     return np.array(smoothed_baselined_lum_array)
 
-def pool_baseline_pupil_data_for_global_moment_of_interest(pupil_data_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_data, baseline_no_tbuckets):
+def pool_baseline_pupil_size_for_global_moment_of_interest(pupil_size_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_sizes, baseline_no_tbuckets):
     all_stims_moment_starts = []
     all_stims_moment_ends = []
-    for stim in pupil_data_dict.keys():
+    for stim in pupil_size_dict.keys():
         this_stim_all_months_moment_starts = []
         this_stim_all_months_moment_ends = []
         start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-        start_end_keys = ['starts', 'ends']
+        start_end_keys = ['start', 'end']
         for x in range(len(start_end_keys)):
-            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
-                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
+            start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
         all_stims_moment_starts.append(min(this_stim_all_months_moment_starts))
         all_stims_moment_ends.append(max(this_stim_all_months_moment_ends))
     all_stims_moment_start = min(all_stims_moment_starts)
     all_stims_moment_end = max(all_stims_moment_ends)
-    for stim in pupil_data_dict.keys():
-        for trial in range(len(pupil_data_dict[stim])):
-            this_moment = pupil_data_dict[stim][trial][all_stims_moment_start:all_stims_moment_end]
+    for stim in pupil_size_dict.keys():
+        for trial in range(len(pupil_size_dict[stim])):
+            this_moment = pupil_size_dict[stim][trial][all_stims_moment_start:all_stims_moment_end]
             baseline_this_moment = np.nanmean(this_moment[0:baseline_no_tbuckets])
             baselined_moment = [(float(x-baseline_this_moment)/baseline_this_moment) for x in this_moment]
-            pooled_pupil_data.append(np.array(baselined_moment))
+            pooled_pupil_sizes.append(np.array(baselined_moment))
 
-def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
-    for stim in pupil_saccades_dict.keys():
+def pool_pupil_movements_for_global_moment_of_interest(pupil_movement_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_movements):
+    all_stims_moment_starts = []
+    all_stims_moment_ends = []
+    for stim in pupil_movement_dict.keys():
         this_stim_all_months_moment_starts = []
         this_stim_all_months_moment_ends = []
         start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-        start_end_keys = ['starts', 'ends']
+        start_end_keys = ['start', 'end']
         for x in range(len(start_end_keys)):
-            for month in moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim].keys():
-                start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][stim][month])
-        this_stim_moment_start = min(this_stim_all_months_moment_starts)
-        this_stim_moment_end = max(this_stim_all_months_moment_ends)
+            start_end_collected[x].append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        all_stims_moment_starts.append(min(this_stim_all_months_moment_starts))
+        all_stims_moment_ends.append(max(this_stim_all_months_moment_ends))
+    all_stims_moment_start = min(all_stims_moment_starts)
+    all_stims_moment_end = max(all_stims_moment_ends)
+    for stim in pupil_movement_dict.keys():
+        for trial in range(len(pupil_movement_dict[stim])):
+            this_moment = pupil_movement_dict[stim][trial][all_stims_moment_start:all_stims_moment_end]
+            pooled_pupil_movements.append(np.array(this_moment))
+
+def pool_pupil_saccades_for_global_moment_of_interest(pupil_saccades_dict, moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
+    for stim in pupil_saccades_dict.keys():
+        start_end_collected = []
+        start_end_keys = ['start', 'end']
+        for x in range(len(start_end_keys)):
+            start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+        this_stim_moment_start = start_end_collected[0]
+        this_stim_moment_end = start_end_collected[1]
         for threshold in pupil_saccades_dict[stim]:
             for s_tbucket in pupil_saccades_dict[stim][threshold]:
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
                     pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim][threshold][s_tbucket]
 
-def pool_baseline_pupil_data_for_stim_specific_moment_of_interest(pupil_data_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_data, baseline_no_tbuckets):
-    this_stim_all_months_moment_starts = []
-    this_stim_all_months_moment_ends = []
-    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-    start_end_keys = ['starts', 'ends']
+def pool_baseline_pupil_size_for_stim_specific_moment_of_interest(pupil_size_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_sizes, baseline_no_tbuckets):
+    start_end_collected = []
+    start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
-            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
-    this_stim_moment_start = min(this_stim_all_months_moment_starts)
-    this_stim_moment_end = max(this_stim_all_months_moment_ends)
-    for trial in range(len(pupil_data_dict[stim_number])):
-        this_moment = pupil_data_dict[stim_number][trial][this_stim_moment_start:this_stim_moment_end]
+        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+    this_stim_moment_start = start_end_collected[0]
+    this_stim_moment_end = start_end_collected[1]
+    for trial in range(len(pupil_size_dict[stim_number])):
+        this_moment = pupil_size_dict[stim_number][trial][this_stim_moment_start:this_stim_moment_end]
         baseline_this_moment = np.nanmean(this_moment[0:baseline_no_tbuckets])
         baselined_moment = [(float(x-baseline_this_moment)/baseline_this_moment) for x in this_moment]
-        pooled_pupil_data.append(np.array(baselined_moment))
+        pooled_pupil_sizes.append(np.array(baselined_moment))
+
+def pool_pupil_movements_for_stim_specific_moment_of_interest(pupil_movement_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_movements):
+    start_end_collected = []
+    start_end_keys = ['start', 'end']
+    for x in range(len(start_end_keys)):
+        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+    this_stim_moment_start = start_end_collected[0]
+    this_stim_moment_end = start_end_collected[1]
+    for trial in range(len(pupil_movement_dict[stim_number])):
+        this_moment = pupil_movement_dict[stim_number][trial][this_stim_moment_start:this_stim_moment_end]
+        pooled_pupil_movements.append(np.array(this_moment))
 
 def pool_pupil_means_for_stim_specific_moment_of_interest(pupil_means_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_means):
-    this_stim_all_months_moment_starts = []
-    this_stim_all_months_moment_ends = []
-    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-    start_end_keys = ['starts', 'ends']
+    start_end_collected = []
+    start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
-            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
-    this_stim_moment_start = min(this_stim_all_months_moment_starts)
-    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+    this_stim_moment_start = start_end_collected[0]
+    this_stim_moment_end = start_end_collected[1]
     pooled_pupil_means.append(np.array(pupil_means_dict[stim_number][this_stim_moment_start:this_stim_moment_end]))
 
 def pool_pupil_peaks_for_stim_specific_moment_of_interest(pupil_peaks_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_peaks):
-    this_stim_all_months_moment_starts = []
-    this_stim_all_months_moment_ends = []
-    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-    start_end_keys = ['starts', 'ends']
+    start_end_collected = []
+    start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
-            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
-    this_stim_moment_start = min(this_stim_all_months_moment_starts)
-    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+    this_stim_moment_start = start_end_collected[0]
+    this_stim_moment_end = start_end_collected[1]
     for peak in pupil_peaks_dict[stim_number]:
         if this_stim_moment_start<=peak<=this_stim_moment_end:
             pooled_pupil_peaks.append(peak)
 
 def pool_pupil_saccades_for_stim_specific_moment_of_interest(pupil_saccades_dict, stim_number, stim_specific_moment_of_interest_pooled_world_vid_dict, pooled_pupil_saccades_dict):
-    this_stim_all_months_moment_starts = []
-    this_stim_all_months_moment_ends = []
-    start_end_collected = [this_stim_all_months_moment_starts, this_stim_all_months_moment_ends]
-    start_end_keys = ['starts', 'ends']
+    start_end_collected = []
+    start_end_keys = ['start', 'end']
     for x in range(len(start_end_keys)):
-        for month in stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]].keys():
-            start_end_collected[x].append(stim_specific_moment_of_interest_pooled_world_vid_dict[start_end_keys[x]][month])
-    this_stim_moment_start = min(this_stim_all_months_moment_starts)
-    this_stim_moment_end = max(this_stim_all_months_moment_ends)
+        start_end_collected.append(moment_of_interest_pooled_world_vid_dict[start_end_keys[x]])
+    this_stim_moment_start = start_end_collected[0]
+    this_stim_moment_end = start_end_collected[1]
     for threshold in pupil_saccades_dict[stim_number]:
             for s_tbucket in pupil_saccades_dict[stim_number][threshold]:
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
@@ -930,6 +936,7 @@ side_names = ['Right', 'Left']
 cType_names = ['Contours', 'Circles']
 cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
 saccade_thresholds = [2.5, 5, 10, 20, 30, 40, 50, 60] # pixels
+saccades_window = 10 # timebuckets
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1035,7 +1042,7 @@ all_octo_avg_tbuckets = pool_world_vids_for_global_moment_of_interest(all_months
 all_stims_unique_clip_avg_tbuckets = pool_world_vids_for_stim_specific_moment_of_interest(all_months_avg_world_vids, stim_vids, all_avg_world_moments, 'unique start', 'unique end')
 ### ------------------------------ ###
 ### double check that the pooled avg videos make sense
-#display_avg_world_tbucket(all_octo_avg_tbuckets, 300)
+#display_avg_world_tbucket(all_stims_unique_clip_avg_tbuckets[24.0], 100)
 ### PREPARE FOR PLOTTING
 # calibration
 all_cal_avg_lum_smoothed_baselined = smoothed_baselined_lum_of_tb_world_vid(all_cal_avg_tbuckets, smoothing_window, baseline_no_buckets)
@@ -1142,7 +1149,7 @@ for side in range(len(all_movements)):
     for c_axis in range(len(all_movements[side])):
         for stimuli in all_movements[side][c_axis]:
             print('Calculating average motion for {side} side, {cAxis_type}, stimulus {stim}'.format(side=side_names[side], cAxis_type=cAxis_names[c_axis], stim=stimuli))
-            avg_motion_this_stim = calc_avg_motion_smoothed(all_movements[side][c_axis][stimuli])
+            avg_motion_this_stim = calc_avg_motion_smoothed(all_movements[side][c_axis][stimuli], smoothing_window)
             all_avg_motion[side][c_axis][stimuli] = avg_motion_this_stim
 
 ### mark saccades: setup
@@ -1167,7 +1174,6 @@ for side in range(len(all_movements)):
             windowed_count_thresholds = [this_stim_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in {side} side, {cAxis_type}, stimulus {s}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[c_axis], s=stim))
-                saccades_window = 40 # timebuckets
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
                 all_saccades[side][c_axis][stim][s_thresh] = find_saccades(all_movements[side][c_axis][stim], s_thresh, count_threshold, saccades_window, w_thresh)
@@ -1185,7 +1191,7 @@ all_left_size_circles_means = {key:[] for key in stim_vids}
 all_right_size_means = [all_right_size_contours_means, all_right_size_circles_means]
 all_left_size_means = [all_left_size_contours_means, all_left_size_circles_means]
 all_size_means = [all_right_size_means, all_left_size_means]
-# Compute global mean
+# Compute global mean, smoothed
 for side in range(len(all_sizes)):
     for i in range(len(all_sizes[side])):
         for stimulus in all_sizes[side][i].keys(): 
@@ -1218,7 +1224,7 @@ all_movement_left_cal = [all_left_contours_movement_X_cal, all_left_contours_mov
 all_movements_cal = [all_movement_right_cal, all_movement_left_cal]
 for side in range(len(all_movements_cal)):
     for i in range(len(all_movements_cal[side])):
-        pool_baseline_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_cal_avg_tbuckets, all_movements_cal[side][i], baseline_no_buckets)
+        pool_pupil_movements_for_global_moment_of_interest(all_movements[side][i], all_cal_avg_tbuckets, all_movements_cal[side][i])
 
 # pupil avg motion
 all_right_contours_X_avg_motion_cal = []
@@ -1278,7 +1284,6 @@ for side in range(len(all_saccades_cal)):
         windowed_count_thresholds = [this_cal_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
         for thresh in range(len(saccade_thresholds)):
             print('Looking for movements greater than {p} pixels in pooled calibration clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[i]))
-            saccades_window = 40 # timebuckets
             s_thresh = saccade_thresholds[thresh]
             w_thresh = windowed_count_thresholds[thresh]
             all_saccades_cal[side][i][s_thresh] = find_saccades(all_movements_cal[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
@@ -1293,7 +1298,7 @@ all_left_sizes_cal = [all_left_contours_cal, all_left_circles_cal]
 all_sizes_cal = [all_right_sizes_cal, all_left_sizes_cal]
 for side in range(len(all_sizes_cal)):
     for i in range(len(all_sizes_cal[side])):
-        pool_baseline_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_cal[side][i], baseline_no_buckets)
+        pool_baseline_pupil_size_for_global_moment_of_interest(all_sizes[side][i], all_cal_avg_tbuckets, all_sizes_cal[side][i], baseline_no_buckets)
 
 # pupil size means
 all_right_contours_means_cal = []
@@ -1305,9 +1310,9 @@ all_left_size_means_cal = [all_left_contours_means_cal, all_left_circles_means_c
 all_size_means_cal = [all_right_size_means_cal, all_left_size_means_cal]
 for side in range(len(all_size_means_cal)):
     for i in range(len(all_size_means_cal[side])):
-        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_cal[side][i], smoothing_window, baseline_no_buckets)
+        this_size_mean_smoothed, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_cal[side][i], smoothing_window)
         all_size_means_cal[side][i].append(total_pooled_trials)
-        all_size_means_cal[side][i].append(this_size_mean_smoothed_baselined)
+        all_size_means_cal[side][i].append(this_size_mean_smoothed)
 
 # pupil size mean peaks and valleys
 all_right_contours_pv_cal = []
@@ -1343,7 +1348,7 @@ all_movement_left_octo = [all_left_contours_movement_X_octo, all_left_contours_m
 all_movements_octo = [all_movement_right_octo, all_movement_left_octo]
 for side in range(len(all_movements_octo)):
     for i in range(len(all_movements_octo[side])):
-        pool_baseline_pupil_data_for_global_moment_of_interest(all_movements[side][i], all_octo_avg_tbuckets, all_movements_octo[side][i], baseline_no_buckets)
+        pool_pupil_movements_for_global_moment_of_interest(all_movements[side][i], all_octo_avg_tbuckets, all_movements_octo[side][i])
 
 # pupil avg motion
 all_right_contours_X_avg_motion_octo = []
@@ -1403,7 +1408,6 @@ for side in range(len(all_saccades_octo)):
         windowed_count_thresholds = [this_octo_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
         for thresh in range(len(saccade_thresholds)):
             print('Looking for movements greater than {p} pixels in pooled octo clips for {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], side=side_names[side], cAxis_type=cAxis_names[i]))
-            saccades_window = 40 # timebuckets
             s_thresh = saccade_thresholds[thresh]
             w_thresh = windowed_count_thresholds[thresh]
             all_saccades_octo[side][i][s_thresh] = find_saccades(all_movements_octo[side][i], s_thresh, count_threshold, saccades_window, w_thresh)
@@ -1418,7 +1422,7 @@ all_left_sizes_octo = [all_left_contours_octo, all_left_circles_octo]
 all_sizes_octo = [all_right_sizes_octo, all_left_sizes_octo]
 for side in range(len(all_sizes_octo)):
     for i in range(len(all_sizes_octo[side])):
-        pool_baseline_pupil_data_for_global_moment_of_interest(all_sizes[side][i], all_octo_avg_tbuckets, all_sizes_octo[side][i], baseline_no_buckets)
+        pool_baseline_pupil_size_for_global_moment_of_interest(all_sizes[side][i], all_octo_avg_tbuckets, all_sizes_octo[side][i], baseline_no_buckets)
 
 # pupil size means
 all_right_contours_means_octo = []
@@ -1430,9 +1434,9 @@ all_left_size_means_octo = [all_left_contours_means_octo, all_left_circles_means
 all_size_means_octo = [all_right_size_means_octo, all_left_size_means_octo]
 for side in range(len(all_size_means_octo)):
     for i in range(len(all_size_means_octo[side])):
-        this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_octo[side][i], smoothing_window, baseline_no_buckets)
+        this_size_mean_smoothed, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_octo[side][i], smoothing_window)
         all_size_means_octo[side][i].append(total_pooled_trials)
-        all_size_means_octo[side][i].append(this_size_mean_smoothed_baselined)
+        all_size_means_octo[side][i].append(this_size_mean_smoothed)
 
 # pupil size mean peaks and valleys
 all_right_contours_pv_octo = []
@@ -1532,7 +1536,7 @@ all_movements_unique = [all_movements_24, all_movements_25, all_movements_26, al
 for stim_order in range(len(all_movements_unique)):
     for side in range(len(all_movements_unique[stim_order])):
         for i in range(len(all_movements_unique[stim_order][side])):
-            pool_baseline_pupil_data_for_stim_specific_moment_of_interest(all_movements[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_movements_unique[stim_order][side][i], baseline_no_buckets)
+            pool_pupil_movements_for_stim_specific_moment_of_interest(all_movements[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_movements_unique[stim_order][side][i])
 
 # pupil avg motion
 # stim 24
@@ -1784,7 +1788,6 @@ for stim_order in range(len(all_saccades_unique)):
             windowed_count_thresholds = [this_unique_movement_N/(i*2) for i in range(1, len(saccade_thresholds)+1)]
             for thresh in range(len(saccade_thresholds)):
                 print('Looking for movements greater than {p} pixels in stim-specific unique clips for stimulus {s}, {side} side, {cAxis_type}'.format(p=saccade_thresholds[thresh], s=stim_vids[stim_order], side=side_names[side], cAxis_type=cAxis_names[i]))
-                saccades_window = 40 # timebuckets
                 s_thresh = saccade_thresholds[thresh]
                 w_thresh = windowed_count_thresholds[thresh]
                 all_saccades_unique[stim_order][side][i][s_thresh] = find_saccades(all_movements_unique[stim_order][side][i], s_thresh, count_threshold, saccades_window, w_thresh)
@@ -1843,7 +1846,7 @@ all_sizes_unique = [all_sizes_24, all_sizes_25, all_sizes_26, all_sizes_27, all_
 for stim_order in range(len(all_sizes_unique)):
     for side in range(len(all_sizes_unique[stim_order])):
         for i in range(len(all_sizes_unique[stim_order][side])):
-            pool_baseline_pupil_data_for_stim_specific_moment_of_interest(all_sizes[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_sizes_unique[stim_order][side][i], baseline_no_buckets)
+            pool_baseline_pupil_size_for_stim_specific_moment_of_interest(all_sizes[side][i], stim_vids[stim_order], all_stims_unique_clip_avg_tbuckets[stim_vids[stim_order]], all_sizes_unique[stim_order][side][i], baseline_no_buckets)
 
 # pupil size means
 # stim 24
@@ -1899,9 +1902,9 @@ all_size_means_unique = [all_size_means_24, all_size_means_25, all_size_means_26
 for stim_order in range(len(all_size_means_unique)):
     for side in range(len(all_size_means_unique[stim_order])):
         for i in range(len(all_size_means_unique[stim_order][side])):
-            this_size_mean_smoothed_baselined, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_unique[stim_order][side][i], smoothing_window, baseline_no_buckets)
+            this_size_mean_smoothed, total_pooled_trials = smoothed_mean_of_pooled_pupil_sizes(all_sizes_unique[stim_order][side][i], smoothing_window)
             all_size_means_unique[stim_order][side][i].append(total_pooled_trials)
-            all_size_means_unique[stim_order][side][i].append(this_size_mean_smoothed_baselined)
+            all_size_means_unique[stim_order][side][i].append(this_size_mean_smoothed)
 
 # pupil size mean peaks and valleys
 # stim 24
@@ -1969,7 +1972,7 @@ for stim_order in range(len(all_size_pv_unique)):
 ### GLOBAL VARIABLES FOR PLOTTING DATA ###
 fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
-plotting_saccades_window = 40 # MAKE SURE THIS ==saccades_window!!
+plotting_saccades_window = saccades_window
 plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_lum_peaks,all_cal_avg_lum_valleys,all_cal_avg_lum_N],
 'octopus':[all_octo_avg_lum_smoothed_baselined,all_octo_avg_lum_peaks,all_octo_avg_lum_valleys,all_octo_avg_lum_N],
 'unique':all_stims_unique_avg_lum_smoothed_baselined}
@@ -1979,8 +1982,10 @@ plot_size_types = {'calibration':[all_sizes_cal, all_size_means_cal, all_size_pv
 plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all_avg_motion_pv_cal],
 'octopus':[all_movements_octo, all_avg_motion_octo, all_avg_motion_pv_octo],
 'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_pv_unique]}
-lum_ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.8, 0.8], 'unique': [-0.7, 0.7]}
-pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 'unique': [-0.4,0.4]}
+lum_ylimits = {'calibration': [-0.6, 0.6], 'octopus': [-0.8, 0.8], 
+'unique': {24.0: [-0.6,0.6], 25.0: [-0.4,0.5], 26.0: [-0.6,0.6], 27.0: [-0.3,0.5], 28.0: [-0.5,0.6], 29.0: [-0.3,0.5]}}
+pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 
+'unique': {24.0: [-0.4,0.6], 25.0: [-0.3,0.6], 26.0: [-0.4,0.6], 27.0: [-0.4,0.6], 28.0: [-0.3,0.6], 29.0: [-0.3,0.6]}}
 pupil_movement_ylimits = {'calibration': [-60,60], 'octopus': [-60,60], 'unique': [-60,60]}
 alphas = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
 peak_label_x_offset = 2.25
@@ -2092,11 +2097,12 @@ for ctype in range(len(cType_names)):
         plot_luminance_peaks = plot_lum_types[plot_type][stim_vids[stim_order]]['SB peaks']
         plot_luminance_valleys = plot_lum_types[plot_type][stim_vids[stim_order]]['SB valleys']
         plot_lum_N = plot_lum_types[plot_type][stim_vids[stim_order]]['Vid Count']
-        stim_name = str(int(stim_vids[stim_order]))
+        stim_name_float = stim_vids[stim_order]
+        stim_name_str = str(int(stim_vids[stim_order]))
         # fig name and path
-        figure_name = 'PupilSizes_' + plot_type + stim_name + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png'
+        figure_name = 'PupilSizes_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png'
         figure_path = os.path.join(pupils_folder, figure_name)
-        figure_title = "Pupil sizes of participants during unique sequence " + stim_name + "\n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+        figure_title = "Pupil sizes of participants during unique sequence " + stim_name_str + "\n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
         # draw fig
         plt.figure(figsize=(14, 14), dpi=fig_size)
         plt.suptitle(figure_title, fontsize=12, y=0.98)
@@ -2116,7 +2122,7 @@ for ctype in range(len(cType_names)):
             plt.plot(valley, plot_means_right[valley], 'x')
             plt.text(valley-valley_label_x_offset, plot_means_right[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         #plt.xlim(-10,1250)
-        plt.ylim(pupil_size_ylimits[plot_type][0],pupil_size_ylimits[plot_type][1])
+        plt.ylim(pupil_size_ylimits[plot_type][stim_name_float][0],pupil_size_ylimits[plot_type][stim_name_float][1])
         # subplot: Left eye sizes
         plt.subplot(3,1,2)
         plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
@@ -2133,7 +2139,7 @@ for ctype in range(len(cType_names)):
             plt.plot(valley, plot_means_left[valley], 'x')
             plt.text(valley-valley_label_x_offset, plot_means_left[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         #plt.xlim(-10,1250)
-        plt.ylim(pupil_size_ylimits[plot_type][0],pupil_size_ylimits[plot_type][1])
+        plt.ylim(pupil_size_ylimits[plot_type][stim_name_float][0],pupil_size_ylimits[plot_type][stim_name_float][1])
         # subplot: Average luminance of stimuli video
         plt.subplot(3,1,3)
         plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
@@ -2148,7 +2154,7 @@ for ctype in range(len(cType_names)):
             plt.plot(valley, plot_luminance[valley], 'x')
             plt.text(valley-valley_label_x_offset, plot_luminance[valley]+valley_label_y_offset, str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
         #plt.xlim(-10,1250)
-        plt.ylim(lum_ylimits[plot_type][0],lum_ylimits[plot_type][1])
+        plt.ylim(lum_ylimits[plot_type][stim_name_float][0],lum_ylimits[plot_type][stim_name_float][1])
         # save and display
         plt.subplots_adjust(hspace=0.5)
         plt.savefig(figure_path)
