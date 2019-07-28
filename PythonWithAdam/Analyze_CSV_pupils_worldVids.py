@@ -1619,7 +1619,9 @@ all_left_circles_Y_avg_motion_cal = []
 all_avg_motion_right_cal_contours = [all_right_contours_X_avg_motion_cal, all_right_contours_Y_avg_motion_cal]
 all_avg_motion_right_cal_circles = [all_right_circles_X_avg_motion_cal, all_right_circles_Y_avg_motion_cal]
 all_avg_motion_right_cal = [all_avg_motion_right_cal_contours, all_avg_motion_right_cal_circles]
-all_avg_motion_left_cal = [all_left_contours_X_avg_motion_cal, all_left_contours_Y_avg_motion_cal, all_left_circles_X_avg_motion_cal, all_left_circles_Y_avg_motion_cal]
+all_avg_motion_left_cal_contours = [all_left_contours_X_avg_motion_cal, all_left_contours_Y_avg_motion_cal]
+all_avg_motion_left_cal_circles = [all_left_circles_X_avg_motion_cal, all_left_circles_Y_avg_motion_cal]
+all_avg_motion_left_cal = [all_avg_motion_left_cal_contours, all_avg_motion_left_cal_circles]
 all_avg_motion_cal = [all_avg_motion_right_cal, all_avg_motion_left_cal]
 for side in range(len(all_avg_motion_cal)):
     for c in range(len(all_avg_motion_cal[side])):
@@ -2376,8 +2378,10 @@ alphas_movement = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.025}
 alphas_motion = {'calibration': 0.0025, 'octopus': 0.0025, 'unique': 0.018}
 peak_label_offsets = [2.25, 0.08]
 valley_label_offsets = [2.25, -0.08]
-plot_lum_events = [mean_octo_inks]
-plot_lum_events_std = [std_octo_inks]
+plot_lum_events = {'calibration':[],'octopus':[mean_octo_inks], 
+'unique':{24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}}
+plot_lum_events_std = {'calibration':[], 'octopus':[std_octo_inks],
+'unique': {24.0:[], 25.0:[], 26.0:[], 27.0:[], 28.0:[], 29.0:[]}}
 ### ------------------------------ ###
 ### GENERATE PLOTS ###
 ### ------------------------------ ###
@@ -2411,7 +2415,7 @@ for plot_type in plot_types:
                 #figure_path = os.path.join(pupils_pv_folder, figure_name)
                 #draw_unique_pupil_size_fig_with_pv(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
                 # draw fig without peaks and valleys
-                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:    
         for ctype in range(len(cType_names)):
             pupil_analysis_type_name = cType_names[ctype]
@@ -2437,7 +2441,7 @@ for plot_type in plot_types:
             #figure_path = os.path.join(pupils_pv_folder, figure_name)
             #draw_global_pupil_size_fig_with_pv(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
             # draw fig without peaks and valleys
-            draw_global_pupil_size_fig(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+            draw_global_pupil_size_fig(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
 
 # Plot pupil movement, X and Y axis separated
 for plot_type in plot_types:
@@ -2461,7 +2465,7 @@ for plot_type in plot_types:
                     figure_path = os.path.join(pupils_folder, figure_name)
                     figure_title = "Pupil movement of participants during unique sequence " + stim_name_str + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events, plot_lum_events_std, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
@@ -2477,7 +2481,7 @@ for plot_type in plot_types:
                 figure_path = os.path.join(pupils_folder, figure_name)
                 figure_title = "Pupil movement of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                 # draw fig
-                draw_global_pupil_movement_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events, plot_lum_events_std, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                draw_global_pupil_movement_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
 
 # Plot pupil motion (abs val of movement traces), X and Y axis combined
 for plot_type in plot_types:
