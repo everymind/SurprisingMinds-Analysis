@@ -2,6 +2,7 @@
 # this script uses ImageMagick to easily install ffmpeg onto Windows 10: 
 # https://www.imagemagick.org/script/download.php
 ### --------------------------------------------------------------------------- ###
+import pdb
 import os
 import glob
 import cv2
@@ -718,7 +719,7 @@ def pool_pupil_saccades_for_stim_specific_moment_of_interest(pupil_saccades_dict
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
                     pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim_number][threshold][s_tbucket]
 
-def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
@@ -730,7 +731,7 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_right)):
         plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=2.5, color=[1.0, 0.98, 0.0, 0.75])
+    plt.plot(plt_means_right, linewidth=2, color=[1.0, 0.98, 0.0, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     # subplot: Left eye sizes
     plt.subplot(3,1,2)
@@ -740,7 +741,7 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_left)):
         plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=2.5, color=[1.0, 0.34, 0.012, 0.75])
+    plt.plot(plt_means_left, linewidth=2, color=[1.0, 0.34, 0.012, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     # subplot: Average luminance of stimuli video
     plt.subplot(3,1,3)
@@ -749,6 +750,10 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    for event in plt_lum_events:
+        plt.axvline(x=event, linewidth=1.5, color='r')
+    for std in plt_lum_events_std:
+        plt.axvline(x=event+std, linewidth=1.5, linestyle='--', color='r')
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     # save and display
     plt.subplots_adjust(hspace=0.5)
@@ -814,7 +819,7 @@ def draw_global_pupil_size_fig_with_pv(plt_type, fsize, fig_title, fig_path, plt
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
@@ -826,7 +831,7 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_right)):
         plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=2.5, color=[1.0, 0.98, 0.0, 0.75])
+    plt.plot(plt_means_right, linewidth=2, color=[1.0, 0.98, 0.0, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     # subplot: Left eye sizes
     plt.subplot(3,1,2)
@@ -836,7 +841,7 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_left)):
         plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=2.5, color=[1.0, 0.34, 0.012, 0.75])
+    plt.plot(plt_means_left, linewidth=2, color=[1.0, 0.34, 0.012, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     # subplot: Average luminance of stimuli video
     plt.subplot(3,1,3)
@@ -845,6 +850,10 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    for event in plt_lum_events:
+        plt.axvline(x=event, linewidth=1.5, color='r')
+    for std in plt_lum_events_std:
+        plt.axvline(x=event+std, linewidth=1.5, linestyle='--', color='r')
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     # save and display
     plt.subplots_adjust(hspace=0.5)
@@ -910,7 +919,7 @@ def draw_unique_pupil_size_fig_with_pv(plt_type, plt_stim_type, fsize, fig_title
     plt.pause(1)
     plt.close()
 
-def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_Y, plt_N_Y, plt_lum, plt_lum_N, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_Y, plt_N_Y, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X-axis movement
@@ -938,6 +947,10 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    for event in plt_lum_events:
+        plt.axvline(x=event, linewidth=1.5, color='r')
+    for std in plt_lum_events_std:
+        plt.axvline(x=event+std, linewidth=1.5, linestyle='--', color='r')
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     # save and display
     plt.subplots_adjust(hspace=0.5)
@@ -946,7 +959,7 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_Y, plt_N_Y, plt_lum, plt_lum_N, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_Y, plt_N_Y, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X-axis movement
@@ -974,6 +987,10 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    for event in plt_lum_events:
+        plt.axvline(x=event, linewidth=1.5, color='r')
+    for std in plt_lum_events_std:
+        plt.axvline(x=event+std, linewidth=1.5, linestyle='--', color='r')
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     # save and display
     plt.subplots_adjust(hspace=0.5)
@@ -982,7 +999,7 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.pause(1)
     plt.close()
 
-def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_type_X_mean, plt_N_X, plt_type_Y, plt_type_Y_mean, plt_N_Y, plt_lum, plt_lum_N, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_type_X_mean, plt_N_X, plt_type_Y, plt_type_Y_mean, plt_N_Y, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X and Y axis motion of pupils
@@ -995,8 +1012,8 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
         plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
     for trial in range(len(plt_type_Y)):
         plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=2.5, color=[1.0, 0.98, 0.0, 0.6])
-    plt.plot(plt_type_Y_mean, linewidth=2.5, color=[1.0, 0.34, 0.012, 0.6])
+    plt.plot(plt_type_X_mean, linewidth=2, color=[1.0, 0.98, 0.0, 0.6])
+    plt.plot(plt_type_Y_mean, linewidth=2, color=[1.0, 0.34, 0.012, 0.6])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     # subplot: Average luminance of stimuli video
     plt.subplot(2,1,2)
@@ -1005,6 +1022,10 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    for event in plt_lum_events:
+        plt.axvline(x=event, linewidth=1.5, color='r')
+    for std in plt_lum_events_std:
+        plt.axvline(x=event+std, linewidth=1.5, linestyle='--', color='r')
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     # save and display
     plt.subplots_adjust(hspace=0.5)
@@ -1013,7 +1034,7 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_type_X_mean, plt_N_X, plt_type_Y, plt_type_Y_mean, plt_N_Y, plt_lum, plt_lum_N, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_X, plt_type_X_mean, plt_N_X, plt_type_Y, plt_type_Y_mean, plt_N_Y, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: Right eye sizes
@@ -1026,8 +1047,8 @@ def draw_unique_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
         plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
     for trial in range(len(plt_type_Y)):
         plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=2.5, color=[1.0, 0.98, 0.0, 0.6])
-    plt.plot(plt_type_Y_mean, linewidth=2.5, color=[1.0, 0.34, 0.012, 0.6])
+    plt.plot(plt_type_X_mean, linewidth=2, color=[1.0, 0.98, 0.0, 0.6])
+    plt.plot(plt_type_Y_mean, linewidth=2, color=[1.0, 0.34, 0.012, 0.6])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     # subplot: Average luminance of stimuli video
     plt.subplot(2,1,2)
@@ -1036,6 +1057,10 @@ def draw_unique_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    for event in plt_lum_events:
+        plt.axvline(x=event, linewidth=1.5, color='r')
+    for std in plt_lum_events_std:
+        plt.axvline(x=event+std, linewidth=1.5, linestyle='--', color='r')
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     # save and display
     plt.subplots_adjust(hspace=0.5)
@@ -1260,21 +1285,21 @@ for month_folder in updated_folders_to_extract:
 # ------------------------------------------------------------------------ #
 ### CSV DATA EXTRACTION COMPLETE ###
 ### GLOBAL VARIABLES FOR CLEANING AND PROCESSING EXTRACTED DATA ###
-smoothing_window = 15 # in time buckets, must be odd! for signal.savgol_filter
+smoothing_window = 5 # in time buckets, must be odd! for signal.savgol_filter
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 side_names = ['Right', 'Left']
 cType_names = ['Contours', 'Circles']
 axis_names = ['X-axis', 'Y-axis']
 cAxis_names = ['contoursX', 'contoursY', 'circlesX', 'circlesY']
 saccade_thresholds = [2.5, 5, 10, 20, 30, 40, 50, 60] # pixels
-saccades_window = 10 # timebuckets
+saccades_window = 5 # timebuckets
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
 # setup 
-moments_of_interest = ['calibration start', 'calibration end', 'unique start', 'unique end', 'octo start', 'octo appears', 'octo end']
+moments_of_interest = ['calibration start', 'calibration end', 'unique start', 'unique end', 'octo start', 'octo inks', 'octo end']
 all_avg_world_moments = {key:{} for key in stim_vids}
 for stim in all_avg_world_moments.keys():
     all_avg_world_moments[stim] = {moment:{} for moment in moments_of_interest}
@@ -1282,15 +1307,16 @@ for stim in all_avg_world_moments.keys():
 # ------------------------------------------------------------------------ #
 ### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
 # ------------------------------------------------------------------------ #
-""" # start searching for time bucket numbers
+# start searching for time bucket numbers
 # display available months
 months_available = [x for x in all_months_avg_world_vids.keys()]
 print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
-# change the following variables based on what month/stim you want to check
+
+""" # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 1 # change index to change month
+month_index = 5 # change index to change month
 stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
@@ -1299,7 +1325,7 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 1111 # change to check different time buckets
+tbucket_to_check = 1112 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
@@ -1311,53 +1337,53 @@ display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 ### for 'end' moments:
 ### {last tbucket when a frame of this moment is visible in the monthly avg frame: [list of months for which this applies]}
 # Stimulus 24.0
-all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11']}, 
-'calibration end': {441:['2017-10','2017-11']}, 
-'unique start': {442:['2017-10'],443:['2017-11']}, 
-'unique end': {596:['2017-10','2017-11']}, 
-'octo start': {595:['2017-10'],596:['2017-11']}, 
-'octo appears': {759:['2017-10','2017-11']}, 
-'octo end': {987:['2017-10'],989:['2017-11']}} 
+all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
+'calibration end': {441:['2017-10','2017-11','2018-03']}, 
+'unique start': {442:['2017-10','2018-03'],443:['2017-11']}, 
+'unique end': {596:['2017-10','2017-11'],598:['2018-03']}, 
+'octo start': {595:['2017-10','2018-03'],596:['2017-11']}, 
+'octo inks': {882:['2017-10'],883:['2017-11','2018-03']}, 
+'octo end': {987:['2017-10'],989:['2017-11'],990:['2018-03']}} 
 # Stimulus 25.0
-all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11']}, 
-'calibration end': {441:['2017-10','2017-11']}, 
-'unique start': {443:['2017-10','2017-11']}, 
-'unique end': {599:['2017-10'],600:['2017-11']}, 
-'octo start': {599:['2017-10','2017-11']}, 
-'octo appears': {763:['2017-10','2017-11']}, 
-'octo end': {989:['2017-10'],993:['2017-11']}} 
+all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
+'calibration end': {441:['2017-10','2017-11','2018-03']}, 
+'unique start': {442:['2018-03'],443:['2017-10','2017-11']}, 
+'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']}, 
+'octo start': {599:['2017-10','2017-11','2018-03']}, 
+'octo inks': {885:['2017-10','2018-03'],886:['2017-11']}, 
+'octo end': {989:['2017-10'],993:['2017-11'],994:['2018-03']}} 
 # Stimulus 26.0
-all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11']}, 
-'calibration end': {441:['2017-10','2017-11']}, 
-'unique start': {442:['2017-10'],443:['2017-11']}, 
-'unique end': {663:['2017-10'],665:['2017-11']}, 
-'octo start': {662:['2017-10'],664:['2017-11']}, 
-'octo appears': {827:['2017-10','2017-11']}, 
-'octo end': {1054:['2017-10'],1059:['2017-11']}} 
+all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
+'calibration end': {441:['2017-10','2017-11','2018-03']}, 
+'unique start': {442:['2017-10','2018-03'],443:['2017-11']}, 
+'unique end': {663:['2017-10'],665:['2017-11','2018-03']}, 
+'octo start': {662:['2017-10'],663:['2018-03'],664:['2017-11']}, 
+'octo inks': {949:['2017-10'],951:['2017-11','2018-03']}, 
+'octo end': {1054:['2017-10'],1059:['2017-11','2018-03']}} 
 # Stimulus 27.0
-all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11']}, 
-'calibration end': {441:['2017-10','2017-11']}, 
-'unique start': {443:['2017-10','2017-11']}, 
-'unique end': {606:['2017-10'],607:['2017-11']}, 
-'octo start': {605:['2017-10','2017-11']}, 
-'octo appears': {770:['2017-10'],772:['2017-11']}, 
-'octo end': {996:['2017-10'],1000:['2017-11']}} 
+all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
+'calibration end': {441:['2017-10','2017-11','2018-03']}, 
+'unique start': {443:['2017-10','2017-11','2018-03']}, 
+'unique end': {606:['2017-10'],607:['2017-11','2018-03']}, 
+'octo start': {605:['2017-10','2017-11'],606:['2018-03']}, 
+'octo inks': {892:['2017-10'],893:['2017-11','2018-03']}, 
+'octo end': {996:['2017-10'],1000:['2017-11','2018-03']}} 
 # Stimulus 28.0
-all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11']}, 
-'calibration end': {441:['2017-10','2017-11']}, 
-'unique start': {443:['2017-10','2017-11']}, 
-'unique end': {662:['2017-10'],663:['2017-11']}, 
-'octo start': {661:['2017-10'],663:['2017-11']}, 
-'octo appears': {826:['2017-10','2017-11']}, 
-'octo end': {1054:['2017-10'],1056:['2017-11']}} 
+all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
+'calibration end': {441:['2017-10','2017-11','2018-03']}, 
+'unique start': {442:['2018-03'],443:['2017-10','2017-11']}, 
+'unique end': {662:['2017-10'],663:['2017-11'],666:['2018-03']}, 
+'octo start': {661:['2017-10'],662:['2018-03'],663:['2017-11']}, 
+'octo inks': {948:['2017-10'],950:['2017-11','2018-03']}, 
+'octo end': {1054:['2017-10'],1056:['2017-11'],1059:['2018-03']}} 
 # Stimulus 29.0
-all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11']}, 
-'calibration end': {441:['2017-10','2017-11']}, 
-'unique start': {442:['2017-10'],443:['2017-11']}, 
-'unique end': {717:['2017-10','2017-11']}, 
-'octo start': {716:['2017-10'],717:['2017-11']}, 
-'octo appears': {881:['2017-10'],882:['2017-11']}, 
-'octo end': {1108:['2017-10'],1110:['2017-11']}} 
+all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
+'calibration end': {441:['2017-10','2017-11','2018-03']}, 
+'unique start': {442:['2017-10'],443:['2017-11','2018-03']}, 
+'unique end': {717:['2017-10','2017-11'],718:['2018-03']}, 
+'octo start': {716:['2017-10','2018-03'],717:['2017-11']}, 
+'octo inks': {1003:['2017-10'],1004:['2017-11','2018-03']}, 
+'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}} 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -2297,6 +2323,25 @@ for stim_order in range(len(all_size_pv_unique)):
             all_size_pv_unique[stim_order][side][i].append(this_mean_peaks[0])
             all_size_pv_unique[stim_order][side][i].append(this_mean_valleys[0])
 
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### COLLECT OCTO INK MOMENT TBUCKET FOR PLOTTING
+all_stim_month_octo_inks = {}
+moments_start_end = ['octo start', 'octo inks']
+for stimulus in stim_vids:
+    all_stim_month_octo_inks[stimulus] = {}
+    for month in months_available:
+        this_month_stim_tbuckets = find_moment_tbuckets(moments_start_end, all_avg_world_moments, month, stimulus)
+        all_stim_month_octo_inks[stimulus][month] = this_month_stim_tbuckets['octo inks'] - this_month_stim_tbuckets['octo start']
+all_octo_inks = []
+for stim in all_stim_month_octo_inks.keys():
+    for month in all_stim_month_octo_inks[stim].keys():
+        all_octo_inks.append(all_stim_month_octo_inks[stim][month])
+mean_octo_inks = np.mean(all_octo_inks)
+std_octo_inks = np.std(all_octo_inks)
+
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -2319,7 +2364,7 @@ plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal],
 'octopus':[all_movements_octo, all_avg_motion_octo],
 'unique':[all_movements_unique, all_avg_motion_unique]}
 lum_ylimits = {'calibration': [-0.4, 0.7], 'octopus': [-0.8, 0.8], 
-'unique': {24.0: [-0.6,0.7], 25.0: [-0.4,0.7], 26.0: [-0.6,0.7], 27.0: [-0.3,0.7], 28.0: [-0.5,0.7], 29.0: [-0.3,0.5]}}
+'unique': {24.0: [-0.6,0.7], 25.0: [-0.4,0.7], 26.0: [-0.6,0.7], 27.0: [-0.3,0.6], 28.0: [-0.5,0.7], 29.0: [-0.2,0.5]}}
 pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 
 'unique': {24.0: [-0.4,0.6], 25.0: [-0.3,0.6], 26.0: [-0.4,0.6], 27.0: [-0.4,0.6], 28.0: [-0.3,0.7], 29.0: [-0.3,0.8]}}
 pupil_movement_ylimits = {'calibration': [-70,70], 'octopus': [-60,60], 
@@ -2328,9 +2373,11 @@ pupil_motion_ylimits = {'calibration': [0,70], 'octopus': [0,60],
 'unique': {24.0: [0,60], 25.0: [0,60], 26.0: [0,60], 27.0: [0,60], 28.0: [0,60], 29.0: [0,60]}}
 alphas_size = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
 alphas_movement = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.025}
-alphas_motion = {'calibration': 0.004, 'octopus': 0.004, 'unique': 0.0125}
+alphas_motion = {'calibration': 0.0025, 'octopus': 0.0025, 'unique': 0.018}
 peak_label_offsets = [2.25, 0.08]
 valley_label_offsets = [2.25, -0.08]
+plot_lum_events = [mean_octo_inks]
+plot_lum_events_std = [std_octo_inks]
 ### ------------------------------ ###
 ### GENERATE PLOTS ###
 ### ------------------------------ ###
@@ -2364,7 +2411,7 @@ for plot_type in plot_types:
                 #figure_path = os.path.join(pupils_pv_folder, figure_name)
                 #draw_unique_pupil_size_fig_with_pv(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
                 # draw fig without peaks and valleys
-                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:    
         for ctype in range(len(cType_names)):
             pupil_analysis_type_name = cType_names[ctype]
@@ -2390,7 +2437,7 @@ for plot_type in plot_types:
             #figure_path = os.path.join(pupils_pv_folder, figure_name)
             #draw_global_pupil_size_fig_with_pv(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
             # draw fig without peaks and valleys
-            draw_global_pupil_size_fig(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+            draw_global_pupil_size_fig(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
 
 # Plot pupil movement, X and Y axis separated
 for plot_type in plot_types:
@@ -2414,7 +2461,7 @@ for plot_type in plot_types:
                     figure_path = os.path.join(pupils_folder, figure_name)
                     figure_title = "Pupil movement of participants during unique sequence " + stim_name_str + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events, plot_lum_events_std, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
@@ -2430,7 +2477,7 @@ for plot_type in plot_types:
                 figure_path = os.path.join(pupils_folder, figure_name)
                 figure_title = "Pupil movement of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                 # draw fig
-                draw_global_pupil_movement_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                draw_global_pupil_movement_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events, plot_lum_events_std, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
 
 # Plot pupil motion (abs val of movement traces), X and Y axis combined
 for plot_type in plot_types:
@@ -2448,15 +2495,13 @@ for plot_type in plot_types:
                     plot_type_Y_mean = plot_movement_types[plot_type][1][stim_order][side][c][1][1]
                     plot_N_Y = len(plot_type_Y)
                     plot_luminance = plot_lum_types[plot_type][stim_name_float]['SB lum']
-                    plot_luminance_peaks = plot_lum_types[plot_type][stim_name_float]['SB peaks']
-                    plot_luminance_valleys = plot_lum_types[plot_type][stim_name_float]['SB valleys']
                     plot_lum_N = plot_lum_types[plot_type][stim_name_float]['Vid Count']
                     # fig name and path
                     figure_name = 'PupilMotion_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
                     figure_path = os.path.join(pupils_folder, figure_name)
                     figure_title = "Pupil motion of participants during unique sequence " + stim_name_str + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_motion_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                    draw_unique_pupil_motion_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
