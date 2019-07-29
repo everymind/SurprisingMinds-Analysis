@@ -2463,7 +2463,7 @@ for plot_type in plot_types:
                     # fig name and path
                     figure_name = 'PupilMovement_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
                     figure_path = os.path.join(pupils_folder, figure_name)
-                    figure_title = "Pupil movement of participants during unique sequence " + stim_name_str + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    figure_title = "Pupil movement of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
                     draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
@@ -2503,9 +2503,9 @@ for plot_type in plot_types:
                     # fig name and path
                     figure_name = 'PupilMotion_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
                     figure_path = os.path.join(pupils_folder, figure_name)
-                    figure_title = "Pupil motion of participants during unique sequence " + stim_name_str + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    figure_title = "Pupil motion of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_motion_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                    draw_unique_pupil_motion_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
@@ -2523,7 +2523,7 @@ for plot_type in plot_types:
                 figure_path = os.path.join(pupils_folder, figure_name)
                 figure_title = "Pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                 # draw fig
-                draw_global_pupil_motion_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                draw_global_pupil_motion_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
