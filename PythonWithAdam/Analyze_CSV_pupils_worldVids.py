@@ -819,7 +819,7 @@ def draw_global_pupil_size_fig_with_pv(plt_type, fsize, fig_title, fig_path, plt
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
     # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
@@ -1100,8 +1100,6 @@ if not os.path.exists(pooled_stim_vids_folder):
     #print("Creating engagement count folder.")
     os.makedirs(pooled_stim_vids_folder)
 
-# consolidate csv files from multiple days into one data structure
-day_folders = sorted(os.listdir(root_folder))
 ### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
 # downsample = collect data from every 40ms or other multiples of 20
 downsampled_bucket_size_ms = 40
@@ -1140,6 +1138,8 @@ all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all
 activation_count = []
 analysed_count = []
 stimuli_tbucketed = {key:[] for key in stim_vids}
+# consolidate csv files from multiple days into one data structure
+day_folders = sorted(os.listdir(root_folder))
 # find pupil data on dropbox
 pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 # first day was a debugging session, so skip it
@@ -2343,6 +2343,12 @@ for stim in all_stim_month_octo_inks.keys():
         all_octo_inks.append(all_stim_month_octo_inks[stim][month])
 mean_octo_inks = np.mean(all_octo_inks)
 std_octo_inks = np.std(all_octo_inks)
+
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### COLLECT STIM-SPECIFIC INTERESTING MOMENT TBUCKET FOR PLOTTING
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
