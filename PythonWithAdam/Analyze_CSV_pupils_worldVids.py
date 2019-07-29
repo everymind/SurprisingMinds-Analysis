@@ -1752,6 +1752,31 @@ for side in range(len(all_avg_motion_octo)):
             all_avg_motion_octo[side][c][axis].append(total_pooled_trials)
             all_avg_motion_octo[side][c][axis].append(this_avg_motion_smoothed)
 
+# pupil avg motion, X and Y axis consolidated
+all_right_contours_X_avg_motion_octo = []
+all_right_circles_X_avg_motion_octo = []
+all_right_contours_Y_avg_motion_octo = []
+all_right_circles_Y_avg_motion_octo = []
+all_left_contours_X_avg_motion_octo = []
+all_left_circles_X_avg_motion_octo = []
+all_left_contours_Y_avg_motion_octo = []
+all_left_circles_Y_avg_motion_octo = []
+all_avg_motion_right_octo_contours = [all_right_contours_X_avg_motion_octo, all_right_contours_Y_avg_motion_octo]
+all_avg_motion_right_octo_circles = [all_right_circles_X_avg_motion_octo, all_right_circles_Y_avg_motion_octo]
+all_avg_motion_right_octo = [all_avg_motion_right_octo_contours, all_avg_motion_right_octo_circles]
+all_avg_motion_left_octo_contours = [all_left_contours_X_avg_motion_octo, all_left_contours_Y_avg_motion_octo]
+all_avg_motion_left_octo_circles = [all_left_circles_X_avg_motion_octo, all_left_circles_Y_avg_motion_octo]
+all_avg_motion_left_octo = [all_avg_motion_left_octo_contours, all_avg_motion_left_octo_circles]
+all_avg_motion_octo = [all_avg_motion_right_octo, all_avg_motion_left_octo]
+for side in range(len(all_avg_motion_octo)):
+    for c in range(len(all_avg_motion_octo[side])):
+        for axis in range(len(all_avg_motion_octo[side][c])):
+            print('Calculating average pupil motion during octopus sequence for {side} side, {c} {a}'.format(side=side_names[side], c=cType_names[c], a=axis_names[axis]))
+            total_pooled_trials = len(all_movements_octo[side][c][axis])
+            this_avg_motion_smoothed = calc_avg_motion_smoothed(all_movements_octo[side][c][axis], smoothing_window)
+            all_avg_motion_octo[side][c][axis].append(total_pooled_trials)
+            all_avg_motion_octo[side][c][axis].append(this_avg_motion_smoothed)
+
 # pupil saccades
 all_right_contours_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
 all_right_circles_X_saccades_octo = {thresh:{} for thresh in saccade_thresholds}
@@ -2380,8 +2405,8 @@ pupil_movement_ylimits = {'calibration': [-70,70], 'octopus': [-60,60],
 pupil_motion_ylimits = {'calibration': [0,70], 'octopus': [0,60], 
 'unique': {24.0: [0,60], 25.0: [0,60], 26.0: [0,60], 27.0: [0,60], 28.0: [0,60], 29.0: [0,60]}}
 alphas_size = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.05}
-alphas_movement = {'calibration': 0.005, 'octopus': 0.005, 'unique': 0.025}
-alphas_motion = {'calibration': 0.0025, 'octopus': 0.0025, 'unique': 0.018}
+alphas_movement = {'calibration': 0.0025, 'octopus': 0.0025, 'unique': 0.025}
+alphas_motion = {'calibration': 0.0015, 'octopus': 0.0015, 'unique': 0.018}
 peak_label_offsets = [2.25, 0.08]
 valley_label_offsets = [2.25, -0.08]
 plot_lum_events = {'calibration':[],'octopus':[mean_octo_inks], 
@@ -2421,7 +2446,7 @@ for plot_type in plot_types:
                 #figure_path = os.path.join(pupils_pv_folder, figure_name)
                 #draw_unique_pupil_size_fig_with_pv(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
                 # draw fig without peaks and valleys
-                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:    
         for ctype in range(len(cType_names)):
             pupil_analysis_type_name = cType_names[ctype]
@@ -2471,7 +2496,7 @@ for plot_type in plot_types:
                     figure_path = os.path.join(pupils_folder, figure_name)
                     figure_title = side_names[side] + "eye pupil movement of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
@@ -2511,7 +2536,7 @@ for plot_type in plot_types:
                     figure_path = os.path.join(pupils_folder, figure_name)
                     figure_title = side_names[side] + "eye pupil motion of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_motion_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
+                    draw_unique_pupil_motion_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_type_X_mean, plot_N_X, plot_type_Y, plot_type_Y_mean, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms)
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
