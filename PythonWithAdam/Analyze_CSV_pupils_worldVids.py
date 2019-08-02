@@ -759,10 +759,10 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color='r')
+        plt.axvline(x=event, linewidth=1, color='gray')
     for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='r')
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='r')
+        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='gray')
+        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='gray')
     plt.ylim(lum_ylims[plt_type][0], lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -872,10 +872,10 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color='r')
+        plt.axvline(x=event, linewidth=1, color='gray')
     for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='r')
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='r')
+        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='gray')
+        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='gray')
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -978,10 +978,10 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color='r')
+        plt.axvline(x=event, linewidth=1, color='gray')
     for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='r')
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='r')
+        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='gray')
+        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='gray')
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1027,10 +1027,10 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color='r')
+        plt.axvline(x=event, linewidth=1, color='gray')
     for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='r')
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='r')
+        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='gray')
+        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='gray')
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1078,10 +1078,10 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color='r')
+        plt.axvline(x=event, linewidth=1, color='gray')
     for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='r')
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='r')
+        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='gray')
+        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='gray')
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0],lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1129,10 +1129,10 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color='r')
+        plt.axvline(x=event, linewidth=1, color='gray')
     for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='r')
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='r')
+        plt.axvline(x=event+std, linewidth=1, linestyle='--', color='gray')
+        plt.axvline(x=event-std, linewidth=1, linestyle='--', color='gray')
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1375,11 +1375,7 @@ saccades_window = 5 # timebuckets
 # ------------------------------------------------------------------------ #
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
 # setup 
-moments_of_interest = ['calibration start', 'calibration end', 'unique start', 'unique end', 'octo start', 'octo inks', 'octo end']
 all_avg_world_moments = {key:{} for key in stim_vids}
-for stim in all_avg_world_moments.keys():
-    all_avg_world_moments[stim] = {moment:{} for moment in moments_of_interest}
-
 # ------------------------------------------------------------------------ #
 ### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
 # ------------------------------------------------------------------------ #
@@ -1392,8 +1388,8 @@ for i in range(len(months_available)):
 
 """ # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 5 # change index to change month
-stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+month_index = 0 # change index to change month
+stim_to_check = 26.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -1401,7 +1397,7 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 1112 # change to check different time buckets
+tbucket_to_check = 530 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
@@ -1416,6 +1412,8 @@ display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {442:['2017-10','2018-03'],443:['2017-11']}, 
+'cat appears': {474:['2017-10','2018-05'], 475:['2017-11', '2018-01']}, 
+'cat lands': {513:['2017-10'], 514:['2018-05']}, 
 'unique end': {596:['2017-10','2017-11'],598:['2018-03']}, 
 'octo start': {595:['2017-10','2018-03'],596:['2017-11']}, 
 'octo inks': {882:['2017-10'],883:['2017-11','2018-03']}, 
@@ -1424,6 +1422,7 @@ all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2
 all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {442:['2018-03'],443:['2017-10','2017-11']}, 
+'beak contacts food': {491:['2017-10','2018-05']}
 'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']}, 
 'octo start': {599:['2017-10','2017-11','2018-03']}, 
 'octo inks': {885:['2017-10','2018-03'],886:['2017-11']}, 
