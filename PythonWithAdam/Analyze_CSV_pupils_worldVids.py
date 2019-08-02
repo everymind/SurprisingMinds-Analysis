@@ -730,8 +730,8 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_right)):
-        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=2, color=[1.0, 0.98, 0.0, 0.75])
+        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.15, 0.011, plt_alphas[plt_type]])
+    plt.plot(plt_means_right, linewidth=2, color=[0.011, 1.0, 0.54, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     right_yticks = np.arange(pupil_ylims[plt_type][0], pupil_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(right_yticks, [str(int(round(y*100))) for y in right_yticks])
@@ -744,8 +744,8 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_left)):
-        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=2, color=[1.0, 0.34, 0.012, 0.75])
+        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.47, 0.008, 1.0, plt_alphas[plt_type]])
+    plt.plot(plt_means_left, linewidth=2, color=[1.0, 0.74, 0.008, 0.75])
     plt.ylim(pupil_ylims[plt_type][0], pupil_ylims[plt_type][1])
     left_yticks = np.arange(pupil_ylims[plt_type][0], pupil_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(left_yticks, [str(int(round(y*100))) for y in left_yticks])
@@ -757,7 +757,7 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
         plt.axvline(x=event, linewidth=1, color='r')
     for std in plt_lum_events_std:
@@ -843,8 +843,8 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_right)):
-        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=2, color=[1.0, 0.98, 0.0, 0.75])
+        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.15, 0.011, plt_alphas[plt_type]])
+    plt.plot(plt_means_right, linewidth=2, color=[0.011, 1.0, 0.54, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0], pupil_ylims[plt_type][plt_stim_type][1])
     right_yticks = np.arange(pupil_ylims[plt_type][plt_stim_type][0], pupil_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(right_yticks, [str(int(round(y*100))) for y in right_yticks])
@@ -857,8 +857,8 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_left)):
-        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=2, color=[1.0, 0.34, 0.012, 0.75])
+        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.47, 0.008, 1.0, plt_alphas[plt_type]])
+    plt.plot(plt_means_left, linewidth=2, color=[1.0, 0.74, 0.008, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     left_yticks = np.arange(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(left_yticks, [str(int(round(y*100))) for y in left_yticks])
@@ -870,7 +870,7 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
         plt.axvline(x=event, linewidth=1, color='r')
     for std in plt_lum_events_std:
@@ -955,7 +955,7 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.4, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
+        plt.plot(plt_type_X[trial], linewidth=0.3, color=[0.14, 0.89, 0.008, plt_alphas[plt_type]])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
@@ -966,7 +966,7 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(plt_type_Y[trial], linewidth=0.4, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
+        plt.plot(plt_type_Y[trial], linewidth=0.3, color=[1.0, 0.35, 0.0, plt_alphas[plt_type]])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -976,7 +976,7 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
         plt.axvline(x=event, linewidth=1, color='r')
     for std in plt_lum_events_std:
@@ -1004,7 +1004,7 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.4, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
+        plt.plot(plt_type_X[trial], linewidth=0.4, color=[0.14, 0.89, 0.008, plt_alphas[plt_type]])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
@@ -1015,7 +1015,7 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(plt_type_Y[trial], linewidth=0.4, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
+        plt.plot(plt_type_Y[trial], linewidth=0.4, color=[1.0, 0.35, 0.0, plt_alphas[plt_type]])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1025,7 +1025,7 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
         plt.axvline(x=event, linewidth=1, color='r')
     for std in plt_lum_events_std:
@@ -1053,8 +1053,8 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=2, color=[1.0, 0.98, 0.0, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.14, 0.89, 0.008, plt_alphas[plt_type]])
+    plt.plot(plt_type_X_mean, linewidth=2, color=[0.89, 0.008, 0.14, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
@@ -1065,8 +1065,8 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=2, color=[1.0, 0.34, 0.012, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[1.0, 0.35, 0.0, plt_alphas[plt_type]])
+    plt.plot(plt_type_Y_mean, linewidth=2, color=[0.0, 0.6, 1.0, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1076,7 +1076,7 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
         plt.axvline(x=event, linewidth=1, color='r')
     for std in plt_lum_events_std:
@@ -1104,8 +1104,8 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=2, color=[1.0, 0.98, 0.0, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.14, 0.89, 0.008, plt_alphas[plt_type]])
+    plt.plot(plt_type_X_mean, linewidth=2, color=[0.89, 0.008, 0.14, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
@@ -1116,8 +1116,8 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=2, color=[1.0, 0.34, 0.012, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[1.0, 0.35, 0.0, plt_alphas[plt_type]])
+    plt.plot(plt_type_Y_mean, linewidth=2, color=[0.0, 0.6, 1.0, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1127,7 +1127,7 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.192, 0.75, 0.004, 1])
+    plt.plot(plt_lum, linewidth=3, color=[1.0, 0.008, 0.93, 1])
     for event in plt_lum_events:
         plt.axvline(x=event, linewidth=1, color='r')
     for std in plt_lum_events_std:
@@ -2594,7 +2594,7 @@ plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all
 'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_XY_unique]}
 lum_ylimits = {'calibration': [-0.3, 0.8], 'octopus': [-0.7, 0.4], 
 'unique': {24.0: [-0.6,0.7], 25.0: [-0.4,0.7], 26.0: [-0.6,0.7], 27.0: [-0.3,0.6], 28.0: [-0.5,0.7], 29.0: [-0.2,0.5]}}
-pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.4,0.4], 
+pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.2,0.3], 
 'unique': {24.0: [-0.4,0.6], 25.0: [-0.3,0.6], 26.0: [-0.4,0.6], 27.0: [-0.4,0.6], 28.0: [-0.3,0.7], 29.0: [-0.3,0.8]}}
 pupil_movement_ylimits = {'calibration': [-70,70], 'octopus': [-60,60], 
 'unique': {24.0: [-60,60], 25.0: [-60,60], 26.0: [-60,60], 27.0: [-60,60], 28.0: [-60,60], 29.0: [-60,60]}}
