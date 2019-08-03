@@ -719,6 +719,45 @@ def pool_pupil_saccades_for_stim_specific_moment_of_interest(pupil_saccades_dict
                 if this_stim_moment_start<=s_tbucket<=this_stim_moment_end:
                     pooled_pupil_saccades_dict[threshold][s_tbucket] = pooled_pupil_saccades_dict[threshold].get(s_tbucket,0) + pupil_saccades_dict[stim_number][threshold][s_tbucket]
 
+def collect_global_moments(moments_start_end_list, all_world_moments_dict, stim_types_list, months_list):
+    all_stim_month_moment_of_interest = {}
+    for stimulus in stim_types_list:
+        all_stim_month_moment_of_interest[stimulus] = {}
+        for month in months_list:
+            this_month_stim_tbuckets = find_moment_tbuckets(moments_start_end_list, all_world_moments_dict, month, stimulus)
+            all_stim_month_moment_of_interest[stimulus][month] = this_month_stim_tbuckets[moments_start_end_list[1]] - this_month_stim_tbuckets[moments_start_end_list[0]]
+    all_moment_tbuckets = []
+    for stim in all_stim_month_moment_of_interest.keys():
+        for month in all_stim_month_moment_of_interest[stim].keys():
+            all_moment_tbuckets.append(all_stim_month_moment_of_interest[stim][month])
+    mean_this_moment = np.mean(all_moment_tbuckets)
+    std_this_moment = np.std(all_moment_tbuckets)
+    return mean_this_moment, std_this_moment
+
+def collect_unique_moments(moments_start_end_list, all_world_moments_dict, stim_type, months_list):
+    all_months_unique_moment_of_interest = {}
+    for month in months_list:
+        this_month_tbuckets = find_moment_tbuckets(moments_start_end_list, all_world_moments_dict, month, stim_type)
+        all_months_unique_moment_of_interest[month] = this_month_tbuckets[moments_start_end_list[1]] - this_month_tbuckets[moments_start_end_list[0]]
+    all_moment_tbuckets = []
+    for month in all_months_unique_moment_of_interest.keys():
+        all_moment_tbuckets.append(all_months_unique_moment_of_interest[month])
+    mean_this_moment = np.mean(all_moment_tbuckets)
+    std_this_moment = np.std(all_moment_tbuckets)
+    return mean_this_moment, std_this_moment
+
+def autolabel(rects):
+    """Attach a text label above each bar in *rects*, displaying its height."""
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate('{}'.format(height),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom', fontsize=8)
+
+
+
 def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
     # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
@@ -1211,8 +1250,8 @@ all_left_trials_circles = {key:[] for key in stim_vids}
 all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
 all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circles_Y, all_left_trials_contours_Y, all_left_trials_circles_Y]
 all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
-activation_count = []
-analysed_count = []
+activation_count = {}
+analysed_count = {}
 stimuli_tbucketed = {key:[] for key in stim_vids}
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
@@ -1238,8 +1277,8 @@ for day_folder in pupil_folders:
         right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupils("right", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
         left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupils("left", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
 
-        analysed_count.append((num_good_right_trials, num_good_left_trials))
-        activation_count.append((num_right_activations, num_left_activations))
+        analysed_count[day_name] = [num_good_right_trials, num_good_left_trials]
+        activation_count[day_name] = [num_right_activations, num_left_activations]
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
 
         # separate by stimulus number
@@ -1388,8 +1427,8 @@ for i in range(len(months_available)):
 
 """ # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 0 # change index to change month
-stim_to_check = 26.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+month_index = 7 # change index to change month
+stim_to_check = 24.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -1397,7 +1436,7 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 530 # change to check different time buckets
+tbucket_to_check = 441 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
@@ -1411,8 +1450,8 @@ display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # Stimulus 24.0
 all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
-'unique start': {442:['2017-10','2018-03'],443:['2017-11']}, 
-'cat appears': {474:['2017-10','2018-05'], 475:['2017-11', '2018-01']}, 
+'unique start': {442:['2017-10','2018-03','2018-05'],443:['2017-11']}, 
+'cat appears': {474:['2017-10'], 475:['2017-11','2018-01','2018-05']}, 
 'cat lands': {513:['2017-10'], 514:['2018-05']}, 
 'unique end': {596:['2017-10','2017-11'],598:['2018-03']}, 
 'octo start': {595:['2017-10','2018-03'],596:['2017-11']}, 
@@ -1422,7 +1461,7 @@ all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2
 all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {442:['2018-03'],443:['2017-10','2017-11']}, 
-'beak contacts food': {491:['2017-10','2018-05']}
+'beak contacts food': {491:['2017-10','2018-05']}, 
 'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']}, 
 'octo start': {599:['2017-10','2017-11','2018-03']}, 
 'octo inks': {885:['2017-10','2018-03'],886:['2017-11']}, 
@@ -1431,6 +1470,10 @@ all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2
 all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {442:['2017-10','2018-03'],443:['2017-11']}, 
+'eyespots appear': {449:['2017-10', '2018-05']}, 
+'eyespots disappear, eyes darken': {487:['2017-10','2018-05']}, 
+'arms spread': {533:['2017-10'], 534:['2018-05']}, 
+'arms in, speckled mantle': {558:['2017-10'], 561:['2018-05']}, 
 'unique end': {663:['2017-10'],665:['2017-11','2018-03']}, 
 'octo start': {662:['2017-10'],663:['2018-03'],664:['2017-11']}, 
 'octo inks': {949:['2017-10'],951:['2017-11','2018-03']}, 
@@ -1439,6 +1482,7 @@ all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2
 all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {443:['2017-10','2017-11','2018-03']}, 
+'tentacles go ballistic': {530:['2017-10','2018-05']}, 
 'unique end': {606:['2017-10'],607:['2017-11','2018-03']}, 
 'octo start': {605:['2017-10','2017-11'],606:['2018-03']}, 
 'octo inks': {892:['2017-10'],893:['2017-11','2018-03']}, 
@@ -1459,6 +1503,26 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo start': {716:['2017-10','2018-03'],717:['2017-11']}, 
 'octo inks': {1003:['2017-10'],1004:['2017-11','2018-03']}, 
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}} 
+
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### ------------------------------ ###
+### COLLECT OCTO INKS MOMENTS FOR PLOTTING
+mean_octo_inks, std_octo_inks = collect_global_moments(['octo start','octo inks'], all_avg_world_moments, stim_vids, months_available)
+### COLLECT UNIQUE CLIP MOMENTS OF INTEREST FOR PLOTTING
+# 24
+mean_cat_appears, std_cat_appears = collect_unique_moments(['unique start','cat appears'], all_avg_world_moments, 24.0, months_available)
+mean_cat_lands, std_cat_lands = collect_unique_moments(['unique start', 'cat lands'], all_avg_world_moments, 24.0, months_available)
+# 25
+mean_beak_contact, std_beak_contact = collect_unique_moments(['unique start', 'beak contacts food'], all_avg_world_moments, 25.0, months_available)
+# 26
+mean_eyespots_appear, std_eyespots_appear = collect_unique_moments(['unique start', 'eyespots appear'], all_avg_world_moments, 26.0, months_available)
+mean_eyespots_disappear, std_eyespots_disappear = collect_unique_moments(['unique start', 'eyespots disappear, eyes darken'], all_avg_world_moments, 26.0, months_available)
+mean_arms_spread, std_arms_spread = collect_unique_moments(['unique start', 'arms spread'], all_avg_world_moments, 26.0, months_available)
+mean_arms_in, std_arms_in = collect_unique_moments(['unique start', 'arms in, speckled mantle'], all_avg_world_moments, 26.0, months_available)
+# 27
+mean_TGB, std_TGB = collect_unique_moments(['unique start', 'tentacles go ballistic'], all_avg_world_moments, 27.0, months_available)
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1536,6 +1600,8 @@ analysed_array_left = np.array(good_trials_left)
 # month of the year
 # language chosen
 ###
+# plot total activations as table
+
 # sort by month of the year
 activation_by_month = {}
 for folder in pupil_folders:
@@ -1556,32 +1622,49 @@ for month in activation_by_month.keys():
     month_list.append(month)
     left_activations.append(activation_by_month[month]['left'])
     right_activations.append(activation_by_month[month]['right'])
-# plot
-x = np.arange(len(month_list))
-width = 0.45  # the width of the bars
-fig, ax = plt.subplots()
-rects1 = ax.bar(x - width/2, left_activations, width, label='Left')
-rects2 = ax.bar(x + width/2, right_activations, width, label='Right')
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Number of activations')
-ax.set_title('Exhibit activations by month')
-ax.set_xticks(x)
-ax.set_xticklabels(month_list, rotation=45, ha="right")
-ax.legend()
-def autolabel(rects):
-    """Attach a text label above each bar in *rects*, displaying its height."""
-    for rect in rects:
-        height = rect.get_height()
-        ax.annotate('{}'.format(height),
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 3),  # 3 points vertical offset
-                    textcoords="offset points",
-                    ha='center', va='bottom')
 
-autolabel(rects1)
-autolabel(rects2)
-fig.tight_layout()
-plt.show()
+# plot activations by month
+activations_filename = 'ExhibitActivationsByMonth_'+ todays_datetime + '.png'
+activations_filepath = os.path.join(engagement_folder, activations_filename)
+draw_monthly_activations(month_list, left_activations, right_activations, activations_filepath)
+
+def draw_monthly_activations(activated_months_list, left_camera_list, right_camera_list, save_filepath):
+    # plot
+    x = np.arange(len(activated_months_list))
+    width = 0.45  # the width of the bars
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width/2, left_camera_list, width-0.025, label='Left camera')
+    rects2 = ax.bar(x + width/2, right_camera_list, width-0.025, label='Right camera')
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Number of activations')
+    ax.set_title('Exhibit activations by month')
+    ax.set_xticks(x)
+    ax.set_xticklabels(activated_months_list, rotation=45, ha="right")
+    ax.legend()
+    autolabel(rects1)
+    autolabel(rects2)
+    # add total activations and good trials as table beneath plot
+    columns = ('Total activations', 'Good left trials', 'Good right trials')
+    rows = [x for x in analysed_count.keys()]
+
+    # Initialize the vertical-offset for the stacked bar chart.
+    y_offset = np.zeros(len(columns))
+
+    # Add a table at the bottom of the axes
+    the_table = plt.table(cellText=cell_text,
+                        rowLabels=rows,
+                        rowColours=colors,
+                        colLabels=columns,
+                        loc='bottom')
+
+    # Adjust layout to make room for the table:
+    plt.subplots_adjust(left=0.2, bottom=0.2)
+
+    fig.tight_layout()
+    plt.savefig(save_filepath)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -2542,31 +2625,6 @@ for stim_order in range(len(all_size_pv_unique)):
             this_mean_valleys = signal.argrelextrema(all_size_means_unique[stim_order][side][i][1], np.less)
             all_size_pv_unique[stim_order][side][i].append(this_mean_peaks[0])
             all_size_pv_unique[stim_order][side][i].append(this_mean_valleys[0])
-
-### ------------------------------ ###
-### ------------------------------ ###
-### ------------------------------ ###
-### ------------------------------ ###
-### COLLECT OCTO INK MOMENT TBUCKET FOR PLOTTING
-all_stim_month_octo_inks = {}
-moments_start_end = ['octo start', 'octo inks']
-for stimulus in stim_vids:
-    all_stim_month_octo_inks[stimulus] = {}
-    for month in months_available:
-        this_month_stim_tbuckets = find_moment_tbuckets(moments_start_end, all_avg_world_moments, month, stimulus)
-        all_stim_month_octo_inks[stimulus][month] = this_month_stim_tbuckets['octo inks'] - this_month_stim_tbuckets['octo start']
-all_octo_inks = []
-for stim in all_stim_month_octo_inks.keys():
-    for month in all_stim_month_octo_inks[stim].keys():
-        all_octo_inks.append(all_stim_month_octo_inks[stim][month])
-mean_octo_inks = np.mean(all_octo_inks)
-std_octo_inks = np.std(all_octo_inks)
-
-### ------------------------------ ###
-### ------------------------------ ###
-### ------------------------------ ###
-### ------------------------------ ###
-### COLLECT STIM-SPECIFIC INTERESTING MOMENT TBUCKET FOR PLOTTING
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
