@@ -1165,7 +1165,7 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
-    plt.subplot(2,1,2)
+    plt.subplot(3,1,3)
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
@@ -1682,7 +1682,7 @@ for side in range(len(all_positions)):
                 print('Calculating movements for {side} side, {c_type} {a}, stimulus {stim}'.format(side=side_names[side], c_type=cType_names[c], a=axis_names[axis], stim=stimuli))
                 # if there are nans (dropped frames) for more than 2 seconds of video time, then toss that trial
                 dropped_frames_threshold = 2000/downsampled_bucket_size_ms
-                all_movements[side][c][axis][stimuli] = calc_mvmnt_from_pos(all_positions[side][c][axis][stimuli], dropped_frames_threshold, 100, -100)
+                all_movements[side][c][axis][stimuli] = calc_mvmnt_from_pos(all_positions[side][c][axis][stimuli], dropped_frames_threshold, 90, -90)
 
 # measure motion (absolute value of movement): setup
 all_right_contours_X_avg_motion = {key:[] for key in stim_vids}
@@ -2725,9 +2725,9 @@ plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all
 'octopus':[all_movements_octo, all_avg_motion_octo, all_avg_motion_XY_octo, all_avg_motion_RL_octo],
 'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_XY_unique, all_avg_motion_RL_unique]}
 lum_ylimits = {'calibration': [-0.3, 0.8], 'octopus': [-0.5, 0.7], 
-'unique': {24.0: [-0.6,0.7], 25.0: [-0.4,0.7], 26.0: [-0.6,0.7], 27.0: [-0.3,0.6], 28.0: [-0.5,0.7], 29.0: [-0.2,0.5]}}
+'unique': {24.0: [-0.6,0.5], 25.0: [-0.4,0.5], 26.0: [-0.6,0.6], 27.0: [-0.2,0.5], 28.0: [-0.5,0.5], 29.0: [-0.2,0.5]}}
 pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.2,0.3], 
-'unique': {24.0: [-0.4,0.6], 25.0: [-0.3,0.6], 26.0: [-0.4,0.6], 27.0: [-0.4,0.6], 28.0: [-0.3,0.7], 29.0: [-0.3,0.8]}}
+'unique': {24.0: [-0.4,0.5], 25.0: [-0.3,0.6], 26.0: [-0.4,0.5], 27.0: [-0.4,0.5], 28.0: [-0.3,0.6], 29.0: [-0.3,0.7]}}
 pupil_movement_ylimits = {'calibration': [-70,70], 'octopus': [-60,60], 
 'unique': {24.0: [-60,60], 25.0: [-60,60], 26.0: [-60,60], 27.0: [-60,60], 28.0: [-60,60], 29.0: [-60,60]}}
 pupil_motion_ylimits = {'calibration': [0,40], 'octopus': [0,40], 
