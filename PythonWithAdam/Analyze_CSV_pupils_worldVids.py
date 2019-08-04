@@ -802,7 +802,7 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     # Initialize the vertical-offset for the stacked bar chart.
     y_offset = np.zeros(len(columns))
     # Get some pastel shades for the colors
-    colors = plt.cm.BuPu(np.linspace(0.2, 0.45, len(rows)))
+    colors = plt.cm.BuPu(np.linspace(0.15, 0.45, len(rows)))
     # plot
     plt.figure(figsize=(14, 14), dpi=fsize)
     cell_text = []
@@ -819,8 +819,8 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
                         rowColours=colors,
                         cellLoc='center',
                         colLabels=columns,
-                        loc='bottom',
-                        fontsize=10)
+                        loc='bottom')
+    the_table.scale(1,4)
     # Adjust layout to make room for the table:
     plt.subplots_adjust(left=0.2, bottom=0.2)
     plt.ylabel('Number of activations')
@@ -887,8 +887,8 @@ def draw_activations_by_weekday(activation_dict, analysed_dict, fsize, save_file
                         rowColours=colors,
                         cellLoc='center',
                         colLabels=columns,
-                        loc='bottom',
-                        fontsize=10)
+                        loc='bottom')
+    the_table.scale(1,4)
     # Adjust layout to make room for the table:
     plt.subplots_adjust(left=0.2, bottom=0.2)
     plt.ylabel('Number of activations')
@@ -2873,6 +2873,7 @@ analysed_array_left = np.array(good_trials_left)
 activations_monthly_filename = 'ExhibitActivationsByMonth_'+ todays_datetime + '.png'
 activations_monthly_filepath = os.path.join(engagement_folder, activations_monthly_filename)
 draw_monthly_activations(activation_count, analysed_count, fig_size, activations_monthly_filepath)
+# plot activations by weekday
 activations_weekday_filename = 'ExhibitActivationsByDayOfWeek_' + todays_datetime + '.png'
 activations_weekday_filepath = os.path.join(engagement_folder, activations_weekday_filename)
 draw_activations_by_weekday(activation_count, analysed_count, fig_size, activations_weekday_filepath)
