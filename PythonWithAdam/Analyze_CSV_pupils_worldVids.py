@@ -750,17 +750,154 @@ def collect_unique_moments(moments_start_end_list, all_world_moments_dict, stim_
     std_this_moment = np.std(all_moment_tbuckets)
     return mean_this_moment, std_this_moment
 
-def autolabel(rects):
-    """Attach a text label above each bar in *rects*, displaying its height."""
-    for rect in rects:
-        height = rect.get_height()
-        ax.annotate('{}'.format(height),
-                    xy=(rect.get_x() + rect.get_width() / 2, height),
-                    xytext=(0, 3),  # 3 points vertical offset
-                    textcoords="offset points",
-                    ha='center', va='bottom', fontsize=8)
+def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepath):
+    activated_months_list = []
+    right_camera_list = []
+    left_camera_list = []
+    analysed_months_list = []
+    good_right_count = []
+    good_left_count = []
+    for date in activation_dict.keys():
+        year_month = '-'.join(date.split('-')[:2])
+        right_activation = activation_dict[date][0]
+        left_activation = activation_dict[date][1]
+        if year_month not in activated_months_list:
+            activated_months_list.append(year_month)
+            right_camera_list.append(right_activation)
+            left_camera_list.append(left_activation)
+        else:
+            updated_right_count = right_camera_list.pop() + right_activation
+            updated_left_count = left_camera_list.pop() + left_activation
+            right_camera_list.append(updated_right_count)
+            left_camera_list.append(updated_left_count)
+    for date in analysed_dict.keys():
+        year_month_analysed = '-'.join(date.split('-')[:2])
+        right_analysed = analysed_dict[date][0]
+        left_analysed = analysed_dict[date][1]
+        if year_month_analysed not in analysed_months_list:
+            analysed_months_list.append(year_month_analysed)
+            good_right_count.append(right_analysed)
+            good_left_count.append(left_analysed)
+        else:
+            updated_right_analysed = good_right_count.pop() + right_analysed
+            updated_left_analysed = good_left_count.pop() + left_analysed
+            good_right_count.append(updated_right_analysed)
+            good_left_count.append(updated_left_analysed)
+    # organize data for plotting
+    data = []
+    all_months_total_activations = []
+    for i in range(len(activated_months_list)):
+        this_month_total_activation = max(right_camera_list[i],left_camera_list[i])
+        all_months_total_activations.append(this_month_total_activation)
+    right_left_diff = [good_right_count[i] - good_left_count[i] for i in range(len(good_left_count))]
+    total_right_diff = [all_months_total_activations[i] - good_right_count[i] for i in range(len(good_right_count))]
+    data.append(good_left_count)
+    data.append(right_left_diff)
+    data.append(total_right_diff)
+    columns = [year_month for year_month in activated_months_list]
+    rows = ('Total activations', 'Good right trials', 'Good left trials')
+    n_rows = len(data)
+    index = np.arange(len(activated_months_list)) + 0.3
+    bar_width = 0.45  # the width of the bars
+    # Initialize the vertical-offset for the stacked bar chart.
+    y_offset = np.zeros(len(columns))
+    # Get some pastel shades for the colors
+    colors = plt.cm.BuPu(np.linspace(0.2, 0.45, len(rows)))
+    # plot
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    cell_text = []
+    for row in range(n_rows):
+        plt.bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
+        y_offset = y_offset + data[row]
+        cell_text.append(['%d' % x for x in y_offset])
+    # Reverse colors and text labels to display the last value at the top.
+    colors = colors[::-1]
+    cell_text.reverse()
+    # Add a table at the bottom of the axes
+    the_table = plt.table(cellText=cell_text,
+                        rowLabels=rows,
+                        rowColours=colors,
+                        cellLoc='center',
+                        colLabels=columns,
+                        loc='bottom',
+                        fontsize=10)
+    # Adjust layout to make room for the table:
+    plt.subplots_adjust(left=0.2, bottom=0.2)
+    plt.ylabel('Number of activations')
+    plt.xticks([])
+    plt.title('Exhibit activations by month')
+    plt.savefig(save_filepath)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
-
+def draw_activations_by_weekday(activation_dict, analysed_dict, fsize, save_filepath):
+    right_camera_list = {}
+    left_camera_list = {}
+    good_right_count = {}
+    good_left_count = {}
+    for date in activation_dict.keys():
+        date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
+        date_weekday = date_obj.weekday()
+        # 0 is monday, sunday is 6
+        right_camera_list[date_weekday] = right_camera_list.get(date_weekday,0) + activation_dict[date][0]
+        left_camera_list[date_weekday] = left_camera_list.get(date_weekday,0) + activation_dict[date][1]
+    for date in analysed_dict.keys():
+        date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
+        date_weekday = date_obj.weekday()
+        good_right_count[date_weekday] = good_right_count.get(date_weekday,0) + analysed_dict[date][0]
+        good_left_count[date_weekday] = good_left_count.get(date_weekday,0) + analysed_dict[date][1] 
+    # organize data for plotting
+    data = []
+    all_weekdays_total_activations = []
+    all_weekdays_good_right = []
+    all_weekdays_good_left = []
+    for i in range(0,7):
+        this_weekday_total_activation = max(right_camera_list[i],left_camera_list[i])
+        all_weekdays_total_activations.append(this_weekday_total_activation)
+        all_weekdays_good_right.append(good_right_count[i])
+        all_weekdays_good_left.append(good_left_count[i])
+    right_left_diff = [all_weekdays_good_right[i] - all_weekdays_good_left[i] for i in range(len(all_weekdays_good_left))]
+    total_right_diff = [all_weekdays_total_activations[i] - all_weekdays_good_right[i] for i in range(len(all_weekdays_good_right))]
+    data.append(all_weekdays_good_left)
+    data.append(right_left_diff)
+    data.append(total_right_diff)
+    columns = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
+    rows = ('Total activations', 'Good right trials', 'Good left trials')
+    n_rows = len(data)
+    index = np.arange(len(columns)) + 0.3
+    bar_width = 0.45  # the width of the bars
+    # Initialize the vertical-offset for the stacked bar chart.
+    y_offset = np.zeros(len(columns))
+    # Get some pastel shades for the colors
+    colors = plt.cm.GnBu(np.linspace(0.2, 0.45, len(rows)))
+    # plot
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    cell_text = []
+    for row in range(n_rows):
+        plt.bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
+        y_offset = y_offset + data[row]
+        cell_text.append(['%d' % x for x in y_offset])
+    # Reverse colors and text labels to display the last value at the top.
+    colors = colors[::-1]
+    cell_text.reverse()
+    # Add a table at the bottom of the axes
+    the_table = plt.table(cellText=cell_text,
+                        rowLabels=rows,
+                        rowColours=colors,
+                        cellLoc='center',
+                        colLabels=columns,
+                        loc='bottom',
+                        fontsize=10)
+    # Adjust layout to make room for the table:
+    plt.subplots_adjust(left=0.2, bottom=0.2)
+    plt.ylabel('Number of activations')
+    plt.xticks([])
+    plt.title('Exhibit activations by weekday')
+    plt.savefig(save_filepath)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
 def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
     # draw fig
@@ -1096,7 +1233,7 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.18, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
     plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.29, 0.0118, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
@@ -1108,7 +1245,7 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.18, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
     plt.plot(plt_type_Y_mean, linewidth=1.5, color=[0.5333, 0.0, 1.0, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
@@ -1147,7 +1284,7 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.4, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
     plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.29, 0.0118, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
@@ -1159,7 +1296,7 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.4, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
     plt.plot(plt_type_Y_mean, linewidth=1.5, color=[0.5333, 0.0, 1.0, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
@@ -1431,8 +1568,8 @@ for i in range(len(months_available)):
 
 """ # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 0 # change index to change month
-stim_to_check = 24.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+month_index = 7 # change index to change month
+stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -1440,7 +1577,7 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 513 # change to check different time buckets
+tbucket_to_check = 980 # change to check different time buckets
 display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
@@ -1459,6 +1596,9 @@ all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2
 'cat lands': {513:['2017-10'], 514:['2018-05']}, 
 'unique end': {596:['2017-10','2017-11'],598:['2018-03']}, 
 'octo start': {595:['2017-10','2018-03'],596:['2017-11']}, 
+'fish turns': {645:['2017-10','2018-05']}, 
+'octo decam': {766:['2018-05'], 767:['2017-10']}, 
+'octo zoom': {860:['2017-10','2018-05']},  
 'octo inks': {882:['2017-10'],883:['2017-11','2018-03']}, 
 'octo end': {987:['2017-10'],989:['2017-11'],990:['2018-03']}} 
 # Stimulus 25.0
@@ -1468,6 +1608,9 @@ all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2
 'beak contacts food': {491:['2017-10','2018-05']}, 
 'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']}, 
 'octo start': {599:['2017-10','2017-11','2018-03']}, 
+'fish turns': {649:['2017-10','2018-05']}, 
+'octo decam': {770:['2017-10','2018-05']}, 
+'octo zoom': {863:['2018-05'],864:['2017-10']}, 
 'octo inks': {885:['2017-10','2018-03'],886:['2017-11']}, 
 'octo end': {989:['2017-10'],993:['2017-11'],994:['2018-03']}} 
 # Stimulus 26.0
@@ -1480,6 +1623,9 @@ all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2
 'arms in, speckled mantle': {558:['2017-10'], 561:['2018-05']}, 
 'unique end': {663:['2017-10'],665:['2017-11','2018-03']}, 
 'octo start': {662:['2017-10'],663:['2018-03'],664:['2017-11']}, 
+'fish turns': {712:['2017-10','2018-05']}, 
+'octo decam': {833:['2017-10','2018-05']}, 
+'octo zoom': {927:['2017-10','2018-05']}, 
 'octo inks': {949:['2017-10'],951:['2017-11','2018-03']}, 
 'octo end': {1054:['2017-10'],1059:['2017-11','2018-03']}} 
 # Stimulus 27.0
@@ -1489,6 +1635,9 @@ all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2
 'tentacles go ballistic': {530:['2017-10','2018-05']}, 
 'unique end': {606:['2017-10'],607:['2017-11','2018-03']}, 
 'octo start': {605:['2017-10','2017-11'],606:['2018-03']}, 
+'fish turns': {655:['2017-10','2018-05']}, 
+'octo decam': {776:['2017-10','2018-05']}, 
+'octo zoom': {869:['2018-05'],870:['2017-10']}, 
 'octo inks': {892:['2017-10'],893:['2017-11','2018-03']}, 
 'octo end': {996:['2017-10'],1000:['2017-11','2018-03']}} 
 # Stimulus 28.0
@@ -1497,6 +1646,9 @@ all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11','2
 'unique start': {442:['2018-03'],443:['2017-10','2017-11']}, 
 'unique end': {662:['2017-10'],663:['2017-11'],666:['2018-03']}, 
 'octo start': {661:['2017-10'],662:['2018-03'],663:['2017-11']}, 
+'fish turns': {711:['2017-10','2018-05']}, 
+'octo decam': {832:['2017-10'],834:['2018-05']}, 
+'octo zoom': {927:['2017-10','2018-05']}, 
 'octo inks': {948:['2017-10'],950:['2017-11','2018-03']}, 
 'octo end': {1054:['2017-10'],1056:['2017-11'],1059:['2018-03']}} 
 # Stimulus 29.0
@@ -1505,6 +1657,9 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2
 'unique start': {442:['2017-10'],443:['2017-11','2018-03']}, 
 'unique end': {717:['2017-10','2017-11'],718:['2018-03']}, 
 'octo start': {716:['2017-10','2018-03'],717:['2017-11']}, 
+'fish turns': {766:['2017-10','2018-03']}, 
+'octo decam': {887:['2017-10','2018-05']}, 
+'octo zoom': {981:['2017-10','2018-05']}, 
 'octo inks': {1003:['2017-10'],1004:['2017-11','2018-03']}, 
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}} 
 
@@ -1513,6 +1668,9 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2
 ### ------------------------------ ###
 ### ------------------------------ ###
 ### COLLECT OCTO INKS MOMENTS FOR PLOTTING
+mean_fish_turns, std_fish_turns = collect_global_moments(['octo start','fish turns'], all_avg_world_moments, stim_vids, months_available)
+mean_octo_decam, std_octo_decam = collect_global_moments(['octo start','octo decam'], all_avg_world_moments, stim_vids, months_available)
+mean_octo_zoom, std_octo_zoom = collect_global_moments(['octo start','octo zoom'], all_avg_world_moments, stim_vids, months_available)
 mean_octo_inks, std_octo_inks = collect_global_moments(['octo start','octo inks'], all_avg_world_moments, stim_vids, months_available)
 ### COLLECT UNIQUE CLIP MOMENTS OF INTEREST FOR PLOTTING
 # 24
@@ -1569,82 +1727,6 @@ for stim in all_stims_unique_clip_avg_tbuckets.keys():
     this_stim_avg_lum_valleys = signal.argrelextrema(this_stim_smoothed_baselined, np.less)
     all_stims_unique_avg_lum_smoothed_baselined[stim]['SB valleys'] = this_stim_avg_lum_valleys[0]
     all_stims_unique_avg_lum_smoothed_baselined[stim]['Vid Count'] = all_stims_unique_clip_avg_tbuckets[stim]['Vid Count']
-
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-### EXHIBIT ACTIVITY METADATA ### 
-# Save activation count to csv
-engagement_count_filename = 'Exhibit_Activation_Count_measured-' + todays_datetime + '.csv'
-engagement_data_folder = os.path.join(current_working_directory, 'Exhibit-Engagement')
-if not os.path.exists(engagement_data_folder):
-    #print("Creating plots folder.")
-    os.makedirs(engagement_data_folder)
-
-csv_file = os.path.join(engagement_data_folder, engagement_count_filename)
-np.savetxt(csv_file, activation_count, fmt='%.2f', delimiter=',')
-# activation count
-total_activation = sum(count[0] for count in activation_count)
-total_days_activated = len(activation_count)
-good_trials_right = [count[0] for count in analysed_count]
-good_trials_left = [count[1] for count in analysed_count]
-total_good_trials_right = sum(good_trials_right)
-total_good_trials_left = sum(good_trials_left)
-print("Total number of exhibit activations: {total}".format(total=total_activation))
-print("Total number of good right eye camera trials: {good_total}".format(good_total=total_good_trials_right))
-print("Total number of good left eye camera trials: {good_total}".format(good_total=total_good_trials_left))
-activation_array = np.array(activation_count)
-analysed_array_right = np.array(good_trials_right)
-analysed_array_left = np.array(good_trials_left)
-### NEED BETTER PLOTS FOR EXHIBIT ENGAGEMENT
-# activation based on: 
-# day of the week
-# time of the day
-# month of the year
-# language chosen
-###
-# plot activations by month
-activations_filename = 'ExhibitActivationsByMonth_'+ todays_datetime + '.png'
-activations_filepath = os.path.join(engagement_folder, activations_filename)
-draw_monthly_activations(month_list, left_activations, right_activations, activations_filepath)
-
-def draw_monthly_activations(activation_dict, analyzed_dict, save_filepath):
-    # plot
-    x = np.arange(len(activated_months_list))
-    width = 0.45  # the width of the bars
-    fig, ax = plt.subplots()
-    rects1 = ax.bar(x - width/2, left_camera_list, width-0.025, label='Left camera')
-    rects2 = ax.bar(x + width/2, right_camera_list, width-0.025, label='Right camera')
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('Number of activations')
-    ax.set_title('Exhibit activations by month')
-    ax.set_xticks(x)
-    ax.set_xticklabels(activated_months_list, rotation=45, ha="right")
-    ax.legend()
-    autolabel(rects1)
-    autolabel(rects2)
-    # add total activations and good trials as table beneath plot
-    columns = [year_month for year_month in analysed_count.keys()]
-    rows = ('Total activations', 'Good left trials', 'Good right trials')
-
-    # Initialize the vertical-offset for the stacked bar chart.
-    y_offset = np.zeros(len(columns))
-
-    # Add a table at the bottom of the axes
-    the_table = plt.table(cellText=cell_text,
-                        rowLabels=rows,
-                        colLabels=columns,
-                        loc='bottom')
-
-    # Adjust layout to make room for the table:
-    plt.subplots_adjust(left=0.2, bottom=0.2)
-
-    fig.tight_layout()
-    plt.savefig(save_filepath)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -1999,7 +2081,7 @@ all_avg_motion_RL_octo_circles = [all_RL_circles_X_avg_motion_octo, all_RL_circl
 all_avg_motion_RL_octo = [all_avg_motion_RL_octo_contours, all_avg_motion_RL_octo_circles]
 for c in range(len(all_avg_motion_RL_octo)):
     for axis in range(len(all_avg_motion_RL_octo[c])):
-        print('Calculating average pupil motion during calibration sequence for both sides, {c} {a}'.format(c=cType_names[c], a=axis_names[axis]))
+        print('Calculating average pupil motion during octopus sequence for both sides, {c} {a}'.format(c=cType_names[c], a=axis_names[axis]))
         RL_movements_combined = all_movements_octo[0][c][axis] + all_movements_octo[1][c][axis]
         total_pooled_trials = len(RL_movements_combined)
         this_avg_motion_RL_smoothed = calc_avg_motion_smoothed(RL_movements_combined, smoothing_window)
@@ -2728,24 +2810,72 @@ lum_ylimits = {'calibration': [-0.3, 0.8], 'octopus': [-0.5, 0.7],
 'unique': {24.0: [-0.6,0.5], 25.0: [-0.4,0.5], 26.0: [-0.6,0.6], 27.0: [-0.2,0.5], 28.0: [-0.5,0.5], 29.0: [-0.2,0.5]}}
 pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.2,0.3], 
 'unique': {24.0: [-0.4,0.5], 25.0: [-0.3,0.6], 26.0: [-0.4,0.5], 27.0: [-0.4,0.5], 28.0: [-0.3,0.6], 29.0: [-0.3,0.7]}}
-pupil_movement_ylimits = {'calibration': [-70,70], 'octopus': [-60,60], 
-'unique': {24.0: [-60,60], 25.0: [-60,60], 26.0: [-60,60], 27.0: [-60,60], 28.0: [-60,60], 29.0: [-60,60]}}
-pupil_motion_ylimits = {'calibration': [0,40], 'octopus': [0,40], 
-'unique': {24.0: [0,40], 25.0: [0,40], 26.0: [0,40], 27.0: [0,40], 28.0: [0,40], 29.0: [0,40]}}
-alphas_size = {'calibration': 0.006, 'octopus': 0.006, 'unique': 0.05}
+pupil_movement_ylimits = {'calibration': [-50,50], 'octopus': [-50,50], 
+'unique': {24.0: [-50,50], 25.0: [-50,50], 26.0: [-50,50], 27.0: [-50,50], 28.0: [-50,50], 29.0: [-50,50]}}
+pupil_motion_ylimits = {'calibration': [0,30], 'octopus': [0,30], 
+'unique': {24.0: [0,20], 25.0: [0,20], 26.0: [0,20], 27.0: [0,20], 28.0: [0,20], 29.0: [0,20]}}
+alphas_size = {'calibration': 0.006, 'octopus': 0.006, 'unique': 0.07}
 alphas_movement = {'calibration': 0.004, 'octopus': 0.004, 'unique': 0.025}
-alphas_motion = {'calibration': 0.003, 'octopus': 0.003, 'unique': 0.015}
+alphas_motion = {'calibration': 0.0035, 'octopus': 0.0033, 'unique': 0.015}
 peak_label_offsets = [2.25, 0.08]
 valley_label_offsets = [2.25, -0.08]
-plot_lum_events = {'calibration':[],'octopus':[mean_octo_inks], 
+plot_lum_events = {'calibration':[],'octopus':[mean_fish_turns, mean_octo_decam, mean_octo_zoom, mean_octo_inks], 
 'unique':{24.0:[mean_cat_appears,mean_cat_lands], 25.0:[mean_beak_contact], 
 26.0:[mean_eyespots_appear,mean_eyespots_disappear,mean_arms_spread,mean_arms_in], 27.0:[mean_TGB], 28.0:[], 29.0:[]}}
-plot_lum_events_std = {'calibration':[], 'octopus':[std_octo_inks],
+plot_lum_events_std = {'calibration':[], 'octopus':[std_fish_turns, std_octo_decam, std_octo_decam, std_octo_inks],
 'unique': {24.0:[std_cat_appears,std_cat_lands], 25.0:[std_beak_contact], 
 26.0:[std_eyespots_appear,std_eyespots_disappear,std_arms_spread,std_arms_in], 27.0:[std_TGB], 28.0:[], 29.0:[]}}
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+# ------------------------------------------------------------------------ #
+### EXHIBIT ACTIVITY METADATA ### 
+# Save activation count to csv
+engagement_count_filename = 'Exhibit_Activation_Count_measured-' + todays_datetime + '.csv'
+engagement_data_folder = os.path.join(current_working_directory, 'Exhibit-Engagement')
+if not os.path.exists(engagement_data_folder):
+    #print("Creating plots folder.")
+    os.makedirs(engagement_data_folder)
+csv_file = os.path.join(engagement_data_folder, engagement_count_filename)
+all_activations = []
+for month in activation_count.keys():
+    month_numeric = int(''.join(month.split('-')))
+    this_month = [month_numeric]
+    for count in activation_count[month]:
+        this_month.append(count)
+    all_activations.append(this_month)
+np.savetxt(csv_file, all_activations, '%d', delimiter=',')
+# activation count
+total_activation = sum(max(count[1]) for count in activation_count.items())
+total_days_activated = len(activation_count.items())
+good_trials_right = [count[1][0] for count in analysed_count.items()]
+good_trials_left = [count[1][1] for count in analysed_count.items()]
+total_good_trials_right = sum(good_trials_right)
+total_good_trials_left = sum(good_trials_left)
+print("Total number of exhibit activations: {total}".format(total=total_activation))
+print("Total number of good right eye camera trials: {good_total}".format(good_total=total_good_trials_right))
+print("Total number of good left eye camera trials: {good_total}".format(good_total=total_good_trials_left))
+activation_array = np.array(activation_count)
+analysed_array_right = np.array(good_trials_right)
+analysed_array_left = np.array(good_trials_left)
+### NEED BETTER PLOTS FOR EXHIBIT ENGAGEMENT
+# activation based on: 
+# day of the week
+# time of the day
+# month of the year
+# language chosen
+###
+
 ### ------------------------------ ###
 ### GENERATE PLOTS ###
 ### ------------------------------ ###
+# plot activations by month
+activations_monthly_filename = 'ExhibitActivationsByMonth_'+ todays_datetime + '.png'
+activations_monthly_filepath = os.path.join(engagement_folder, activations_monthly_filename)
+draw_monthly_activations(activation_count, analysed_count, fig_size, activations_monthly_filepath)
+activations_weekday_filename = 'ExhibitActivationsByDayOfWeek_' + todays_datetime + '.png'
+activations_weekday_filepath = os.path.join(engagement_folder, activations_weekday_filename)
+draw_activations_by_weekday(activation_count, analysed_count, fig_size, activations_weekday_filepath)
 # Plot pupil sizes
 for plot_type in plot_types:
     if plot_type == 'unique':
@@ -2883,6 +3013,8 @@ for plot_type in plot_types:
             figure_title = "Right and Left eye pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
             # draw fig
             draw_global_pupil_motion_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_X_mean, plot_type_Y, plot_N_Y, plot_type_Y_mean, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+
+# Plot saccades and fixations
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
