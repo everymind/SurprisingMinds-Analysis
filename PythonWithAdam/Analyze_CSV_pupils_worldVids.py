@@ -938,11 +938,11 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-    for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for e in range(len(plt_lum_events)):
+        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0], lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1051,11 +1051,11 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-    for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for e in range(len(plt_lum_events)):
+        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1157,11 +1157,11 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-    for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for e in range(len(plt_lum_events)):
+        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1206,11 +1206,11 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-    for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for e in range(len(plt_lum_events)):
+        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1257,11 +1257,11 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-    for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for e in range(len(plt_lum_events)):
+        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0],lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1308,11 +1308,11 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events:
-        plt.axvline(x=event, linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-    for std in plt_lum_events_std:
-        plt.axvline(x=event+std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=event-std, linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for e in range(len(plt_lum_events)):
+        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -2795,7 +2795,7 @@ plot_types = ['calibration', 'octopus', 'unique']
 fig_size = 200 # dpi
 image_type_options = ['.png', '.pdf']
 plotting_saccades_window = saccades_window
-plotting_xticks_step = 50
+plotting_xticks_step = 25
 plotting_yticks_percentChange_step = 0.1
 plot_lum_types = {'calibration':[all_cal_avg_lum_smoothed_baselined,all_cal_avg_lum_peaks,all_cal_avg_lum_valleys,all_cal_avg_lum_N],
 'octopus':[all_octo_avg_lum_smoothed_baselined,all_octo_avg_lum_peaks,all_octo_avg_lum_valleys,all_octo_avg_lum_N],
@@ -2808,15 +2808,15 @@ plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all
 'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_XY_unique, all_avg_motion_RL_unique]}
 lum_ylimits = {'calibration': [-0.3, 0.8], 'octopus': [-0.5, 0.7], 
 'unique': {24.0: [-0.6,0.5], 25.0: [-0.4,0.5], 26.0: [-0.6,0.6], 27.0: [-0.2,0.5], 28.0: [-0.5,0.5], 29.0: [-0.2,0.5]}}
-pupil_size_ylimits = {'calibration': [-0.4,0.4], 'octopus': [-0.2,0.3], 
+pupil_size_ylimits = {'calibration': [-0.3,0.3], 'octopus': [-0.2,0.3], 
 'unique': {24.0: [-0.4,0.5], 25.0: [-0.3,0.6], 26.0: [-0.4,0.5], 27.0: [-0.4,0.5], 28.0: [-0.3,0.6], 29.0: [-0.3,0.7]}}
 pupil_movement_ylimits = {'calibration': [-50,50], 'octopus': [-50,50], 
 'unique': {24.0: [-50,50], 25.0: [-50,50], 26.0: [-50,50], 27.0: [-50,50], 28.0: [-50,50], 29.0: [-50,50]}}
 pupil_motion_ylimits = {'calibration': [0,30], 'octopus': [0,30], 
 'unique': {24.0: [0,20], 25.0: [0,20], 26.0: [0,20], 27.0: [0,20], 28.0: [0,20], 29.0: [0,20]}}
-alphas_size = {'calibration': 0.006, 'octopus': 0.006, 'unique': 0.07}
-alphas_movement = {'calibration': 0.004, 'octopus': 0.004, 'unique': 0.025}
-alphas_motion = {'calibration': 0.0035, 'octopus': 0.0033, 'unique': 0.015}
+alphas_size = {'calibration': 0.02, 'octopus': 0.02, 'unique': 0.3}
+alphas_movement = {'calibration': 0.004, 'octopus': 0.004, 'unique': 0.03}
+alphas_motion = {'calibration': 0.002, 'octopus': 0.002, 'unique': 0.015}
 peak_label_offsets = [2.25, 0.08]
 valley_label_offsets = [2.25, -0.08]
 plot_lum_events = {'calibration':[],'octopus':[mean_fish_turns, mean_octo_decam, mean_octo_zoom, mean_octo_inks], 
@@ -2858,12 +2858,6 @@ print("Total number of good left eye camera trials: {good_total}".format(good_to
 activation_array = np.array(activation_count)
 analysed_array_right = np.array(good_trials_right)
 analysed_array_left = np.array(good_trials_left)
-### NEED BETTER PLOTS FOR EXHIBIT ENGAGEMENT
-# activation based on: 
-# day of the week
-# time of the day
-# month of the year
-# language chosen
 ###
 
 ### ------------------------------ ###
