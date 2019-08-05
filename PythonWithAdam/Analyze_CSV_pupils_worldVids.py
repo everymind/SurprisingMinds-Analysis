@@ -831,53 +831,70 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     plt.pause(1)
     plt.close()
 
-def draw_activations_by_weekday(activation_dict, analysed_dict, fsize, save_filepath):
-    right_camera_list = {}
-    left_camera_list = {}
-    good_right_count = {}
-    good_left_count = {}
+def draw_avg_activations_by_weekday(activation_dict, analysed_dict, fsize, save_filepath):
+    right_camera_activations = {day:[] for day in range(0,7)}
+    left_camera_activations = {day:[] for day in range(0,7)}
+    good_right_count = {day:[] for day in range(0,7)}
+    good_left_count = {day:[] for day in range(0,7)}
     for date in activation_dict.keys():
         date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
         date_weekday = date_obj.weekday()
         # 0 is monday, sunday is 6
-        right_camera_list[date_weekday] = right_camera_list.get(date_weekday,0) + activation_dict[date][0]
-        left_camera_list[date_weekday] = left_camera_list.get(date_weekday,0) + activation_dict[date][1]
+        right_camera_activations[date_weekday].append(activation_dict[date][0])
+        left_camera_activations[date_weekday].append(activation_dict[date][1])
     for date in analysed_dict.keys():
         date_obj = datetime.datetime.strptime(date, '%Y-%m-%d')
         date_weekday = date_obj.weekday()
-        good_right_count[date_weekday] = good_right_count.get(date_weekday,0) + analysed_dict[date][0]
-        good_left_count[date_weekday] = good_left_count.get(date_weekday,0) + analysed_dict[date][1] 
+        good_right_count[date_weekday].append(analysed_dict[date][0])
+        good_left_count[date_weekday].append(analysed_dict[date][1])
     # organize data for plotting
     data = []
-    all_weekdays_total_activations = []
-    all_weekdays_good_right = []
-    all_weekdays_good_left = []
+    error = []
+    all_weekdays_avg_activations = []
+    all_weekdays_CI95_activations = []
+    all_weekdays_avg_good_right = []
+    all_weekdays_CI95_good_right = []
+    all_weekdays_avg_good_left = []
+    all_weekdays_CI95_good_left = []
     for i in range(0,7):
-        this_weekday_total_activation = max(right_camera_list[i],left_camera_list[i])
-        all_weekdays_total_activations.append(this_weekday_total_activation)
-        all_weekdays_good_right.append(good_right_count[i])
-        all_weekdays_good_left.append(good_left_count[i])
-    right_left_diff = [all_weekdays_good_right[i] - all_weekdays_good_left[i] for i in range(len(all_weekdays_good_left))]
-    total_right_diff = [all_weekdays_total_activations[i] - all_weekdays_good_right[i] for i in range(len(all_weekdays_good_right))]
-    data.append(all_weekdays_good_left)
-    data.append(right_left_diff)
-    data.append(total_right_diff)
+        this_weekday_avg_activation = max(np.mean(np.array(right_camera_activations[i])), np.mean(np.array(left_camera_activations[i])))
+        this_weekday_std_activation = max(np.std(np.array(right_camera_activations[i])), np.std(np.array(left_camera_activations[i])))
+        this_weekday_CI95_activation = 1.96*(this_weekday_std_activation/np.sqrt(len(right_camera_activations[i])))
+        this_weekday_avg_good_right = np.mean(np.array(good_right_count[i]))
+        this_weekday_CI95_good_right = 1.96*(np.std(np.array(good_right_count[i]))/np.sqrt(len(good_right_count[i])))
+        this_weekday_avg_good_left = np.mean(np.array(good_left_count[i]))
+        this_weekday_CI95_good_left = 1.96*(np.std(np.array(good_left_count[i]))/np.sqrt(len(good_left_count[i])))
+        all_weekdays_avg_activations.append(this_weekday_avg_activation)
+        all_weekdays_CI95_activations.append(this_weekday_CI95_activation)
+        all_weekdays_avg_good_right.append(this_weekday_avg_good_right)
+        all_weekdays_CI95_good_right.append(this_weekday_CI95_good_right)
+        all_weekdays_avg_good_left.append(this_weekday_avg_good_left)
+        all_weekdays_CI95_good_left.append(this_weekday_CI95_good_left)
+    #right_left_avg_diff = [all_weekdays_avg_good_right[i] - all_weekdays_avg_good_left[i] for i in range(len(all_weekdays_avg_good_left))]
+    #total_right_avg_diff = [all_weekdays_avg_activations[i] - all_weekdays_avg_good_right[i] for i in range(len(all_weekdays_avg_good_right))]
+    data.append(all_weekdays_avg_good_left)
+    data.append(all_weekdays_avg_good_right)
+    data.append(all_weekdays_avg_activations)
+    error.append(all_weekdays_CI95_good_left)
+    error.append(all_weekdays_CI95_good_right)
+    error.append(all_weekdays_CI95_activations)
     columns = ('Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')
-    rows = ('Total activations', 'Good right trials', 'Good left trials')
+    rows = ('Mean total activations', 'Mean total good right trials', 'Mean total good left trials')
     n_rows = len(data)
-    index = np.arange(len(columns)) + 0.3
-    bar_width = 0.45  # the width of the bars
+    index = np.arange(len(columns)) + 5
+    bar_width = 0.2  # the width of the bars
+    bar_offsets = [-0.5*bar_width, -1.5*bar_width, -2.5*bar_width]
     # Initialize the vertical-offset for the stacked bar chart.
-    y_offset = np.zeros(len(columns))
+    #y_offset = np.zeros(len(columns))
     # Get some pastel shades for the colors
     colors = plt.cm.GnBu(np.linspace(0.2, 0.45, len(rows)))
     # plot
     plt.figure(figsize=(14, 14), dpi=fsize)
     cell_text = []
     for row in range(n_rows):
-        plt.bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
-        y_offset = y_offset + data[row]
-        cell_text.append(['%d' % x for x in y_offset])
+        plt.bar(index+bar_offsets[row], data[row], bar_width, yerr=error[row], capsize=5, color=colors[row])
+        #y_offset = y_offset + data[row]
+        cell_text.append(['%d' % x for x in data[row]])
     # Reverse colors and text labels to display the last value at the top.
     colors = colors[::-1]
     cell_text.reverse()
@@ -893,7 +910,7 @@ def draw_activations_by_weekday(activation_dict, analysed_dict, fsize, save_file
     plt.subplots_adjust(left=0.2, bottom=0.2)
     plt.ylabel('Number of activations')
     plt.xticks([])
-    plt.title('Exhibit activations by weekday')
+    plt.title(r'Average exhibit activations by weekday, with 95% confidence intervals')
     plt.savefig(save_filepath)
     plt.show(block=False)
     plt.pause(1)
@@ -2870,7 +2887,7 @@ draw_monthly_activations(activation_count, analysed_count, fig_size, activations
 # plot activations by weekday
 activations_weekday_filename = 'ExhibitActivationsByDayOfWeek_' + todays_datetime + '.png'
 activations_weekday_filepath = os.path.join(engagement_folder, activations_weekday_filename)
-draw_activations_by_weekday(activation_count, analysed_count, fig_size, activations_weekday_filepath)
+draw_avg_activations_by_weekday(activation_count, analysed_count, fig_size, activations_weekday_filepath)
 # Plot pupil sizes
 for plot_type in plot_types:
     if plot_type == 'unique':
