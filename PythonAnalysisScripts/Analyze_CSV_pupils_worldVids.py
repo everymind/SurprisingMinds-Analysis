@@ -953,13 +953,14 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0], lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1066,13 +1067,14 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1172,13 +1174,14 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1221,13 +1224,14 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1272,13 +1276,14 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0],lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1323,13 +1328,14 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1392,13 +1398,14 @@ def draw_global_pupil_motion_fig_with_pv(plt_type, fsize, fig_title, fig_path, p
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-10, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0],lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1461,13 +1468,14 @@ def draw_unique_pupil_motion_fig_with_pv(plt_type, plt_stim_type, fsize, fig_tit
     plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
     plt.xlabel('Time in seconds', fontsize=11)
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for e in range(len(plt_lum_events)):
-        plt.axvline(x=plt_lum_events[e], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[e]-5, 0.4, str(e+1), size=12, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[e]+plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[e]-plt_lum_events_std[e], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    for event in plt_lum_events.keys():
+        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
+        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
     plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1721,10 +1729,10 @@ print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
 
-""" # change the following variables based on what month/stim you want to check
+# change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
 month_index = 7 # change index to change month
-stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+stim_to_check = 24.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -1732,8 +1740,8 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 980 # change to check different time buckets
-display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
+tbucket_to_check = 549 # change to check different time buckets
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
 # ------------------------------------------------------------------------ #
@@ -1747,8 +1755,10 @@ display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {442:['2017-10','2018-03','2018-05'],443:['2017-11']}, 
-'cat appears': {475:['2017-10','2017-11','2018-01','2018-05']}, 
-'cat lands': {513:['2017-10'], 514:['2018-05']}, 
+'cat appears': {463:['2017-10','2018-01','2018-05'], 464:['2017-11']}, 
+'cat front paws visible': {473:['2017-10','2018-01','2018-05'], 474:['2017-11']},
+'cat lands on toy': {513:['2017-10'], 514:['2018-05']}, 
+'cat back paws bounce': {549:['2017-10'],547:['2018-05']},
 'unique end': {596:['2017-10','2017-11'],598:['2018-03']}, 
 'octo start': {595:['2017-10','2018-03'],596:['2017-11']}, 
 'fish turns': {645:['2017-10','2018-05']}, 
@@ -1760,7 +1770,14 @@ all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2
 all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {442:['2018-03'],443:['2017-10','2017-11']}, 
-'beak contacts food': {491:['2017-10','2018-05']}, 
+'fingers appear': {443:['2017-10'], 442:['2018-05']},
+'bird flies towards fingers': {462:['2018-05'],463:['2017-10']}, 
+'beak contacts food': {491:['2017-10'],492:['2018-05']}, 
+'wings at top of frame': {535:['2017-10','2018-05']},
+'foreground bird flutters': {553:['2017-10'], 553:['2018-05']}, 
+'foreground bird lands': {561:['2017-10'], 562:['2018-05']},
+'foreground bird takes off': {569:['2017-10'],570:['2018-05']}, 
+'bird flies past fingers': {573:['2017-10','2018-05']}, 
 'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']}, 
 'octo start': {599:['2017-10','2017-11','2018-03']}, 
 'fish turns': {649:['2017-10','2018-05']}, 
@@ -1822,24 +1839,43 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2
 ### ------------------------------ ###
 ### ------------------------------ ###
 ### ------------------------------ ###
-### COLLECT OCTO INKS MOMENTS FOR PLOTTING
-mean_fish_turns, std_fish_turns = collect_global_moments(['octo start','fish turns'], all_avg_world_moments, stim_vids, months_available)
-mean_octo_decam, std_octo_decam = collect_global_moments(['octo start','octo decam'], all_avg_world_moments, stim_vids, months_available)
-mean_octo_zoom, std_octo_zoom = collect_global_moments(['octo start','octo zoom'], all_avg_world_moments, stim_vids, months_available)
-mean_octo_inks, std_octo_inks = collect_global_moments(['octo start','octo inks'], all_avg_world_moments, stim_vids, months_available)
+### COLLECT CALIBRATION MOMENTS FOR PLOTTING
+cal_moments = []
+all_cal_moments_mean = {}
+all_cal_moments_std = {}
+### COLLECT OCTO MOMENTS FOR PLOTTING
+octo_moments = ['fish turns','octo decam','octo zoom','octo inks']
+all_octo_moments_mean = {}
+all_octo_moments_std = {}
+for moment in octo_moments:
+    all_octo_moments_mean[moment],all_octo_moments_std[moment] = collect_global_moments(['octo start',moment], all_avg_world_moments, stim_vids, months_available)
+
 ### COLLECT UNIQUE CLIP MOMENTS OF INTEREST FOR PLOTTING
-# 24
-mean_cat_appears, std_cat_appears = collect_unique_moments(['unique start','cat appears'], all_avg_world_moments, 24.0, months_available)
-mean_cat_lands, std_cat_lands = collect_unique_moments(['unique start', 'cat lands'], all_avg_world_moments, 24.0, months_available)
-# 25
-mean_beak_contact, std_beak_contact = collect_unique_moments(['unique start', 'beak contacts food'], all_avg_world_moments, 25.0, months_available)
-# 26
-mean_eyespots_appear, std_eyespots_appear = collect_unique_moments(['unique start', 'eyespots appear'], all_avg_world_moments, 26.0, months_available)
-mean_eyespots_disappear, std_eyespots_disappear = collect_unique_moments(['unique start', 'eyespots disappear, eyes darken'], all_avg_world_moments, 26.0, months_available)
-mean_arms_spread, std_arms_spread = collect_unique_moments(['unique start', 'arms spread'], all_avg_world_moments, 26.0, months_available)
-mean_arms_in, std_arms_in = collect_unique_moments(['unique start', 'arms in, speckled mantle'], all_avg_world_moments, 26.0, months_available)
-# 27
-mean_TGB, std_TGB = collect_unique_moments(['unique start', 'tentacles go ballistic'], all_avg_world_moments, 27.0, months_available)
+stim24_moments = ['cat appears','cat front paws visible','cat lands on toy','cat back paws bounce']
+stim24_moments_mean = {}
+stim24_moments_std = {}
+stim25_moments = ['fingers appear','bird flies towards fingers','beak contacts food','wings at top of frame','foreground bird flutters','foreground bird lands','foreground bird takes off','bird flies past fingers']
+stim25_moments_mean = {}
+stim25_moments_std = {}
+stim26_moments = ['eyespots appear','eyespots disappear, eyes darken','arms spread','arms in, speckled mantle']
+stim26_moments_mean = {}
+stim26_moments_std = {}
+stim27_moments = ['tentacles go ballistic']
+stim27_moments_mean = {}
+stim27_moments_std = {}
+stim28_moments = []
+stim28_moments_mean = {}
+stim28_moments_std = {}
+stim29_moments = []
+stim29_moments_mean = {}
+stim29_moments_std = {}
+all_stim_moments = [stim24_moments, stim25_moments, stim26_moments, stim27_moments, stim28_moments, stim29_moments]
+all_stim_moments_mean = [stim24_moments_mean, stim25_moments_mean, stim26_moments_mean, stim27_moments_mean, stim28_moments_mean, stim29_moments_mean]
+all_stim_moments_std = [stim24_moments_std, stim25_moments_std, stim26_moments_std, stim27_moments_std, stim28_moments_std, stim29_moments_std]
+for stim_order in range(len(stim_vids)):
+    for moment in all_stim_moments[stim_order]:
+        all_stim_moments_mean[stim_order][moment],all_stim_moments_std[stim_order][moment] = collect_unique_moments(['unique start',moment], all_avg_world_moments, stim_vids[stim_order], months_available)
+
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -2970,12 +3006,10 @@ alphas_movement = {'calibration': 0.004, 'octopus': 0.004, 'unique': 0.03}
 alphas_motion = {'calibration': 0.002, 'octopus': 0.002, 'unique': 0.015}
 peak_label_offsets_motion = [2, 2.5]
 valley_label_offsets_motion = [2, -2.5]
-plot_lum_events = {'calibration':[],'octopus':[mean_fish_turns, mean_octo_decam, mean_octo_zoom, mean_octo_inks], 
-'unique':{24.0:[mean_cat_appears,mean_cat_lands], 25.0:[mean_beak_contact], 
-26.0:[mean_eyespots_appear,mean_eyespots_disappear,mean_arms_spread,mean_arms_in], 27.0:[mean_TGB], 28.0:[], 29.0:[]}}
-plot_lum_events_std = {'calibration':[], 'octopus':[std_fish_turns, std_octo_decam, std_octo_decam, std_octo_inks],
-'unique': {24.0:[std_cat_appears,std_cat_lands], 25.0:[std_beak_contact], 
-26.0:[std_eyespots_appear,std_eyespots_disappear,std_arms_spread,std_arms_in], 27.0:[std_TGB], 28.0:[], 29.0:[]}}
+plot_lum_events = {'calibration':all_cal_moments_mean,'octopus':all_octo_moments_mean, 
+'unique':{24.0:stim24_moments_mean,25.0:stim25_moments_mean,26.0:stim26_moments_mean,27.0:stim27_moments_mean,28.0:stim28_moments_mean,29.0:stim29_moments_mean}}
+plot_lum_events_std = {'calibration':all_cal_moments_std, 'octopus':all_octo_moments_std,
+'unique': {24.0:stim24_moments_std,25.0:stim25_moments_std,26.0:stim26_moments_std,27.0:stim27_moments_std,28.0:stim28_moments_std,29.0:stim29_moments_std}}
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
