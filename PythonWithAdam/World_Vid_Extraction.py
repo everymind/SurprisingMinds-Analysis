@@ -563,7 +563,7 @@ for item in zipped_data:
             print("World vid frames for {month} not yet completed".format(month=item_year_month))
             continue
         # full month extracted?
-        print('This month extraction completed: {month_list}'.format(month_list=this_month_analysed))
+        print('This month extraction completed: {month_list}'.format(month_list=this_month_extracted))
         # take avg stim vids for each day and build a monthly average vid for each stim
         search_pattern = os.path.join(analysed_drive, 'SurprisingMinds_'+item_year_month+'-*')
         current_month_analysed = glob.glob(search_pattern)
