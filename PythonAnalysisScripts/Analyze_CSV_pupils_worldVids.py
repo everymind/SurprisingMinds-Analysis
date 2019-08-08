@@ -783,7 +783,7 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
             updated_left_analysed = good_left_count.pop() + left_analysed
             good_right_count.append(updated_right_analysed)
             good_left_count.append(updated_left_analysed)
-        # organize data for plotting
+    # organize data for plotting
     data = []
     all_months_total_activations = []
     for i in range(len(activated_months_list)):
@@ -801,11 +801,11 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     data.append(right_left_diff)
     data.append(total_right_diff)
     columns = [year_month for year_month in activated_months_list]
-    columns.append('Grand Totals')
+    columns.append('Grand \nTotals')
     rows = ('Total activations', 'Good right trials', 'Good left trials')
     n_rows = len(data)
-    index = np.arange(len(activated_months_list)) + 0.3
-    bar_width = 0.45  # the width of the bars
+    index = np.arange(len(activated_months_list)+1) * 2
+    bar_width = 0.7  # the width of the bars
     # Initialize the vertical-offset for the stacked bar chart.
     y_offset = np.zeros(len(columns))
     # Get some pastel shades for the colors
@@ -814,7 +814,7 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     plt.figure(figsize=(14, 14), dpi=fsize)
     cell_text = []
     for row in range(n_rows):
-        plt.bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
+        plt.bar(index, data[row], bar_width, align='center', bottom=y_offset, color=colors[row])
         y_offset = y_offset + data[row]
         cell_text.append(['%d' % x for x in y_offset])
     # Reverse colors and text labels to display the last value at the top.
@@ -827,11 +827,14 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
                         cellLoc='center',
                         colLabels=columns,
                         loc='bottom')
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(12)
     the_table.scale(1,4)
     # Adjust layout to make room for the table:
     plt.subplots_adjust(left=0.2, bottom=0.2)
     plt.ylabel('Number of activations')
     plt.xticks([])
+    plt.xlim(-1, index[-1]+1)
     plt.title('Exhibit activations by month')
     plt.savefig(save_filepath)
     plt.show(block=False)
