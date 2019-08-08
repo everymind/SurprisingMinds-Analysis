@@ -1079,7 +1079,7 @@ def draw_global_pupil_movement_fig(plt_movement_dict, plt_lum_dict, plt_type, c_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
+        plt.plot(plt_type_Y[trial], linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1138,7 +1138,7 @@ def draw_unique_pupil_movement_fig(plt_movement_dict, plt_stim_order, plt_stim_f
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
+        plt.plot(plt_type_Y[trial], linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
     plt.ylim(pupil_ylims[plt_type][plt_stim_float][0],pupil_ylims[plt_type][plt_stim_float][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1188,8 +1188,8 @@ def draw_global_pupil_motion_fig(plt_movement_dict, plt_lum_dict, plt_type, c_ty
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.3, color=[0.0196, 0.1333, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.478, 0.0196, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.8, 0.0039, 1.0, plt_alphas[plt_type]])
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.0039, 0.753, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
@@ -1200,8 +1200,8 @@ def draw_global_pupil_motion_fig(plt_movement_dict, plt_lum_dict, plt_type, c_ty
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.7686, 0.0078, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.0196, 0.3569, 0.937, plt_alphas[plt_type]])
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.0039, 0.9843, 0.75])
     plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1251,8 +1251,8 @@ def draw_unique_pupil_motion_fig(plt_movement_dict, plt_stim_order, plt_stim_flo
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.3, color=[0.0196, 0.1333, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.478, 0.0196, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.8, 0.0039, 1.0, plt_alphas[plt_type]])
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.0039, 0.753, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_float][0],pupil_ylims[plt_type][plt_stim_float][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
@@ -1263,8 +1263,8 @@ def draw_unique_pupil_motion_fig(plt_movement_dict, plt_stim_order, plt_stim_flo
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.7686, 0.0078, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.0196, 0.3569, 0.937, plt_alphas[plt_type]])
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.0039, 0.9843, 0.75])
     plt.ylim(pupil_ylims[plt_type][plt_stim_float][0],pupil_ylims[plt_type][plt_stim_float][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
@@ -1319,8 +1319,8 @@ def draw_global_pupil_motion_fig_with_pv(plt_movement_dict, plt_lum_dict, plt_ty
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.3, color=[0.0196, 0.1333, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.478, 0.0196, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.8, 0.0039, 1.0, plt_alphas[plt_type]])
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.0039, 0.753, 0.75])
     for peak in plt_type_X_mean_p:
         plt.plot(peak, plt_type_X_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_X_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
@@ -1337,8 +1337,8 @@ def draw_global_pupil_motion_fig_with_pv(plt_movement_dict, plt_lum_dict, plt_ty
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.7686, 0.0078, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.0196, 0.3569, 0.937, plt_alphas[plt_type]])
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.0039, 0.9843, 0.75])
     for peak in plt_type_Y_mean_p:
         plt.plot(peak, plt_type_Y_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_Y_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
@@ -1399,8 +1399,8 @@ def draw_unique_pupil_motion_fig_with_pv(plt_movement_dict, plt_stim_order, plt_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.3, color=[0.0196, 0.1333, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.478, 0.0196, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.8, 0.0039, 1.0, plt_alphas[plt_type]])
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.0039, 0.753, 0.75])
     for peak in plt_type_X_mean_p:
         plt.plot(peak, plt_type_X_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_X_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
@@ -1417,8 +1417,8 @@ def draw_unique_pupil_motion_fig_with_pv(plt_movement_dict, plt_stim_order, plt_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.553, 0.0078, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.7686, 0.0078, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[0.0196, 0.3569, 0.937, plt_alphas[plt_type]])
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[1.0, 0.0039, 0.9843, 0.75])
     for peak in plt_type_Y_mean_p:
         plt.plot(peak, plt_type_Y_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_Y_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
@@ -1695,10 +1695,10 @@ print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
 
-# change the following variables based on what month/stim you want to check
+""" # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
 month_index = 7 # change index to change month
-stim_to_check = 24.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -1706,8 +1706,8 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 549 # change to check different time buckets
-display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
+tbucket_to_check = 1042 # change to check different time buckets
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
 # ------------------------------------------------------------------------ #
@@ -1731,6 +1731,7 @@ all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {766:['2018-05'], 767:['2017-10']}, 
 'octo zoom': {860:['2017-10','2018-05']},  
 'octo inks': {882:['2017-10'],883:['2017-11','2018-03']}, 
+'camera clears ink cloud': {916:['2017-10'],920:['2018-05']}, 
 'octo end': {987:['2017-10'],989:['2017-11'],990:['2018-03']}} 
 # Stimulus 25.0
 all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1749,6 +1750,7 @@ all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {770:['2017-10','2018-05']}, 
 'octo zoom': {863:['2018-05'],864:['2017-10']}, 
 'octo inks': {885:['2017-10','2018-03'],886:['2017-11']}, 
+'camera clears ink cloud': {919:['2017-10'],923:['2018-05']}, 
 'octo end': {989:['2017-10'],993:['2017-11'],994:['2018-03']}} 
 # Stimulus 26.0
 all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1764,6 +1766,7 @@ all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {833:['2017-10','2018-05']}, 
 'octo zoom': {927:['2017-10','2018-05']}, 
 'octo inks': {949:['2017-10'],951:['2017-11','2018-03']}, 
+'camera clears ink cloud': {983:['2017-10'],987:['2018-05']}, 
 'octo end': {1054:['2017-10'],1059:['2017-11','2018-03']}} 
 # Stimulus 27.0
 all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1777,6 +1780,7 @@ all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {776:['2017-10','2018-05']}, 
 'octo zoom': {869:['2018-05'],870:['2017-10']}, 
 'octo inks': {892:['2017-10'],893:['2017-11','2018-03']}, 
+'camera clears ink cloud': {926:['2017-10'],929:['2018-05']}, 
 'octo end': {996:['2017-10'],1000:['2017-11','2018-03']}} 
 # Stimulus 28.0
 all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1788,6 +1792,7 @@ all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {832:['2017-10'],834:['2018-05']}, 
 'octo zoom': {927:['2017-10','2018-05']}, 
 'octo inks': {948:['2017-10'],950:['2017-11','2018-03']}, 
+'camera clears ink cloud': {982:['2017-10'],986:['2018-05']}, 
 'octo end': {1054:['2017-10'],1056:['2017-11'],1059:['2018-03']}} 
 # Stimulus 29.0
 all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1799,6 +1804,7 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {887:['2017-10','2018-05']}, 
 'octo zoom': {981:['2017-10','2018-05']}, 
 'octo inks': {1003:['2017-10'],1004:['2017-11','2018-03']}, 
+'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']}, 
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}} 
 
 ### ------------------------------ ###
@@ -1810,7 +1816,7 @@ cal_moments = []
 all_cal_moments_mean = {}
 all_cal_moments_std = {}
 ### COLLECT OCTO MOMENTS FOR PLOTTING
-octo_moments = ['fish turns','octo decam','octo zoom','octo inks']
+octo_moments = ['fish turns','octo decam','octo zoom','camera clears ink cloud','octo inks']
 all_octo_moments_mean = {}
 all_octo_moments_std = {}
 for moment in octo_moments:
@@ -2961,7 +2967,7 @@ plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all
 'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_XY_unique, all_avg_motion_RL_unique]}
 lum_ylimits = {'calibration': [-0.3, 0.8], 'octopus': [-0.5, 0.7], 
 'unique': {24.0: [-0.6,0.5], 25.0: [-0.4,0.5], 26.0: [-0.6,0.6], 27.0: [-0.2,0.5], 28.0: [-0.5,0.5], 29.0: [-0.2,0.5]}}
-pupil_size_ylimits = {'calibration': [-0.3,0.3], 'octopus': [-0.2,0.3], 
+pupil_size_ylimits = {'calibration': [-0.3,0.3], 'octopus': [-0.4,0.4], 
 'unique': {24.0: [-0.4,0.5], 25.0: [-0.3,0.6], 26.0: [-0.4,0.5], 27.0: [-0.4,0.5], 28.0: [-0.3,0.6], 29.0: [-0.3,0.7]}}
 pupil_movement_ylimits = {'calibration': [-50,50], 'octopus': [-50,50], 
 'unique': {24.0: [-50,50], 25.0: [-50,50], 26.0: [-50,50], 27.0: [-50,50], 28.0: [-50,50], 29.0: [-50,50]}}
