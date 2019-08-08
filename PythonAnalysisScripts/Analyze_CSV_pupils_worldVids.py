@@ -789,12 +789,9 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     for i in range(len(activated_months_list)):
         this_month_total_activation = max(right_camera_list[i],left_camera_list[i])
         all_months_total_activations.append(this_month_total_activation)
-    grand_total_good_left = sum(good_left_count)
-    grand_total_good_right = sum(good_right_count)
-    grand_total_activations = sum(all_months_total_activations)
-    good_left_count.append(grand_total_good_left)
-    good_right_count.append(grand_total_good_right)
-    all_months_total_activations.append(grand_total_activations)
+    good_left_count.append(0)
+    good_right_count.append(0)
+    all_months_total_activations.append(0)
     right_left_diff = [good_right_count[i] - good_left_count[i] for i in range(len(good_left_count))]
     total_right_diff = [all_months_total_activations[i] - good_right_count[i] for i in range(len(good_right_count))]
     data.append(good_left_count)
@@ -817,6 +814,14 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
         plt.bar(index, data[row], bar_width, align='center', bottom=y_offset, color=colors[row])
         y_offset = y_offset + data[row]
         cell_text.append(['%d' % x for x in y_offset])
+    # add grand totals
+    grand_total_good_left = sum(good_left_count)
+    grand_total_good_right = sum(good_right_count)
+    grand_total_activations = sum(all_months_total_activations)
+    grand_totals = [grand_total_good_left, grand_total_good_right, grand_total_activations]
+    for i in range(len(cell_text)):
+        cell_text[i].pop()
+        cell_text[i].append('%d' % grand_totals[i])
     # Reverse colors and text labels to display the last value at the top.
     colors = colors[::-1]
     cell_text.reverse()
