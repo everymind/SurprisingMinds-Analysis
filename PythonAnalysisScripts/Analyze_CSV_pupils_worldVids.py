@@ -783,18 +783,25 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
             updated_left_analysed = good_left_count.pop() + left_analysed
             good_right_count.append(updated_right_analysed)
             good_left_count.append(updated_left_analysed)
-    # organize data for plotting
+        # organize data for plotting
     data = []
     all_months_total_activations = []
     for i in range(len(activated_months_list)):
         this_month_total_activation = max(right_camera_list[i],left_camera_list[i])
         all_months_total_activations.append(this_month_total_activation)
+    grand_total_good_left = sum(good_left_count)
+    grand_total_good_right = sum(good_right_count)
+    grand_total_activations = sum(all_months_total_activations)
+    good_left_count.append(grand_total_good_left)
+    good_right_count.append(grand_total_good_right)
+    all_months_total_activations.append(grand_total_activations)
     right_left_diff = [good_right_count[i] - good_left_count[i] for i in range(len(good_left_count))]
     total_right_diff = [all_months_total_activations[i] - good_right_count[i] for i in range(len(good_right_count))]
     data.append(good_left_count)
     data.append(right_left_diff)
     data.append(total_right_diff)
     columns = [year_month for year_month in activated_months_list]
+    columns.append('Grand Totals')
     rows = ('Total activations', 'Good right trials', 'Good left trials')
     n_rows = len(data)
     index = np.arange(len(activated_months_list)) + 0.3
