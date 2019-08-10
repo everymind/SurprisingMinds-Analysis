@@ -789,16 +789,20 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     for i in range(len(activated_months_list)):
         this_month_total_activation = max(right_camera_list[i],left_camera_list[i])
         all_months_total_activations.append(this_month_total_activation)
+    good_left_count.append(0)
+    good_right_count.append(0)
+    all_months_total_activations.append(0)
     right_left_diff = [good_right_count[i] - good_left_count[i] for i in range(len(good_left_count))]
     total_right_diff = [all_months_total_activations[i] - good_right_count[i] for i in range(len(good_right_count))]
     data.append(good_left_count)
     data.append(right_left_diff)
     data.append(total_right_diff)
     columns = [year_month for year_month in activated_months_list]
+    columns.append('Grand \nTotals')
     rows = ('Total activations', 'Good right trials', 'Good left trials')
     n_rows = len(data)
-    index = np.arange(len(activated_months_list)) + 0.3
-    bar_width = 0.45  # the width of the bars
+    index = np.arange(len(activated_months_list)+1) * 2
+    bar_width = 0.7  # the width of the bars
     # Initialize the vertical-offset for the stacked bar chart.
     y_offset = np.zeros(len(columns))
     # Get some pastel shades for the colors
@@ -807,9 +811,17 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
     plt.figure(figsize=(14, 14), dpi=fsize)
     cell_text = []
     for row in range(n_rows):
-        plt.bar(index, data[row], bar_width, bottom=y_offset, color=colors[row])
+        plt.bar(index, data[row], bar_width, align='center', bottom=y_offset, color=colors[row])
         y_offset = y_offset + data[row]
         cell_text.append(['%d' % x for x in y_offset])
+    # add grand totals
+    grand_total_good_left = sum(good_left_count)
+    grand_total_good_right = sum(good_right_count)
+    grand_total_activations = sum(all_months_total_activations)
+    grand_totals = [grand_total_good_left, grand_total_good_right, grand_total_activations]
+    for i in range(len(cell_text)):
+        cell_text[i].pop()
+        cell_text[i].append('%d' % grand_totals[i])
     # Reverse colors and text labels to display the last value at the top.
     colors = colors[::-1]
     cell_text.reverse()
@@ -820,11 +832,14 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
                         cellLoc='center',
                         colLabels=columns,
                         loc='bottom')
+    the_table.auto_set_font_size(False)
+    the_table.set_fontsize(12)
     the_table.scale(1,4)
     # Adjust layout to make room for the table:
     plt.subplots_adjust(left=0.2, bottom=0.2)
     plt.ylabel('Number of activations')
     plt.xticks([])
+    plt.xlim(-1, index[-1]+1)
     plt.title('Exhibit activations by month')
     plt.savefig(save_filepath)
     plt.show(block=False)
@@ -916,7 +931,25 @@ def draw_avg_activations_by_weekday(activation_dict, analysed_dict, fsize, save_
     plt.pause(1)
     plt.close()
 
-def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
+def get_plt_colors(color_type, subplot_type, plt_alphas, plt_type):
+    plotting_colors = {'Right': {'all':[0.0118, 0.686, 1.0, plt_alphas[plt_type]], 'mean':[0.066667, 0.0157, 1.0, 0.75]}, 
+                        'Left': {'all':[1.0, 0.5412, 0.0157, plt_alphas[plt_type]], 'mean':[1.0, 0.3412, 0.0118, 0.75]}, 
+                        'X-axis': {'all':[0.722, 0.0118, 1.0, plt_alphas[plt_type]], 'mean':[0.996, 0.651, 0.0157, 0.75], 'CI95':[1.0, 0.784, 0.0, 0.3]}, 
+                        'Y-axis': {'all':[0.0196, 0.196, 0.988, plt_alphas[plt_type]], 'mean':[0.996, 0.651, 0.0157, 0.75], 'CI95':[1.0, 0.784, 0.0, 0.3]},
+                        'lum': {'all':[0.1725, 0.87, 0.0314, 1]},
+                        'events':{'all':[0.87, 0.0314, 0.1725, 1]}}
+    return plotting_colors[color_type][subplot_type]
+
+def draw_global_pupil_size_fig(plt_size_dict, plt_lum_dict, plt_type, c_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_right = plt_size_dict[plt_type][0][0][c_type]
+    plt_means_right = plt_size_dict[plt_type][1][0][c_type][1]
+    plt_type_left = plt_size_dict[plt_type][0][1][c_type]
+    plt_means_left = plt_size_dict[plt_type][1][1][c_type][1]
+    plt_N_right = len(plt_type_right)
+    plt_N_left = len(plt_type_left)
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
     # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
@@ -927,10 +960,10 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_right)):
-        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.9686, 0.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=2, color=[0.933, 0.0, 1.0, 0.75])
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
-    right_yticks = np.arange(pupil_ylims[plt_type][0], pupil_ylims[plt_type][1], step=plt_yticks_step)
+        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=get_plt_colors('right','all',plt_alphas,plt_type))
+    plt.plot(plt_means_right, linewidth=2, color=get_plt_colors('right','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
+    right_yticks = np.arange(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1], step=plt_yticks_step)
     plt.yticks(right_yticks, [str(int(round(y*100))) for y in right_yticks])
     right_xticks = np.arange(0, len(plt_type_right[0]), step=plt_xticks_step)
     plt.xticks(right_xticks, ['%.1f'%((x*40)/1000) for x in right_xticks])
@@ -941,10 +974,10 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_left)):
-        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[1.0, 0.6196, 0.0118, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=2, color=[0.243, 0.0118, 1.0, 0.75])
-    plt.ylim(pupil_ylims[plt_type][0], pupil_ylims[plt_type][1])
-    left_yticks = np.arange(pupil_ylims[plt_type][0], pupil_ylims[plt_type][1], step=plt_yticks_step)
+        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=get_plt_colors('left','all',plt_alphas,plt_type))
+    plt.plot(plt_means_left, linewidth=2, color=get_plt_colors('left','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
+    left_yticks = np.arange(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1], step=plt_yticks_step)
     plt.yticks(left_yticks, [str(int(round(y*100))) for y in left_yticks])
     left_xticks = np.arange(0, len(plt_type_left[0]), step=plt_xticks_step)
     plt.xticks(left_xticks, ['%.1f'%((x*40)/1000) for x in left_xticks])
@@ -955,12 +988,13 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type].keys():
+        plt.axvline(x=plt_lum_events[plt_type][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][event]+plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][event]-plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
     plt.ylim(lum_ylims[plt_type][0], lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -973,7 +1007,16 @@ def draw_global_pupil_size_fig(plt_type, fsize, fig_title, fig_path, plt_type_ri
     plt.pause(1)
     plt.close()
 
-def draw_global_pupil_size_fig_with_pv(plt_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_means_right_p, plt_means_right_v, plt_N_right, plt_type_left, plt_means_left, plt_means_left_p, plt_means_left_v, plt_N_left, plt_lum, plt_lum_p, plt_lum_v, plt_lum_N, p_label_offsets, v_label_offsets, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_unique_pupil_size_fig(plt_size_dict, plt_stim_order, plt_stim_float, plt_lum_dict, plt_type, c_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_right = plt_size_dict[plt_type][0][plt_stim_order][0][c_type]
+    plt_means_right = plt_size_dict[plt_type][1][plt_stim_order][0][c_type][1]
+    plt_type_left = plt_size_dict[plt_type][0][plt_stim_order][1][c_type]
+    plt_means_left = plt_size_dict[plt_type][1][plt_stim_order][1][c_type][1]
+    plt_N_right = len(plt_type_right)
+    plt_N_left = len(plt_type_left)
+    plt_lum = plt_lum_dict[plt_type][plt_stim_float]['SB lum']
+    plt_lum_N = plt_lum_dict[plt_type][plt_stim_float]['Vid Count']
     # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
@@ -984,67 +1027,10 @@ def draw_global_pupil_size_fig_with_pv(plt_type, fsize, fig_title, fig_path, plt
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_right)):
-        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=1.5, color=[1.0, 0.98, 0.0, 0.75])
-    for peak in plt_means_right_p:
-        plt.plot(peak, plt_means_right[peak], 'x')
-        plt.text(peak-p_label_offsets[0], plt_means_right[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plt_means_right_v:
-        plt.plot(valley, plt_means_right[valley], 'x')
-        plt.text(valley-v_label_offsets[0], plt_means_right[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
-    # subplot: Left eye sizes
-    plt.subplot(3,1,2)
-    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-    plt.title('Left eye pupil sizes; N = ' + str(plt_N_left), fontsize=10, color='grey', style='italic')
-    plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='--')
-    for trial in range(len(plt_type_left)):
-        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
-    for peak in plt_means_left_p:
-        plt.plot(peak, plt_means_left[peak], 'x')
-        plt.text(peak-p_label_offsets[0], plt_means_left[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plt_means_left_v:
-        plt.plot(valley, plt_means_left[valley], 'x')
-        plt.text(valley-v_label_offsets[0], plt_means_left[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
-    # subplot: Average luminance of stimuli video
-    plt.subplot(3,1,3)
-    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
-    plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(tbucket_size) + 'ms)', fontsize=11)
-    plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
-    plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=1, color=[0.192, 0.75, 0.004, 1])
-    for peak in plt_lum_p:
-        plt.plot(peak, plt_lum[peak], 'x')
-        plt.text(peak-p_label_offsets[0], plt_lum[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plt_lum_v:
-        plt.plot(valley, plt_lum[valley], 'x')
-        plt.text(valley-v_label_offsets[0], plt_lum[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
-    # save and display
-    plt.subplots_adjust(hspace=0.5)
-    plt.savefig(fig_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
-
-def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_N_right, plt_type_left, plt_means_left, plt_N_left, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
-    # draw fig
-    plt.figure(figsize=(14, 14), dpi=fsize)
-    plt.suptitle(fig_title, fontsize=12, y=0.98)
-    # subplot: Right eye sizes
-    plt.subplot(3,1,1)
-    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-    plt.title('Right eye pupil sizes; N = ' + str(plt_N_right), fontsize=10, color='grey', style='italic')
-    plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='--')
-    for trial in range(len(plt_type_right)):
-        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[1.0, 0.9686, 0.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=2, color=[0.933, 0.0, 1.0, 0.75])
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0], pupil_ylims[plt_type][plt_stim_type][1])
-    right_yticks = np.arange(pupil_ylims[plt_type][plt_stim_type][0], pupil_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
+        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=get_plt_colors('right','all',plt_alphas,plt_type))
+    plt.plot(plt_means_right, linewidth=2, color=get_plt_colors('right','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
+    right_yticks = np.arange(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1], step=plt_yticks_step)
     plt.yticks(right_yticks, [str(int(round(y*100))) for y in right_yticks])
     right_xticks = np.arange(0, len(plt_type_right[0]), step=plt_xticks_step)
     plt.xticks(right_xticks, ['%.1f'%((x*40)/1000) for x in right_xticks])
@@ -1055,10 +1041,10 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_left)):
-        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[1.0, 0.6196, 0.0118, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=2, color=[0.243, 0.0118, 1.0, 0.75])
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
-    left_yticks = np.arange(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
+        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=get_plt_colors('left','all',plt_alphas,plt_type))
+    plt.plot(plt_means_left, linewidth=2, color=get_plt_colors('left','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
+    left_yticks = np.arange(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1], step=plt_yticks_step)
     plt.yticks(left_yticks, [str(int(round(y*100))) for y in left_yticks])
     left_xticks = np.arange(0, len(plt_type_left[0]), step=plt_xticks_step)
     plt.xticks(left_xticks, ['%.1f'%((x*40)/1000) for x in left_xticks])
@@ -1069,14 +1055,15 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-    plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
-    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type][plt_stim_float].keys():
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][plt_stim_float][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]+plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]-plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
     lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
     plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
@@ -1087,64 +1074,15 @@ def draw_unique_pupil_size_fig(plt_type, plt_stim_type, fsize, fig_title, fig_pa
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_size_fig_with_pv(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_right, plt_means_right, plt_means_right_p, plt_means_right_v, plt_N_right, plt_type_left, plt_means_left, plt_means_left_p, plt_means_left_v, plt_N_left, plt_lum, plt_lum_p, plt_lum_v, plt_lum_N, p_label_offsets, v_label_offsets, plt_alphas, pupil_ylims, lum_ylims, tbucket_size):
+def draw_global_pupil_movement_fig(plt_movement_dict, plt_lum_dict, plt_type, c_type, s_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_X = plt_movement_dict[plt_type][0][s_type][c_type][0]
+    plt_type_Y = plt_movement_dict[plt_type][0][s_type][c_type][1]
+    plt_N_X = len(plt_type_X)
+    plt_N_Y = len(plt_type_Y)
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
     # draw fig
-    plt.figure(figsize=(14, 14), dpi=fsize)
-    plt.suptitle(fig_title, fontsize=12, y=0.98)
-    # subplot: Right eye sizes
-    plt.subplot(3,1,1)
-    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-    plt.title('Right eye pupil sizes; N = ' + str(plt_N_right), fontsize=10, color='grey', style='italic')
-    plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='--')
-    for trial in range(len(plt_type_right)):
-        plt.plot(plt_type_right[trial], '.', MarkerSize=1, color=[0.9686, 0.0, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_right, linewidth=1.5, color=[1.0, 0.98, 0.0, 0.75])
-    for peak in plt_means_right_p:
-        plt.plot(peak, plt_means_right[peak], 'x')
-        plt.text(peak-p_label_offsets[0], plt_means_right[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plt_means_right_v:
-        plt.plot(valley, plt_means_right[valley], 'x')
-        plt.text(valley-v_label_offsets[0], plt_means_right[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
-    # subplot: Left eye sizes
-    plt.subplot(3,1,2)
-    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
-    plt.title('Left eye pupil sizes; N = ' + str(plt_N_left), fontsize=10, color='grey', style='italic')
-    plt.minorticks_on()
-    plt.grid(b=True, which='major', linestyle='--')
-    for trial in range(len(plt_type_left)):
-        plt.plot(plt_type_left[trial], '.', MarkerSize=1, color=[0.012, 0.7, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_means_left, linewidth=1.5, color=[1.0, 0.34, 0.012, 0.75])
-    for peak in plt_means_left_p:
-        plt.plot(peak, plt_means_left[peak], 'x')
-        plt.text(peak-p_label_offsets[0], plt_means_left[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plt_means_left_v:
-        plt.plot(valley, plt_means_left[valley], 'x')
-        plt.text(valley-v_label_offsets[0], plt_means_left[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
-    # subplot: Average luminance of stimuli video
-    plt.subplot(3,1,3)
-    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
-    plt.xlabel('Time buckets (downsampled, 1 time bucket = ' + str(tbucket_size) + 'ms)', fontsize=11)
-    plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
-    plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=1, color=[0.192, 0.75, 0.004, 1])
-    for peak in plt_lum_p:
-        plt.plot(peak, plt_lum[peak], 'x')
-        plt.text(peak-p_label_offsets[0], plt_lum[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    for valley in plt_lum_v:
-        plt.plot(valley, plt_lum[valley], 'x')
-        plt.text(valley-v_label_offsets[0], plt_lum[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
-    # save and display
-    plt.subplots_adjust(hspace=0.5)
-    plt.savefig(fig_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
-
-def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_Y, plt_N_Y, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X-axis movement
@@ -1154,8 +1092,8 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.3, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
+        plt.plot(plt_type_X[trial], linewidth=0.3, color=get_plt_colors('X-axis','all',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
     # subplot: Y-axis movement
@@ -1165,8 +1103,8 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(plt_type_Y[trial], linewidth=0.3, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
+        plt.plot(plt_type_Y[trial], linewidth=0.3, color=get_plt_colors('Y-axis','all',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
@@ -1176,12 +1114,13 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type].keys():
+        plt.axvline(x=plt_lum_events[plt_type][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][event]+plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][event]-plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1194,7 +1133,15 @@ def draw_global_pupil_movement_fig(plt_type, fsize, fig_title, fig_path, plt_typ
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_Y, plt_N_Y, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
+def draw_unique_pupil_movement_fig(plt_movement_dict, plt_stim_order, plt_stim_float, plt_lum_dict, plt_type, c_type, s_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_X = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][0]
+    plt_N_X = len(plt_type_X)
+    plt_type_Y = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][1]
+    plt_N_Y = len(plt_type_Y)
+    plt_lum = plt_lum_dict[plt_type][plt_stim_float]['SB lum']
+    plt_lum_N = plt_lum_dict[plt_type][plt_stim_float]['Vid Count']
+    # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X-axis movement
@@ -1204,8 +1151,8 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(plt_type_X[trial], linewidth=0.4, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
+        plt.plot(plt_type_X[trial], linewidth=0.3, color=get_plt_colors('X-axis','all',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
     # subplot: Y-axis movement
@@ -1215,8 +1162,8 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(plt_type_Y[trial], linewidth=0.4, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
+        plt.plot(plt_type_Y[trial], linewidth=0.3, color=get_plt_colors('Y-axis','all',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
@@ -1226,14 +1173,15 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-    plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
-    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type][plt_stim_float].keys():
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][plt_stim_float][event]+event_marker_hloc, event_marker_vloc, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]+plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]-plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
     lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
     plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
@@ -1244,7 +1192,17 @@ def draw_unique_pupil_movement_fig(plt_type, plt_stim_type, fsize, fig_title, fi
     plt.pause(1)
     plt.close()
 
-def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_X_mean, plt_type_Y, plt_N_Y, plt_type_Y_mean, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
+def draw_global_pupil_motion_fig(plt_movement_dict, plt_lum_dict, plt_type, c_type, s_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_X = plt_movement_dict[plt_type][0][s_type][c_type][0]
+    plt_N_X = len(plt_type_X)
+    plt_type_X_mean = plt_movement_dict[plt_type][1][s_type][c_type][0][1]
+    plt_type_Y = plt_movement_dict[plt_type][0][s_type][c_type][1]
+    plt_N_Y = len(plt_type_X)
+    plt_type_Y_mean = plt_movement_dict[plt_type][1][s_type][c_type][1][1]
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
+    # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X-axis avg motion
@@ -1254,9 +1212,9 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.18, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.29, 0.0118, 0.75])
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=get_plt_colors('X-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=get_plt_colors('X-axis','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
     # subplot: Y-axis avg motion
@@ -1266,9 +1224,9 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.18, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[0.5333, 0.0, 1.0, 0.75])
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=get_plt_colors('Y-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=get_plt_colors('Y-axis','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
@@ -1278,12 +1236,13 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type].keys():
+        plt.axvline(x=plt_lum_events[plt_type][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][event]+event_marker_hloc, event_marker_vloc, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][event]+plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][event]-plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0],lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1296,7 +1255,17 @@ def draw_global_pupil_motion_fig(plt_type, fsize, fig_title, fig_path, plt_type_
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_X_mean, plt_type_Y, plt_N_Y, plt_type_Y_mean, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step):
+def draw_unique_pupil_motion_fig(plt_movement_dict, plt_stim_order, plt_stim_float, plt_lum_dict, plt_type, c_type, s_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_X = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][0]
+    plt_N_X = len(plt_type_X)
+    plt_type_X_mean = plt_movement_dict[plt_type][1][plt_stim_order][s_type][c_type][0][1]
+    plt_type_Y = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][1]
+    plt_N_Y = len(plt_type_Y)
+    plt_type_Y_mean = plt_movement_dict[plt_type][1][plt_stim_order][s_type][c_type][1][1]
+    plt_lum = plt_lum_dict[plt_type][plt_stim_float]['SB lum']
+    plt_lum_N = plt_lum_dict[plt_type][plt_stim_float]['Vid Count']
+    # draw fig
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(fig_title, fontsize=12, y=0.98)
     # subplot: X-axis avg motion
@@ -1306,9 +1275,9 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.29, 0.0118, 0.75])
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=get_plt_colors('X-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=get_plt_colors('X-axis','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
     # subplot: Y-axis avg motion
@@ -1318,9 +1287,9 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[0.5333, 0.0, 1.0, 0.75])
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=get_plt_colors('Y-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=get_plt_colors('Y-axis','mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
@@ -1330,14 +1299,15 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-    plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
-    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type][plt_stim_float].keys():
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][plt_stim_float][event]+event_marker_hloc, event_marker_vloc, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]+plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]-plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
     lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
     plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
@@ -1348,7 +1318,16 @@ def draw_unique_pupil_motion_fig(plt_type, plt_stim_type, fsize, fig_title, fig_
     plt.pause(1)
     plt.close()
 
-def draw_global_pupil_motion_fig_with_pv(plt_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_X_mean, plt_type_Y, plt_N_Y, plt_type_Y_mean, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, p_label_offsets, v_label_offsets):
+def draw_global_pupil_motion_fig_with_pv(plt_movement_dict, plt_lum_dict, plt_type, c_type, s_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc, p_label_offsets, v_label_offsets):
+    # prepare data
+    plt_type_X = plt_movement_dict[plt_type][0][s_type][c_type][0]
+    plt_N_X = len(plt_type_X)
+    plt_type_X_mean = plt_movement_dict[plt_type][1][s_type][c_type][0][1]
+    plt_type_Y = plt_movement_dict[plt_type][0][s_type][c_type][1]
+    plt_N_Y = len(plt_type_X)
+    plt_type_Y_mean = plt_movement_dict[plt_type][1][s_type][c_type][1][1]
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
     # get peaks and valleys
     plt_type_X_mean_p = signal.argrelextrema(plt_type_X_mean, np.greater)[0]
     plt_type_X_mean_v = signal.argrelextrema(plt_type_X_mean, np.less)[0]
@@ -1364,15 +1343,15 @@ def draw_global_pupil_motion_fig_with_pv(plt_type, fsize, fig_title, fig_path, p
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.18, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.29, 0.0118, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=get_plt_colors('X-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=get_plt_colors('X-axis','mean',plt_alphas,plt_type))
     for peak in plt_type_X_mean_p:
         plt.plot(peak, plt_type_X_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_X_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
     for valley in plt_type_X_mean_v:
         plt.plot(valley, plt_type_X_mean[valley], 'x')
         plt.text(valley-v_label_offsets[0], plt_type_X_mean[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
     # subplot: Y-axis avg motion
@@ -1382,15 +1361,15 @@ def draw_global_pupil_motion_fig_with_pv(plt_type, fsize, fig_title, fig_path, p
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.18, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[0.5333, 0.0, 1.0, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=get_plt_colors('Y-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=get_plt_colors('Y-axis','mean',plt_alphas,plt_type))
     for peak in plt_type_Y_mean_p:
         plt.plot(peak, plt_type_Y_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_Y_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
     for valley in plt_type_Y_mean_v:
         plt.plot(valley, plt_type_Y_mean[valley], 'x')
         plt.text(valley-v_label_offsets[0], plt_type_Y_mean[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][0],pupil_ylims[plt_type][1])
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
@@ -1400,12 +1379,13 @@ def draw_global_pupil_motion_fig_with_pv(plt_type, fsize, fig_title, fig_path, p
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type].keys():
+        plt.axvline(x=plt_lum_events[plt_type][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][event]+event_marker_hloc, event_marker_vloc, event, size=8, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][event]+plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][event]-plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
     plt.ylim(lum_ylims[plt_type][0],lum_ylims[plt_type][1])
     lum_yticks = np.arange(lum_ylims[plt_type][0],lum_ylims[plt_type][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
@@ -1418,7 +1398,16 @@ def draw_global_pupil_motion_fig_with_pv(plt_type, fsize, fig_title, fig_path, p
     plt.pause(1)
     plt.close()
 
-def draw_unique_pupil_motion_fig_with_pv(plt_type, plt_stim_type, fsize, fig_title, fig_path, plt_type_X, plt_N_X, plt_type_X_mean, plt_type_Y, plt_N_Y, plt_type_Y_mean, plt_lum, plt_lum_N, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, p_label_offsets, v_label_offsets):
+def draw_unique_pupil_motion_fig_with_pv(plt_movement_dict, plt_stim_order, plt_stim_float, plt_lum_dict, plt_type, c_type, s_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc, p_label_offsets, v_label_offsets):
+    # prepare data
+    plt_type_X = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][0]
+    plt_N_X = len(plt_type_X)
+    plt_type_X_mean = plt_movement_dict[plt_type][1][plt_stim_order][s_type][c_type][0][1]
+    plt_type_Y = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][1]
+    plt_N_Y = len(plt_type_Y)
+    plt_type_Y_mean = plt_movement_dict[plt_type][1][plt_stim_order][s_type][c_type][1][1]
+    plt_lum = plt_lum_dict[plt_type][plt_stim_float]['SB lum']
+    plt_lum_N = plt_lum_dict[plt_type][plt_stim_float]['Vid Count']
     # get peaks and valleys
     plt_type_X_mean_p = signal.argrelextrema(plt_type_X_mean, np.greater)[0]
     plt_type_X_mean_v = signal.argrelextrema(plt_type_X_mean, np.less)[0]
@@ -1434,15 +1423,15 @@ def draw_unique_pupil_motion_fig_with_pv(plt_type, plt_stim_type, fsize, fig_tit
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_X)):
-        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=[0.0118, 0.8666, 1.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_X_mean, linewidth=1.5, color=[1.0, 0.29, 0.0118, 0.75])
+        plt.plot(abs(plt_type_X[trial]), linewidth=0.3, color=get_plt_colors('X-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_X_mean, linewidth=1.5, color=get_plt_colors('X-axis','mean',plt_alphas,plt_type))
     for peak in plt_type_X_mean_p:
         plt.plot(peak, plt_type_X_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_X_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
     for valley in plt_type_X_mean_v:
         plt.plot(valley, plt_type_X_mean[valley], 'x')
         plt.text(valley-v_label_offsets[0], plt_type_X_mean[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
     X_xticks = np.arange(0, len(plt_type_X[0]), step=plt_xticks_step)
     plt.xticks(X_xticks, ['%.1f'%((x*40)/1000) for x in X_xticks])
     # subplot: Y-axis avg motion
@@ -1452,15 +1441,15 @@ def draw_unique_pupil_motion_fig_with_pv(plt_type, plt_stim_type, fsize, fig_tit
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
     for trial in range(len(plt_type_Y)):
-        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=[1.0, 0.769, 0.0, plt_alphas[plt_type]])
-    plt.plot(plt_type_Y_mean, linewidth=1.5, color=[0.5333, 0.0, 1.0, 0.75])
+        plt.plot(abs(plt_type_Y[trial]), linewidth=0.3, color=get_plt_colors('Y-axis','all',plt_alphas,plt_type))
+    plt.plot(plt_type_Y_mean, linewidth=1.5, color=get_plt_colors('Y-axis','mean',plt_alphas,plt_type))
     for peak in plt_type_Y_mean_p:
         plt.plot(peak, plt_type_Y_mean[peak], 'x')
         plt.text(peak-p_label_offsets[0], plt_type_Y_mean[peak]+p_label_offsets[1], str(peak), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
     for valley in plt_type_Y_mean_v:
         plt.plot(valley, plt_type_Y_mean[valley], 'x')
         plt.text(valley-v_label_offsets[0], plt_type_Y_mean[valley]+v_label_offsets[1], str(valley), fontsize='xx-small', bbox=dict(facecolor='white', edgecolor='black', boxstyle='round,pad=0.3'))
-    plt.ylim(pupil_ylims[plt_type][plt_stim_type][0],pupil_ylims[plt_type][plt_stim_type][1])
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
     Y_xticks = np.arange(0, len(plt_type_Y[0]), step=plt_xticks_step)
     plt.xticks(Y_xticks, ['%.1f'%((x*40)/1000) for x in Y_xticks])
     # subplot: Average luminance of stimuli video
@@ -1470,14 +1459,15 @@ def draw_unique_pupil_motion_fig_with_pv(plt_type, plt_stim_type, fsize, fig_tit
     plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
     plt.minorticks_on()
     plt.grid(b=True, which='major', linestyle='--')
-    plt.plot(plt_lum, linewidth=3, color=[0.1725, 0.87, 0.0314, 1])
-    for event in plt_lum_events.keys():
-        plt.axvline(x=plt_lum_events[event], linewidth=1, color=[0.87, 0.0314, 0.1725, 1])
-        plt.text(plt_lum_events[event]-10, 0.4, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
-        plt.axvline(x=plt_lum_events[event]+plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-        plt.axvline(x=plt_lum_events[event]-plt_lum_events_std[event], linewidth=1, linestyle='--', color=[0.87, 0.0314, 0.1725, 1])
-    plt.ylim(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1])
-    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_type][0],lum_ylims[plt_type][plt_stim_type][1], step=plt_yticks_step)
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type][plt_stim_float].keys():
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][plt_stim_float][event]+event_marker_hloc, event_marker_vloc, event, size=9, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]+plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]-plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1], step=plt_yticks_step)
     plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
     lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
     plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
@@ -1487,6 +1477,332 @@ def draw_unique_pupil_motion_fig_with_pv(plt_type, plt_stim_type, fsize, fig_tit
     plt.show(block=False)
     plt.pause(1)
     plt.close()
+
+def draw_global_pupil_size_fig_avg_zoom(plt_size_dict, plt_lum_dict, plt_type, s_type, s_name, c_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_traces = plt_size_dict[plt_type][0][s_type][c_type]
+    plt_mean = plt_size_dict[plt_type][1][s_type][c_type][1]
+    plt_N = len(plt_type_traces)
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
+    # draw fig
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    plt.suptitle(fig_title, fontsize=12, y=0.98)
+    # subplot: traces of all trials
+    plt.subplot(3,1,1)
+    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+    plt.title('Pupil size traces for all participants; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plt_type_traces)):
+        plt.plot(plt_type_traces[trial], '.', MarkerSize=1, color=get_plt_colors(s_name,'all',plt_alphas,plt_type))
+    plt.plot(plt_mean, linewidth=2, color=get_plt_colors(s_name,'mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
+    traces_yticks = np.arange(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1], step=plt_yticks_step)
+    plt.yticks(traces_yticks, [str(int(round(y*100))) for y in traces_yticks])
+    traces_xticks = np.arange(0, len(plt_type_traces[0]), step=plt_xticks_step)
+    plt.xticks(traces_xticks, ['%.1f'%((x*40)/1000) for x in traces_xticks])
+    # subplot: zoom in on population mean
+    plt.subplot(3,1,2)
+    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+    plt.title('Zoomed-in view of mean pupil size for all participants; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plt_type_traces)):
+        plt.plot(plt_type_traces[trial], '.', MarkerSize=1, color=get_plt_colors(s_name,'all',plt_alphas,plt_type))
+    plt.plot(plt_mean, linewidth=2, color=get_plt_colors(s_name,'mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['zoom'][0],pupil_ylims[plt_type]['zoom'][1])
+    zoom_yticks = np.arange(pupil_ylims[plt_type]['zoom'][0],pupil_ylims[plt_type]['zoom'][1], step=plt_yticks_step)
+    plt.yticks(zoom_yticks, [str(int(round(y*100))) for y in zoom_yticks])
+    zoom_xticks = np.arange(0, len(plt_type_traces[0]), step=plt_xticks_step)
+    plt.xticks(zoom_xticks, ['%.1f'%((x*40)/1000) for x in zoom_xticks])
+    # subplot: Average luminance of stimuli video
+    plt.subplot(3,1,3)
+    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+    plt.xlabel('Time in seconds', fontsize=11)
+    plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type].keys():
+        plt.axvline(x=plt_lum_events[plt_type][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][event]+plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][event]-plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][0], lum_ylims[plt_type][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
+    plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
+    lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
+    plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
+    # save and display
+    plt.subplots_adjust(hspace=0.5)
+    plt.savefig(fig_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+def draw_unique_pupil_size_fig_avg_zoom(plt_size_dict, plt_stim_order, plt_stim_float, plt_lum_dict, plt_type, s_type, s_name, c_type, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_traces = plt_size_dict[plt_type][0][plt_stim_order][s_type][c_type]
+    plt_mean = plt_size_dict[plt_type][1][plt_stim_order][s_type][c_type][1]
+    plt_N = len(plt_type_traces)
+    plt_lum = plt_lum_dict[plt_type][plt_stim_float]['SB lum']
+    plt_lum_N = plt_lum_dict[plt_type][plt_stim_float]['Vid Count']
+    # draw fig
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    plt.suptitle(fig_title, fontsize=12, y=0.98)
+    # subplot: traces of all trials
+    plt.subplot(3,1,1)
+    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+    plt.title('Pupil size traces for all participants; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plt_type_traces)):
+        plt.plot(plt_type_traces[trial], '.', MarkerSize=1, color=get_plt_colors(s_name,'all',plt_alphas,plt_type))
+    plt.plot(plt_mean, linewidth=2, color=get_plt_colors(s_name,'mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
+    right_yticks = np.arange(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1], step=plt_yticks_step)
+    plt.yticks(right_yticks, [str(int(round(y*100))) for y in right_yticks])
+    right_xticks = np.arange(0, len(plt_type_right[0]), step=plt_xticks_step)
+    plt.xticks(right_xticks, ['%.1f'%((x*40)/1000) for x in right_xticks])
+    # subplot: zoom in on population mean
+    plt.subplot(3,1,2)
+    plt.ylabel('Percent change in pupil area (from baseline)', fontsize=11)
+    plt.title('Zoomed-in view of mean pupil size for all participants; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plt_type_traces)):
+        plt.plot(plt_type_traces[trial], '.', MarkerSize=1, color=get_plt_colors(s_name,'all',plt_alphas,plt_type))
+    plt.plot(plt_mean, linewidth=2, color=get_plt_colors(s_name,'mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['zoom'][0], pupil_ylims[plt_type][plt_stim_float]['zoom'][1])
+    left_yticks = np.arange(pupil_ylims[plt_type][plt_stim_float]['zoom'][0], pupil_ylims[plt_type][plt_stim_float]['zoom'][1], step=plt_yticks_step)
+    plt.yticks(left_yticks, [str(int(round(y*100))) for y in left_yticks])
+    left_xticks = np.arange(0, len(plt_type_left[0]), step=plt_xticks_step)
+    plt.xticks(left_xticks, ['%.1f'%((x*40)/1000) for x in left_xticks])
+    # subplot: Average luminance of stimuli video
+    plt.subplot(3,1,3)
+    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+    plt.xlabel('Time in seconds', fontsize=11)
+    plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type][plt_stim_float].keys():
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][plt_stim_float][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]+plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]-plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1], step=plt_yticks_step)
+    plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
+    lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
+    plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
+    # save and display
+    plt.subplots_adjust(hspace=0.5)
+    plt.savefig(fig_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+# debugging
+plt_movement_dict = plot_movement_types
+plt_lum_dict = plot_lum_types
+plt_type = plot_type
+c_type = c
+s_type = side
+a_type = a
+a_name = axis_names[a]
+fsize = fig_size
+fig_title = figure_title
+fig_path = figure_path
+plt_lum_events = plot_lum_events
+plt_lum_events_std = plot_lum_events_std
+plt_alphas = alphas_motion
+pupil_ylims = pupil_motion_ylimits
+lum_ylims = lum_ylimits
+tbucket_size = downsampled_bucket_size_ms
+plt_xticks_step = plotting_xticks_step
+plt_yticks_step = plotting_yticks_percentChange_step
+event_marker_vloc = event_vlocs[plot_type]
+event_marker_hloc = event_hlocs[plot_type]
+def draw_global_pupil_motion_fig_avg_zoom(plt_movement_dict, plt_lum_dict, plt_type, c_type, s_type, a_type, a_name, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_traces = plt_movement_dict[plt_type][0][s_type][c_type][a_type]
+    plt_mean = plt_movement_dict[plt_type][1][s_type][c_type][a_type][1]
+    plt_N = len(plt_type_traces)
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
+    # calculate 95 percent confidence interval
+    total_each_tb = {tb:[] for tb in range(len(plt_type_traces[0]))}
+    for trial in plt_type_traces:
+        for tb in range(len(trial)):
+            total_each_tb[tb].append(abs(trial[tb]))
+    mean_each_tb = {}
+    std_each_tb = {}
+    CI95_each_tb = {}
+    for tb in total_each_tb.keys():
+        mean_each_tb[tb] = np.nanmean(total_each_tb[tb])
+        std_each_tb[tb] = np.nanstd(total_each_tb[tb])
+        CI95_each_tb[tb] = 1.96*(std_each_tb[tb]/np.sqrt(plt_N))
+    #for tb in mean_each_tb.keys():
+    #    if abs(mean_each_tb[tb]-plt_mean[tb])>0.5:
+    #        print('Difference in means for timebucket {tb} = {diff}'.format(tb=tb, diff=mean_each_tb[tb]-plt_mean[tb]))
+    CI95_upper = []
+    CI95_lower = []
+    x_tbs = []
+    for tb in CI95_each_tb.keys():
+        x_tbs.append(tb)
+        this_tb_upper = mean_each_tb[tb] + CI95_each_tb[tb]
+        CI95_upper.append(this_tb_upper)
+        this_tb_lower = mean_each_tb[tb] - CI95_each_tb[tb]
+        CI95_lower.append(this_tb_lower)
+    # draw fig
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    plt.suptitle(fig_title, fontsize=12, y=0.98)
+    # subplot: traces of all trials
+    plt.subplot(3,1,1)
+    plt.ylabel('Change in pixels', fontsize=11)
+    plt.title('Pupil motion (abs value of movement) traces for all participants; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plt_type_traces)):
+        plt.plot(abs(plt_type_traces[trial]), linewidth=0.3, color=get_plt_colors(a_name,'all',plt_alphas,plt_type))
+    plt.plot(plt_mean, linewidth=1.5, color=get_plt_colors(a_name,'mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['full'][0],pupil_ylims[plt_type]['full'][1])
+    traces_xticks = np.arange(0, len(plt_type_traces[0]), step=plt_xticks_step)
+    plt.xticks(traces_xticks, ['%.1f'%((x*40)/1000) for x in traces_xticks])
+    # subplot: zoom in on population mean
+    plt.subplot(3,1,2)
+    plt.ylabel('Change in pixels', fontsize=11)
+    plt.title('Zoomed-in view of mean pupil motion for all participants, with 95%% confidence interval; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plt_mean, linewidth=1.5, color=get_plt_colors(a_name,'mean',plt_alphas,plt_type))
+    plt.fill_between(x_tbs, CI95_upper, CI95_lower, color=get_plt_colors(a_name,'CI95',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type]['zoom'][0],pupil_ylims[plt_type]['zoom'][1])
+    zoom_xticks = np.arange(0, len(plt_type_traces[0]), step=plt_xticks_step)
+    plt.xticks(zoom_xticks, ['%.1f'%((x*40)/1000) for x in zoom_xticks])
+    # subplot: Average luminance of stimuli video
+    plt.subplot(3,1,3)
+    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+    plt.xlabel('Time in seconds', fontsize=11)
+    plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type].keys():
+        plt.axvline(x=plt_lum_events[plt_type][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][event]+plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][event]-plt_lum_events_std[plt_type][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][0], lum_ylims[plt_type][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][0], lum_ylims[plt_type][1], step=plt_yticks_step)
+    plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
+    lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
+    plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
+    # save and display
+    plt.subplots_adjust(hspace=0.5)
+    plt.savefig(fig_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+def draw_unique_pupil_motion_fig_avg_zoom(plt_movement_dict, plt_stim_order, plt_stim_float, plt_lum_dict, plt_type, c_type, s_type, a_type, a_name, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
+    # prepare data
+    plt_type_traces = plt_movement_dict[plt_type][0][plt_stim_order][s_type][c_type][a_type]
+    plt_mean = plt_movement_dict[plt_type][1][plt_stim_order][s_type][c_type][a_type][1]
+    plt_N = len(plt_type_traces)
+    plt_lum = plt_lum_dict[plt_type][plt_stim_float]['SB lum']
+    plt_lum_N = plt_lum_dict[plt_type][plt_stim_float]['Vid Count']
+    # calculate 95 percent confidence interval
+    total_each_tb = {tb:[] for tb in range(len(plt_type_traces[0]))}
+    for trial in plt_type_traces:
+        for tb in range(len(trial)):
+            total_each_tb[tb].append(abs(trial[tb]))
+    mean_each_tb = {}
+    std_each_tb = {}
+    CI95_each_tb = {}
+    for tb in total_each_tb.keys():
+        mean_each_tb[tb] = np.nanmean(total_each_tb[tb])
+        std_each_tb[tb] = np.nanstd(total_each_tb[tb])
+        CI95_each_tb[tb] = 1.96*(std_each_tb[tb]/np.sqrt(plt_N))
+    #for tb in mean_each_tb.keys():
+    #    if abs(mean_each_tb[tb]-plt_mean[tb])>0.5:
+    #        print('Difference in means for timebucket {tb} = {diff}'.format(tb=tb, diff=mean_each_tb[tb]-plt_mean[tb]))
+    CI95_upper = []
+    CI95_lower = []
+    x_tbs = []
+    for tb in CI95_each_tb.keys():
+        x_tbs.append(tb)
+        this_tb_upper = mean_each_tb[tb] + CI95_each_tb[tb]
+        CI95_upper.append(this_tb_upper)
+        this_tb_lower = mean_each_tb[tb] - CI95_each_tb[tb]
+        CI95_lower.append(this_tb_lower)
+    # draw fig
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    plt.suptitle(fig_title, fontsize=12, y=0.98)
+    # subplot: traces of all trials
+    plt.subplot(3,1,1)
+    plt.ylabel('Change in pixels', fontsize=11)
+    plt.title('Pupil motion (abs value of movement) traces for all participants; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    for trial in range(len(plt_type_traces)):
+        plt.plot(abs(plt_type_traces[trial]), linewidth=0.3, color=get_plt_colors(a_name,'all',plt_alphas,plt_type))
+    plt.plot(plt_mean, linewidth=1.5, color=get_plt_colors(a_name,'mean',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['full'][0], pupil_ylims[plt_type][plt_stim_float]['full'][1])
+    traces_xticks = np.arange(0, len(plt_type_right[0]), step=plt_xticks_step)
+    plt.xticks(traces_xticks, ['%.1f'%((x*40)/1000) for x in traces_xticks])
+    # subplot: zoom in on population mean
+    plt.subplot(3,1,2)
+    plt.ylabel('Change in pixels', fontsize=11)
+    plt.title('Zoomed-in view of mean pupil motion for all participants, with 95%% confidence interval; N = ' + str(plt_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plt_mean, linewidth=1.5, color=get_plt_colors(a_name,'mean',plt_alphas,plt_type))
+    plt.fill_between(x_tbs, CI95_upper, CI95_lower, color=get_plt_colors(a_name,'CI95',plt_alphas,plt_type))
+    plt.ylim(pupil_ylims[plt_type][plt_stim_float]['zoom'][0], pupil_ylims[plt_type][plt_stim_float]['zoom'][1])
+    traces_xticks = np.arange(0, len(plt_type_right[0]), step=plt_xticks_step)
+    plt.xticks(traces_xticks, ['%.1f'%((x*40)/1000) for x in traces_xticks])
+    # subplot: Average luminance of stimuli video
+    plt.subplot(3,1,3)
+    plt.ylabel('Percent change in luminance (from baseline)', fontsize=11)
+    plt.xlabel('Time in seconds', fontsize=11)
+    plt.title('Average luminance of ' + plt_type + ' sequence as seen by world camera, grayscaled; N = ' + str(plt_lum_N), fontsize=10, color='grey', style='italic')
+    plt.minorticks_on()
+    plt.grid(b=True, which='major', linestyle='--')
+    plt.plot(plt_lum, linewidth=3, color=get_plt_colors('lum','all',plt_alphas,plt_type))
+    for event in plt_lum_events[plt_type][plt_stim_float].keys():
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event], linewidth=1, color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.text(plt_lum_events[plt_type][plt_stim_float][event]+event_marker_hloc, event_marker_vloc, event, size=7, ha='center', va='center', bbox=dict(boxstyle='round', ec='black', fc='whitesmoke'))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]+plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        plt.axvline(x=plt_lum_events[plt_type][plt_stim_float][event]-plt_lum_events_std[plt_type][plt_stim_float][event], linewidth=1, linestyle='--', color=get_plt_colors('events','all',plt_alphas,plt_type))
+        event_marker_vloc = -event_marker_vloc
+    plt.ylim(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1])
+    lum_yticks = np.arange(lum_ylims[plt_type][plt_stim_float][0],lum_ylims[plt_type][plt_stim_float][1], step=plt_yticks_step)
+    plt.yticks(lum_yticks, [str(int(round(y*100))) for y in lum_yticks])
+    lum_xticks = np.arange(0, len(plt_lum), step=plt_xticks_step)
+    plt.xticks(lum_xticks, ['%.1f'%((x*40)/1000) for x in lum_xticks])
+    # save and display
+    plt.subplots_adjust(hspace=0.5)
+    plt.savefig(fig_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
+
+def draw_global_pupil_size_motion():
+    # prepare data
+    plt_type_size = 
+    plt_size_mean = 
+    plt_type_motion = 
+    plt_motion_mean = 
+    plt_N_size = len(plt_type_size)
+    plt_N_motion = len(plt_type_motion)
+    plt_lum = plt_lum_dict[plt_type][0]
+    plt_lum_N = plt_lum_dict[plt_type][3]
 
 ### BEGIN ANALYSIS ###
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
@@ -1729,10 +2045,10 @@ print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
 
-# change the following variables based on what month/stim you want to check
+""" # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
 month_index = 7 # change index to change month
-stim_to_check = 24.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -1740,8 +2056,8 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 549 # change to check different time buckets
-display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
+tbucket_to_check = 1042 # change to check different time buckets
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
 # ------------------------------------------------------------------------ #
@@ -1765,6 +2081,7 @@ all_avg_world_moments[24.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {766:['2018-05'], 767:['2017-10']}, 
 'octo zoom': {860:['2017-10','2018-05']},  
 'octo inks': {882:['2017-10'],883:['2017-11','2018-03']}, 
+'camera clears ink cloud': {916:['2017-10'],920:['2018-05']}, 
 'octo end': {987:['2017-10'],989:['2017-11'],990:['2018-03']}} 
 # Stimulus 25.0
 all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1774,9 +2091,8 @@ all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2
 'bird flies towards fingers': {462:['2018-05'],463:['2017-10']}, 
 'beak contacts food': {491:['2017-10'],492:['2018-05']}, 
 'wings at top of frame': {535:['2017-10','2018-05']},
-'foreground bird flutters': {553:['2017-10'], 553:['2018-05']}, 
-'foreground bird lands': {561:['2017-10'], 562:['2018-05']},
-'foreground bird takes off': {569:['2017-10'],570:['2018-05']}, 
+'bird flutters': {553:['2017-10'], 553:['2018-05']}, 
+'bird lands': {561:['2017-10'], 562:['2018-05']},
 'bird flies past fingers': {573:['2017-10','2018-05']}, 
 'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']}, 
 'octo start': {599:['2017-10','2017-11','2018-03']}, 
@@ -1784,6 +2100,7 @@ all_avg_world_moments[25.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {770:['2017-10','2018-05']}, 
 'octo zoom': {863:['2018-05'],864:['2017-10']}, 
 'octo inks': {885:['2017-10','2018-03'],886:['2017-11']}, 
+'camera clears ink cloud': {919:['2017-10'],923:['2018-05']}, 
 'octo end': {989:['2017-10'],993:['2017-11'],994:['2018-03']}} 
 # Stimulus 26.0
 all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1799,11 +2116,13 @@ all_avg_world_moments[26.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {833:['2017-10','2018-05']}, 
 'octo zoom': {927:['2017-10','2018-05']}, 
 'octo inks': {949:['2017-10'],951:['2017-11','2018-03']}, 
+'camera clears ink cloud': {983:['2017-10'],987:['2018-05']}, 
 'octo end': {1054:['2017-10'],1059:['2017-11','2018-03']}} 
 # Stimulus 27.0
 all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
 'calibration end': {441:['2017-10','2017-11','2018-03']}, 
 'unique start': {443:['2017-10','2017-11','2018-03']}, 
+'cuttlefish appears': {443:['2017-10','2018-05']},
 'tentacles go ballistic': {530:['2017-10','2018-05']}, 
 'unique end': {606:['2017-10'],607:['2017-11','2018-03']}, 
 'octo start': {605:['2017-10','2017-11'],606:['2018-03']}, 
@@ -1811,6 +2130,7 @@ all_avg_world_moments[27.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {776:['2017-10','2018-05']}, 
 'octo zoom': {869:['2018-05'],870:['2017-10']}, 
 'octo inks': {892:['2017-10'],893:['2017-11','2018-03']}, 
+'camera clears ink cloud': {926:['2017-10'],929:['2018-05']}, 
 'octo end': {996:['2017-10'],1000:['2017-11','2018-03']}} 
 # Stimulus 28.0
 all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1822,6 +2142,7 @@ all_avg_world_moments[28.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {832:['2017-10'],834:['2018-05']}, 
 'octo zoom': {927:['2017-10','2018-05']}, 
 'octo inks': {948:['2017-10'],950:['2017-11','2018-03']}, 
+'camera clears ink cloud': {982:['2017-10'],986:['2018-05']}, 
 'octo end': {1054:['2017-10'],1056:['2017-11'],1059:['2018-03']}} 
 # Stimulus 29.0
 all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2018-03']}, 
@@ -1833,6 +2154,7 @@ all_avg_world_moments[29.0] = {'calibration start': {102:['2017-10','2017-11','2
 'octo decam': {887:['2017-10','2018-05']}, 
 'octo zoom': {981:['2017-10','2018-05']}, 
 'octo inks': {1003:['2017-10'],1004:['2017-11','2018-03']}, 
+'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']}, 
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}} 
 
 ### ------------------------------ ###
@@ -1844,7 +2166,7 @@ cal_moments = []
 all_cal_moments_mean = {}
 all_cal_moments_std = {}
 ### COLLECT OCTO MOMENTS FOR PLOTTING
-octo_moments = ['fish turns','octo decam','octo zoom','octo inks']
+octo_moments = ['fish turns','octo decam','octo zoom','octo inks','camera clears ink cloud']
 all_octo_moments_mean = {}
 all_octo_moments_std = {}
 for moment in octo_moments:
@@ -1854,13 +2176,13 @@ for moment in octo_moments:
 stim24_moments = ['cat appears','cat front paws visible','cat lands on toy','cat back paws bounce']
 stim24_moments_mean = {}
 stim24_moments_std = {}
-stim25_moments = ['fingers appear','bird flies towards fingers','beak contacts food','wings at top of frame','foreground bird flutters','foreground bird lands','foreground bird takes off','bird flies past fingers']
+stim25_moments = ['fingers appear','bird flies towards fingers','beak contacts food','wings at top of frame','bird flutters','bird lands','bird flies past fingers']
 stim25_moments_mean = {}
 stim25_moments_std = {}
 stim26_moments = ['eyespots appear','eyespots disappear, eyes darken','arms spread','arms in, speckled mantle']
 stim26_moments_mean = {}
 stim26_moments_std = {}
-stim27_moments = ['tentacles go ballistic']
+stim27_moments = ['cuttlefish appears','tentacles go ballistic']
 stim27_moments_mean = {}
 stim27_moments_std = {}
 stim28_moments = []
@@ -2995,21 +3317,25 @@ plot_movement_types = {'calibration':[all_movements_cal, all_avg_motion_cal, all
 'unique':[all_movements_unique, all_avg_motion_unique, all_avg_motion_XY_unique, all_avg_motion_RL_unique]}
 lum_ylimits = {'calibration': [-0.3, 0.8], 'octopus': [-0.5, 0.7], 
 'unique': {24.0: [-0.6,0.5], 25.0: [-0.4,0.5], 26.0: [-0.6,0.6], 27.0: [-0.2,0.5], 28.0: [-0.5,0.5], 29.0: [-0.2,0.5]}}
-pupil_size_ylimits = {'calibration': [-0.3,0.3], 'octopus': [-0.2,0.3], 
-'unique': {24.0: [-0.4,0.5], 25.0: [-0.3,0.6], 26.0: [-0.4,0.5], 27.0: [-0.4,0.5], 28.0: [-0.3,0.6], 29.0: [-0.3,0.7]}}
+pupil_size_ylimits = {'calibration': {'full':[-0.7,0.7], 'zoom':[-0.15, 0.15]}, 'octopus': {'full':[-0.45, 0.45], 'zoom':[-0.25,0.25]}, 
+'unique': {24.0: {'full':[-0.6,0.7],'zoom':[-0.2,0.1]}, 25.0: {'full':[-0.4,0.7],'zoom':[-0.2,0.1]}, 26.0: {'full':[-0.5,0.6],'zoom':[-0.15,0.1]}, 27.0: {'full':[-0.5,0.6],'zoom':[-0.15,0.1]}, 28.0: {'full':[-0.4,0.7],'zoom':[-0.2,0.2]}, 29.0: {'full':[-0.4,0.8],'zoom':[-0.15,0.1]}}}
 pupil_movement_ylimits = {'calibration': [-50,50], 'octopus': [-50,50], 
 'unique': {24.0: [-50,50], 25.0: [-50,50], 26.0: [-50,50], 27.0: [-50,50], 28.0: [-50,50], 29.0: [-50,50]}}
-pupil_motion_ylimits = {'calibration': [0,30], 'octopus': [0,30], 
-'unique': {24.0: [0,20], 25.0: [0,20], 26.0: [0,20], 27.0: [0,20], 28.0: [0,20], 29.0: [0,20]}}
-alphas_size = {'calibration': 0.02, 'octopus': 0.02, 'unique': 0.3}
+pupil_motion_ylimits = {'calibration': {'full':[0,50],'zoom':[0,15]}, 'octopus': {'full':[0,50],'zoom':[0,7]}, 
+'unique': {24.0: {'full':[0,50],'zoom':[0,5]}, 25.0: {'full':[0,50],'zoom':[0,10]}, 26.0: {'full':[0,50],'zoom':[0,10]}, 27.0: {'full':[0,50],'zoom':[0,10]}, 28.0: {'full':[0,50],'zoom':[0,10]}, 29.0: {'full':[0,50],'zoom':[0,10]}}}
+alphas_size = {'calibration': 0.02, 'octopus': 0.02, 'unique': 0.45}
 alphas_movement = {'calibration': 0.004, 'octopus': 0.004, 'unique': 0.03}
-alphas_motion = {'calibration': 0.002, 'octopus': 0.002, 'unique': 0.015}
+alphas_motion = {'calibration': 0.002, 'octopus': 0.002, 'unique': 0.025}
 peak_label_offsets_motion = [2, 2.5]
 valley_label_offsets_motion = [2, -2.5]
 plot_lum_events = {'calibration':all_cal_moments_mean,'octopus':all_octo_moments_mean, 
 'unique':{24.0:stim24_moments_mean,25.0:stim25_moments_mean,26.0:stim26_moments_mean,27.0:stim27_moments_mean,28.0:stim28_moments_mean,29.0:stim29_moments_mean}}
 plot_lum_events_std = {'calibration':all_cal_moments_std, 'octopus':all_octo_moments_std,
 'unique': {24.0:stim24_moments_std,25.0:stim25_moments_std,26.0:stim26_moments_std,27.0:stim27_moments_std,28.0:stim28_moments_std,29.0:stim29_moments_std}}
+event_vlocs = {'calibration':0,'octopus':-0.4, 
+'unique':{24.0:0.2, 25.0:0.2, 26.0:0.3, 27.0:-0.1, 28.0:0.2, 29.0:0.2}}
+event_hlocs = {'calibration':0,'octopus':-5, 
+'unique':{24.0:-1, 25.0:1, 26.0:-2, 27.0:-1, 28.0:-2, 29.0:-2}}
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
@@ -3044,7 +3370,6 @@ activation_array = np.array(activation_count)
 analysed_array_right = np.array(good_trials_right)
 analysed_array_left = np.array(good_trials_left)
 ###
-
 ### ------------------------------ ###
 ### GENERATE PLOTS ###
 ### ------------------------------ ###
@@ -3062,57 +3387,23 @@ for plot_type in plot_types:
         for ctype in range(len(cType_names)):
             for stim_order in range(len(stim_vids)):
                 pupil_analysis_type_name = cType_names[ctype]
-                plot_type_right = plot_size_types[plot_type][0][stim_order][0][ctype]
-                plot_N_right = len(plot_type_right)
-                plot_means_right = plot_size_types[plot_type][1][stim_order][0][ctype][1]
-                plot_means_right_peaks = plot_size_types[plot_type][2][stim_order][0][ctype][0]
-                plot_means_right_valleys = plot_size_types[plot_type][2][stim_order][0][ctype][1]
-                plot_type_left = plot_size_types[plot_type][0][stim_order][1][ctype]
-                plot_N_left = len(plot_type_left)
-                plot_means_left = plot_size_types[plot_type][1][stim_order][1][ctype][1]
-                plot_means_left_peaks = plot_size_types[plot_type][2][stim_order][1][ctype][0]
-                plot_means_left_valleys = plot_size_types[plot_type][2][stim_order][1][ctype][1]
-                plot_luminance = plot_lum_types[plot_type][stim_vids[stim_order]]['SB lum']
-                plot_luminance_peaks = plot_lum_types[plot_type][stim_vids[stim_order]]['SB peaks']
-                plot_luminance_valleys = plot_lum_types[plot_type][stim_vids[stim_order]]['SB valleys']
-                plot_lum_N = plot_lum_types[plot_type][stim_vids[stim_order]]['Vid Count']
                 stim_name_float = stim_vids[stim_order]
                 stim_name_str = str(int(stim_vids[stim_order]))
                 # fig name and path
                 figure_name = 'PupilSizes_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png'
                 figure_path = os.path.join(pupils_folder, figure_name)
                 figure_title = "Pupil sizes of participants during unique sequence " + stim_name_str + "\n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-                # draw fig with peaks and valleys
-                #figure_path = os.path.join(pupils_pv_folder, figure_name)
-                #draw_unique_pupil_size_fig_with_pv(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
-                # draw fig without peaks and valleys
-                draw_unique_pupil_size_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+                # draw 
+                draw_unique_pupil_size_fig(plot_size_types, stim_order, stim_name_float, plot_lum_types, plot_type, ctype, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float])
     else:    
-        for ctype in range(len(cType_names)):
-            pupil_analysis_type_name = cType_names[ctype]
-            plot_type_right = plot_size_types[plot_type][0][0][ctype]
-            plot_N_right = len(plot_type_right)
-            plot_means_right = plot_size_types[plot_type][1][0][ctype][1]
-            plot_means_right_peaks = plot_size_types[plot_type][2][0][ctype][0]
-            plot_means_right_valleys = plot_size_types[plot_type][2][0][ctype][1]
-            plot_type_left = plot_size_types[plot_type][0][1][ctype]
-            plot_N_left = len(plot_type_left)
-            plot_means_left = plot_size_types[plot_type][1][1][ctype][1]
-            plot_means_left_peaks = plot_size_types[plot_type][2][1][ctype][0]
-            plot_means_left_valleys = plot_size_types[plot_type][2][1][ctype][1]
-            plot_luminance = plot_lum_types[plot_type][0]
-            plot_luminance_peaks = plot_lum_types[plot_type][1]
-            plot_luminance_valleys = plot_lum_types[plot_type][2]
-            plot_lum_N = plot_lum_types[plot_type][3]
+        for c in range(len(cType_names)):
+            pupil_analysis_type_name = cType_names[c]
             # fig name and path
             figure_name = 'PupilSizes_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
             figure_path = os.path.join(pupils_folder, figure_name)
             figure_title = "Pupil sizes of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-            # draw fig with peaks and valleys
-            #figure_path = os.path.join(pupils_pv_folder, figure_name)
-            #draw_global_pupil_size_fig_with_pv(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_means_right_peaks, plot_means_right_valleys, plot_N_right, plot_type_left, plot_means_left, plot_means_left_peaks, plot_means_left_valleys, plot_N_left, plot_luminance, plot_luminance_peaks, plot_luminance_valleys, plot_lum_N, peak_label_offsets, valley_label_offsets, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms)
-            # draw fig without peaks and valleys
-            draw_global_pupil_size_fig(plot_type, fig_size, figure_title, figure_path, plot_type_right, plot_means_right, plot_N_right, plot_type_left, plot_means_left, plot_N_left, plot_luminance, plot_lum_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+            # draw 
+            draw_global_pupil_size_fig(plot_size_types, plot_lum_types, plot_type, c, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type])
 
 # Plot pupil movement, X and Y axis separated
 for plot_type in plot_types:
@@ -3123,118 +3414,156 @@ for plot_type in plot_types:
                     stim_name_float = stim_vids[stim_order]
                     stim_name_str = str(int(stim_vids[stim_order]))
                     pupil_analysis_type_name = cType_names[c]
-                    plot_type_X = plot_movement_types[plot_type][0][stim_order][side][c][0]
-                    plot_N_X = len(plot_type_X)
-                    plot_type_Y = plot_movement_types[plot_type][0][stim_order][side][c][1]
-                    plot_N_Y = len(plot_type_Y)
-                    plot_luminance = plot_lum_types[plot_type][stim_name_float]['SB lum']
-                    plot_luminance_peaks = plot_lum_types[plot_type][stim_name_float]['SB peaks']
-                    plot_luminance_valleys = plot_lum_types[plot_type][stim_name_float]['SB valleys']
-                    plot_lum_N = plot_lum_types[plot_type][stim_name_float]['Vid Count']
                     # fig name and path
                     figure_name = 'PupilMovement_' + plot_type + stim_name_str + '_' + side_names[side] + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
                     figure_path = os.path.join(pupils_folder, figure_name)
                     figure_title = side_names[side] + " eye pupil movement of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                     # draw fig
-                    draw_unique_pupil_movement_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+                    draw_unique_pupil_movement_fig(plot_movement_types, stim_order, stim_name_float, plot_lum_types, plot_type, c, side, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float])
     else:
         for side in range(len(side_names)):
             for c in range(len(cType_names)):
                 pupil_analysis_type_name = cType_names[c]
-                plot_type_X = plot_movement_types[plot_type][0][side][c][0]
-                plot_N_X = len(plot_type_X)
-                plot_type_Y = plot_movement_types[plot_type][0][side][c][1]
-                plot_N_Y = len(plot_type_Y)
-                plot_luminance = plot_lum_types[plot_type][0]
-                plot_luminance_N = plot_lum_types[plot_type][3]
                 # fig name and path
                 figure_name = 'PupilMovement_' + plot_type + '_' + side_names[side] + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
                 figure_path = os.path.join(pupils_folder, figure_name)
                 figure_title = side_names[side] + " eye pupil movement of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
                 # draw fig
-                draw_global_pupil_movement_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_Y, plot_N_Y, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+                draw_global_pupil_movement_fig(plot_movement_types, plot_lum_types, plot_type, c, side, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_movement, pupil_movement_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type])
 
-# Plot pupil motion (abs val of movement traces), right and left consolidated
+# Plot pupil motion (abs val of movement traces), X and Y separated
 for plot_type in plot_types:
     if plot_type == 'unique':
         for stim_order in range(len(stim_vids)):
-            for c in range(len(cType_names)):
-                stim_name_float = stim_vids[stim_order]
-                stim_name_str = str(int(stim_vids[stim_order]))
-                pupil_analysis_type_name = cType_names[c]
-                plot_type_X = plot_movement_types[plot_type][0][stim_order][0][c][0] + plot_movement_types[plot_type][0][stim_order][1][c][0]
-                plot_N_X = len(plot_type_X)
-                plot_type_X_mean = plot_movement_types[plot_type][3][stim_order][c][0][1]
-                plot_type_Y = plot_movement_types[plot_type][0][stim_order][0][c][1] + plot_movement_types[plot_type][0][stim_order][1][c][1]
-                plot_N_Y = len(plot_type_Y)
-                plot_type_Y_mean = plot_movement_types[plot_type][3][stim_order][c][1][1]
-                plot_luminance = plot_lum_types[plot_type][stim_name_float]['SB lum']
-                plot_lum_N = plot_lum_types[plot_type][stim_name_float]['Vid Count']
-                # fig name and path
-                figure_name = 'PupilMotion_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-                figure_path = os.path.join(pupils_folder, figure_name)
-                figure_title = "Right and Left eye pupil motion of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-                # draw fig
-                draw_unique_pupil_motion_fig(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_X_mean, plot_type_Y, plot_N_Y, plot_type_Y_mean, plot_luminance, plot_luminance_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+            for side in range(len(side_names)):
+                for c in range(len(cType_names)):
+                    stim_name_float = stim_vids[stim_order]
+                    stim_name_str = str(int(stim_vids[stim_order]))
+                    pupil_analysis_type_name = cType_names[c]
+                    # fig name and path
+                    figure_name = 'PupilMotion' + side_names[side] + '_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                    figure_path = os.path.join(pupils_folder, figure_name)
+                    figure_title = side_names[side] + " eye pupil motion of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    # draw fig
+                    draw_unique_pupil_motion_fig(plot_movement_types, stim_order, stim_name_float, plot_lum_types, plot_type, c, side, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float])
     else:
-        for c in range(len(cType_names)):
-            pupil_analysis_type_name = cType_names[c]
-            plot_type_X = plot_movement_types[plot_type][0][0][c][0] + plot_movement_types[plot_type][0][1][c][0]
-            plot_N_X = len(plot_type_X)
-            plot_type_X_mean = plot_movement_types[plot_type][3][c][0][1]
-            plot_type_Y = plot_movement_types[plot_type][0][0][c][1] + plot_movement_types[plot_type][0][0][c][1]
-            plot_N_Y = len(plot_type_Y)
-            plot_type_Y_mean = plot_movement_types[plot_type][3][c][1][1]
-            plot_luminance = plot_lum_types[plot_type][0]
-            plot_luminance_N = plot_lum_types[plot_type][3]
-            # fig name and path
-            figure_name = 'PupilMotion_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-            figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Right and Left eye pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-            # draw fig
-            draw_global_pupil_motion_fig(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_X_mean, plot_type_Y, plot_N_Y, plot_type_Y_mean, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step)
+        for side in range(len(side_names)):
+            for c in range(len(cType_names)):
+                pupil_analysis_type_name = cType_names[c]
+                # fig name and path
+                figure_name = 'PupilMotion' + side_names[side] + '_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                figure_path = os.path.join(pupils_folder, figure_name)
+                figure_title = side_names[side] + " eye pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                # draw fig
+                draw_global_pupil_motion_fig(plot_movement_types, plot_lum_types, plot_type, c, side, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type])
 
-# Plot pupil motion (abs val of movement traces), right and left consolidated, with peaks and valleys labeled
+# Plot pupil motion (abs val of movement traces), with peaks and valleys labeled
 for plot_type in plot_types:
     if plot_type == 'unique':
         for stim_order in range(len(stim_vids)):
-            for c in range(len(cType_names)):
-                stim_name_float = stim_vids[stim_order]
-                stim_name_str = str(int(stim_vids[stim_order]))
-                pupil_analysis_type_name = cType_names[c]
-                plot_type_X = plot_movement_types[plot_type][0][stim_order][0][c][0] + plot_movement_types[plot_type][0][stim_order][1][c][0]
-                plot_N_X = len(plot_type_X)
-                plot_type_X_mean = plot_movement_types[plot_type][3][stim_order][c][0][1]
-                plot_type_Y = plot_movement_types[plot_type][0][stim_order][0][c][1] + plot_movement_types[plot_type][0][stim_order][1][c][1]
-                plot_N_Y = len(plot_type_Y)
-                plot_type_Y_mean = plot_movement_types[plot_type][3][stim_order][c][1][1]
-                plot_luminance = plot_lum_types[plot_type][stim_name_float]['SB lum']
-                plot_lum_N = plot_lum_types[plot_type][stim_name_float]['Vid Count']
-                # fig name and path
-                figure_name = 'PupilMotionWithPV_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-                figure_path = os.path.join(pupils_folder, figure_name)
-                figure_title = "Right and Left eye pupil motion of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-                # draw fig
-                draw_unique_pupil_motion_fig_with_pv(plot_type, stim_name_float, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_X_mean, plot_type_Y, plot_N_Y, plot_type_Y_mean, plot_luminance, plot_luminance_N, plot_lum_events[plot_type][stim_name_float], plot_lum_events_std[plot_type][stim_name_float], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, peak_label_offsets_motion, valley_label_offsets_motion)
+            for side in range(len(side_names)):
+                for c in range(len(cType_names)):
+                    stim_name_float = stim_vids[stim_order]
+                    stim_name_str = str(int(stim_vids[stim_order]))
+                    pupil_analysis_type_name = cType_names[c]
+                    # fig name and path
+                    figure_name = 'PupilMotion' + side_names[side] + '_PV_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                    figure_path = os.path.join(pupils_folder, figure_name)
+                    figure_title = side_names[side] + " eye pupil motion of participants during unique sequence " + stim_name_str + " \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    # draw fig
+                    draw_unique_pupil_motion_fig_with_pv(plot_movement_types, stim_order, stim_name_float, plot_lum_types, plot_type, c, side, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float], peak_label_offsets_motion, valley_label_offsets_motion)
     else:
-        for c in range(len(cType_names)):
-            pupil_analysis_type_name = cType_names[c]
-            plot_type_X = plot_movement_types[plot_type][0][0][c][0] + plot_movement_types[plot_type][0][1][c][0]
-            plot_N_X = len(plot_type_X)
-            plot_type_X_mean = plot_movement_types[plot_type][3][c][0][1]
-            plot_type_Y = plot_movement_types[plot_type][0][0][c][1] + plot_movement_types[plot_type][0][0][c][1]
-            plot_N_Y = len(plot_type_Y)
-            plot_type_Y_mean = plot_movement_types[plot_type][3][c][1][1]
-            plot_luminance = plot_lum_types[plot_type][0]
-            plot_luminance_N = plot_lum_types[plot_type][3]
-            # fig name and path
-            figure_name = 'PupilMotionWithPV_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
-            figure_path = os.path.join(pupils_folder, figure_name)
-            figure_title = "Right and Left eye pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
-            # draw fig
-            draw_global_pupil_motion_fig_with_pv(plot_type, fig_size, figure_title, figure_path, plot_type_X, plot_N_X, plot_type_X_mean, plot_type_Y, plot_N_Y, plot_type_Y_mean, plot_luminance, plot_luminance_N, plot_lum_events[plot_type], plot_lum_events_std[plot_type], alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, peak_label_offsets_motion, valley_label_offsets_motion)
+        for side in range(len(side_names)):
+            for c in range(len(cType_names)):
+                pupil_analysis_type_name = cType_names[c]
+                # fig name and path
+                figure_name = 'PupilMotion' + side_names[side] + '_PV_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                figure_path = os.path.join(pupils_folder, figure_name)
+                figure_title = side_names[side] + " eye pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                # draw fig
+                draw_global_pupil_motion_fig_with_pv(plot_movement_types, plot_lum_types, plot_type, c, side, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type], peak_label_offsets_motion, valley_label_offsets_motion)
 
-# Plot saccades and fixations
+# Plot pupil size, subplot zoomed in on average pupil size trace
+for plot_type in plot_types:
+    if plot_type == 'unique':
+        for side in range(len(side_names)):
+            for ctype in range(len(cType_names)):
+                for stim_order in range(len(stim_vids)):
+                    pupil_analysis_type_name = cType_names[ctype]
+                    stim_name_float = stim_vids[stim_order]
+                    stim_name_str = str(int(stim_vids[stim_order]))
+                    # fig name and path
+                    figure_name = 'PupilSizesZoom_' + side_names[side] + '_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png'
+                    figure_path = os.path.join(pupils_folder, figure_name)
+                    figure_title = side_names[side] + " pupil sizes of participants during unique sequence " + stim_name_str + "\n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    # draw 
+                    draw_unique_pupil_size_fig_avg_zoom(plot_size_types, stim_order, stim_name_float, plot_lum_types, plot_type, side, side_names[side], ctype, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float])
+    else:  
+        for side in range(len(side_names)):  
+            for c in range(len(cType_names)):
+                pupil_analysis_type_name = cType_names[c]
+                # fig name and path
+                figure_name = 'PupilSizesZoom_' + side_names[side] + '_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                figure_path = os.path.join(pupils_folder, figure_name)
+                figure_title = side_names[side] + " pupil sizes of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                # draw 
+                draw_global_pupil_size_fig_avg_zoom(plot_size_types, plot_lum_types, plot_type, side, side_names[side], c, fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_size, pupil_size_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type])
+
+# Plot pupil motion, subplot zoomed in on average pupil motion trace
+for plot_type in plot_types:
+    if plot_type == 'unique':
+        for side in range(len(side_names)):
+            for ctype in range(len(cType_names)):
+                for a in range(len(axis_names)):
+                    for stim_order in range(len(stim_vids)):
+                        pupil_analysis_type_name = cType_names[ctype]
+                        stim_name_float = stim_vids[stim_order]
+                        stim_name_str = str(int(stim_vids[stim_order]))
+                        # fig name and path
+                        figure_name = 'PupilMotionZoom_' + side_names[side] + axis_names[a] + '_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png'
+                        figure_path = os.path.join(pupils_folder, figure_name)
+                        figure_title = side_names[side] + " pupil " + axis_names[a] + " motion of participants during unique sequence " + stim_name_str + "\n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                        # draw 
+                        draw_unique_pupil_motion_fig_avg_zoom(plot_movement_types, stim_order, stim_name_float, plot_lum_types, plot_type, c, side, a, axis_names[a], fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float])
+    else:  
+        for side in range(len(side_names)):  
+            for c in range(len(cType_names)):
+                for a in range(len(axis_names)):
+                    pupil_analysis_type_name = cType_names[c]
+                    # fig name and path
+                    figure_name = 'PupilMotionZoom_' + side_names[side] + axis_names[a] + '_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                    figure_path = os.path.join(pupils_folder, figure_name)
+                    figure_title = side_names[side] + " pupil " + axis_names[a] + " motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    # draw 
+                    draw_global_pupil_motion_fig_avg_zoom(plot_movement_types, plot_lum_types, plot_type, c, side, a, axis_names[a], fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type])
+
+# Plot pupil size and motion next to each other
+for plot_type in plot_types:
+    if plot_type == 'unique':
+        for side in range(len(side_names)):
+            for ctype in range(len(cType_names)):
+                for a in range(len(axis_names)):
+                    for stim_order in range(len(stim_vids)):
+                        pupil_analysis_type_name = cType_names[ctype]
+                        stim_name_float = stim_vids[stim_order]
+                        stim_name_str = str(int(stim_vids[stim_order]))
+                        # fig name and path
+                        figure_name = 'PupilSizeAndMotion_' + side_names[side] + '_' + plot_type + stim_name_str + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png'
+                        figure_path = os.path.join(pupils_folder, figure_name)
+                        figure_title = side_names[side] + " pupil motion of participants during unique sequence " + stim_name_str + "\n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                        # draw 
+                        draw_unique_pupil_motion_fig_avg_zoom(plot_movement_types, stim_order, stim_name_float, plot_lum_types, plot_type, c, side, a, axis_names[a], fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type][stim_name_float], event_hlocs[plot_type][stim_name_float])
+    else:  
+        for side in range(len(side_names)):  
+            for c in range(len(cType_names)):
+                for a in range(len(axis_names)):
+                    pupil_analysis_type_name = cType_names[c]
+                    # fig name and path
+                    figure_name = 'PupilMotionZoom_' + side_names[side] + '_' + plot_type + '_' + pupil_analysis_type_name + '_' + todays_datetime + '_dpi' + str(fig_size) + '.png' 
+                    figure_path = os.path.join(pupils_folder, figure_name)
+                    figure_title = side_names[side] + " pupil motion of participants during " + plot_type + " sequence \n" + str(total_activation) + " total exhibit activations" + "\nAnalysis type: " + pupil_analysis_type_name + "\nPlotted on " + todays_datetime
+                    # draw 
+                    draw_global_pupil_motion_fig_avg_zoom(plot_movement_types, plot_lum_types, plot_type, c, side, a, axis_names[a], fig_size, figure_title, figure_path, plot_lum_events, plot_lum_events_std, alphas_motion, pupil_motion_ylimits, lum_ylimits, downsampled_bucket_size_ms, plotting_xticks_step, plotting_yticks_percentChange_step, event_vlocs[plot_type], event_hlocs[plot_type])
 
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
