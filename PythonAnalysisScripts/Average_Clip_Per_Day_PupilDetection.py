@@ -183,14 +183,14 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                 crop_size = 128
                 # Check boundarys of image
                 if( (left >= 0) and (top >= 0) and ((left + crop_size) < 800) and ((top + crop_size) < 600) ):
-                    cropped = gray[top:(top + crop_size), left:(left+crop_size)]
+                    cropped = blurred[top:(top + crop_size), left:(left+crop_size)]
                     # Compute average and stdev of all pixel luminances along border
                     ## this currently averages the rightmost and leftmost edges of the cropped window, because we assume that these pixels are not the pupil
                     avg = (np.mean(cropped[:, 0]) + np.mean(cropped[:, -1])) / 2
                     std = (np.std(cropped[:, 0]) + np.std(cropped[:, -1])) / 2
                     ## Find shape of pupil
                     # Threshold
-                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*2), 255, cv2.THRESH_BINARY_INV)[1])
+                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*4.5), 255, cv2.THRESH_BINARY_INV)[1])
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                     # if more than one contour
