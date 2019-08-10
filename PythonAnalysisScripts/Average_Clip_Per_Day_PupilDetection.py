@@ -164,7 +164,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
             # Hough circle detection
             rows = blurred.shape[0]
             ## sometimes the image seems really clean and easy to find the pupil and yet it still fails
-            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 15,
+            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 9.0,
                                     param1=55, param2=20,
                                     minRadius=10, maxRadius=150)
             # If there are no circles, then what??
