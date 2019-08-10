@@ -72,8 +72,10 @@ def find_darkest_circle(list_of_circles, source_image):
         print("{Image} is not grayscale!".format(Image=source_image))
         exit()
     for i in range(len(list_of_circles)):
+        # make a copy of the source image
+        copied_image = source_image.copy()
         # create a mask image that is the same size as source_image
-        mask = np.zeros(source_image.shape, source_image.dtype)
+        mask = np.zeros(copied_image.shape, copied_image.dtype)
         # get center coordinates and radius of circle from list_of_circle
         center = (list_of_circles[i][0], list_of_circles[i][1])
         radius = list_of_circles[i][2]
@@ -81,13 +83,9 @@ def find_darkest_circle(list_of_circles, source_image):
         # draw mask circle at coordinates and w/radius of circle from list_of_circles
         mask_circle = cv2.circle(mask, center, radius, 255, -1)
         ## for debugging
-        # this_circle = cv2.circle(source_image, center, radius, (i*100, 0, 100), 2)
-        # plt.imshow(source_image)
-        # plt.show(block=False)
-        # plt.pause(2)
-        # plt.clf()
-        # plt.cla()
-        # plt.close()
+        # this_circle = cv2.circle(copied_image, center, radius, (0, 0, 255), 2)
+        # plt.imshow(copied_image)
+        # plt.show()
         # get coordinates of mask circle pixels
         where = np.where(mask==255)
         # find those same coordinates in source_image
@@ -165,10 +163,9 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
             blurred = cv2.medianBlur(gray, 25)
             # Hough circle detection
             rows = blurred.shape[0]
-            ## WTF DOES HOUGHCIRCLES DO??
             ## sometimes the image seems really clean and easy to find the pupil and yet it still fails
-            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 8,
-                                    param1=75, param2=25,
+            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 15,
+                                    param1=55, param2=20,
                                     minRadius=10, maxRadius=150)
             # If there are no circles, then what??
             if circles is not None:
@@ -193,9 +190,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                     std = (np.std(cropped[:, 0]) + np.std(cropped[:, -1])) / 2
                     ## Find shape of pupil
                     # Threshold
-                    ## try removing otsu
-                    ## try using 2 standard devs away from average instead of 3
-                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*3), 255, cv2.THRESH_BINARY_INV+cv2.THRESH_OTSU)[1])
+                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*2), 255, cv2.THRESH_BINARY_INV)[1])
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                     # if more than one contour
@@ -212,26 +207,25 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                             # Shift ellipse back to full frame coordinates
                             shifted_center = (np.int(ellipse[0][0]) + left, np.int(ellipse[0][1]) + top)
                             # Draw circles
+                            frame_copy = frame.copy()
                             circles = np.uint16(np.around(circles))
                             for i in circles[0, :]:
                                 center = (i[0], i[1])
                                 # circle center
-                                cv2.circle(frame, center, 5, (0, 100, 100), 1)
+                                cv2.circle(frame_copy, center, 5, (0, 100, 100), 1)
                                 # circle outline
                                 radius = i[2]
-                                cv2.circle(frame, center, radius, (255, 0, 255), 1)
+                                cv2.circle(frame_copy, center, radius, (255, 0, 255), 1)
                             # Draw ellipse around largest contour
                             axes = (np.int(ellipse[1][0]/2),np.int(ellipse[1][1]/2)) 
                             angle = np.int(ellipse[2])
-                            frame = cv2.ellipse(frame, shifted_center, axes, angle, 0, 360, (0, 255, 0), 3, cv2.LINE_AA, 0)
+                            frame_copy = cv2.ellipse(frame_copy, shifted_center, axes, angle, 0, 360, (0, 255, 0), 3, cv2.LINE_AA, 0)
                             # Draw debugging circle around darkest circle
                             axes = (darkest_circle[2], darkest_circle[2]) 
                             angle = 0
-                            frame = cv2.ellipse(frame, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 2, cv2.LINE_AA, 0)
+                            frame_copy = cv2.ellipse(frame_copy, (darkest_circle[0], darkest_circle[1]), axes, angle, 0, 360, (0, 0, 255), 2, cv2.LINE_AA, 0)
                             # Save Data
                             darkest_circle_area = np.pi*(darkest_circle[2])**2
-                            #print("Pupil Size predicted by ellipses: {area}".format(area=cv2.contourArea(largest_contour)))
-                            #print("Pupil size predicted by circles: {area1}".format(area1=darkest_circle_area))
                             # save data from both findContours and find_darkest_circle
                             pupil_buckets[current_key][0] = shifted_center[0]
                             pupil_buckets[current_key][1] = shifted_center[1]
@@ -240,7 +234,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                             pupil_buckets[current_key][4] = darkest_circle[1]
                             pupil_buckets[current_key][5] = (darkest_circle[2]**2) * math.pi
                             # Fill debug displays and show
-                            cv2.imshow(debug_name, frame)
+                            cv2.imshow(debug_name, frame_copy)
                             ret = cv2.waitKey(1)
                         else:
                             #print("Pupil Size: n/a (too small)")
@@ -258,11 +252,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                 #print("Pupil Size: n/a (no circles)")
                 pupil_buckets[current_key][2] = -4
                 pupil_buckets[current_key][5] = -4
-            ## STILL DOING THIS?????
-            # Add current frame to average clip at correct slot
-            #day_avg_clip[:,:,f] = day_avg_clip[:,:,f] + gray
     # Save pupil size data
-    # HOW TO SAVE A DICTIONARY AS A CSV????
     time_chunks = []
     for key in pupil_buckets.keys():
         time_chunks.append(key)
