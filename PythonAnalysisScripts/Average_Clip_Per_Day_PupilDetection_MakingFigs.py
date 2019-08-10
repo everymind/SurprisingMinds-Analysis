@@ -154,7 +154,6 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
     last_timestamp = video_timestamps[-1]
     initialize_pattern = [-5,-5,-5,-5,-5,-5]
     pupil_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, initialize_pattern)
-
     # Loop through 4ms time buckets of eye video to find nearest frame and save pupil xy positon and area
     timestamps_to_check = video_timestamps[align_frame:]
     for timestamp in timestamps_to_check:
@@ -177,8 +176,8 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
             rows = blurred.shape[0]
             ## WTF DOES HOUGHCIRCLES DO??
             ## sometimes the image seems really clean and easy to find the pupil and yet it still fails
-            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 8,
-                                    param1=75, param2=25,
+            circles = cv2.HoughCircles(blurred, cv2.HOUGH_GRADIENT, 1.0, rows / 9,
+                                    param1=55, param2=20,
                                     minRadius=10, maxRadius=150)
             # If there are no circles, then what??
             if circles is not None:
@@ -196,7 +195,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                 crop_size = 128
                 # Check boundarys of image
                 if( (left >= 0) and (top >= 0) and ((left + crop_size) < 800) and ((top + crop_size) < 600) ):
-                    cropped = gray[top:(top + crop_size), left:(left+crop_size)]
+                    cropped = blurred[top:(top + crop_size), left:(left+crop_size)]
                     # Compute average and stdev of all pixel luminances along border
                     ## this currently averages the rightmost and leftmost edges of the cropped window, because we assume that these pixels are not the pupil
                     avg = (np.mean(cropped[:, 0]) + np.mean(cropped[:, -1])) / 2
@@ -205,7 +204,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
                     # Threshold
                     ## try removing otsu
                     ## try using 2 standard devs away from average instead of 3
-                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*2), 255, cv2.THRESH_BINARY_INV)[1])
+                    thresholded = np.uint8(cv2.threshold(cropped, avg-(std*4.5), 255, cv2.THRESH_BINARY_INV)[1])
                     # Find contours
                     contours, heirarchy = cv2.findContours(thresholded, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
                     # if more than one contour
