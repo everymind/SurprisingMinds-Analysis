@@ -835,7 +835,7 @@ def draw_monthly_activations(activation_dict, analysed_dict, fsize, save_filepat
                         colLabels=columns,
                         loc='bottom')
     the_table.auto_set_font_size(False)
-    the_table.set_fontsize(12)
+    the_table.set_fontsize(11)
     the_table.scale(1,4)
     # Adjust layout to make room for the table:
     plt.subplots_adjust(left=0.2, bottom=0.2)
@@ -2063,17 +2063,17 @@ saccades_window = 5 # timebuckets
 ### FIND MOMENTS OF INTEREST IN AVERAGE WORLD VIDS
 # setup
 all_avg_world_moments = {key:{} for key in stim_vids}
-# ------------------------------------------------------------------------ #
-### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
-# ------------------------------------------------------------------------ #
-# start searching for time bucket numbers
 # display available months
 months_available = [x for x in all_months_avg_world_vids.keys()]
 print("Months for which averaged stimulus video data exists: ")
 for i in range(len(months_available)):
     print("{index}: {month}".format(index=i, month=months_available[i]))
 
-# change the following variables based on what month/stim you want to check
+# ------------------------------------------------------------------------ #
+### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
+# ------------------------------------------------------------------------ #
+# start searching for time bucket numbers
+""" # change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
 month_index = 7 # change index to change month
 stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
@@ -2085,7 +2085,7 @@ max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
 tbucket_to_check = 710 # change to check different time buckets
-display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
 # ------------------------------------------------------------------------ #
