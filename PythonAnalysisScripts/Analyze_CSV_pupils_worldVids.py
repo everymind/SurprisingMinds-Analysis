@@ -2073,10 +2073,10 @@ for i in range(len(months_available)):
 ### MANUAL SECTION, UNCOMMENT BELOW TO FIND TIME BUCKETS OF MOMENTS OF INTEREST ###
 # ------------------------------------------------------------------------ #
 # start searching for time bucket numbers
-""" # change the following variables based on what month/stim you want to check
+# change the following variables based on what month/stim you want to check
 ### month/stimulus variables to change ###
-month_index = 7 # change index to change month
-stim_to_check = 29.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
+month_index = 12 # change index to change month
+stim_to_check = 28.0 # stims = 24.0, 25.0, 26.0, 27.0, 28.0, 29.0
 # more setup
 month_to_check = months_available[month_index]
 avg_month_vid_dict_to_check = all_months_avg_world_vids[month_to_check][stim_to_check]
@@ -2084,8 +2084,8 @@ sorted_tbuckets = sorted([x for x in avg_month_vid_dict_to_check.keys() if type(
 max_tbucket = sorted_tbuckets[-1]
 print("Time bucket to check must be smaller than {m}".format(m=max_tbucket))
 ### tbucket variable to change ###
-tbucket_to_check = 710 # change to check different time buckets
-display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check) """
+tbucket_to_check = 509 # change to check different time buckets
+display_avg_world_tbucket(avg_month_vid_dict_to_check, tbucket_to_check)
 # ------------------------------------------------------------------------ #
 ### END MANUAL SECTION ###
 # ------------------------------------------------------------------------ #
@@ -2194,6 +2194,10 @@ all_avg_world_moments[28.0] = {'calibration start': {0:['2017-10','2017-11','201
 'center dot appears': {374:['2018-05'],375:['2017-10']},
 'calibration end': {441:['2017-10','2017-11','2018-03']},
 'unique start': {442:['2018-03'],443:['2017-10','2017-11']},
+'fish scatter': {456:['2017-10','2018-04','2018-10']},
+'center fish turns': {469:['2017-10'], 470:['2018-04'], 471:['2018-10']},
+'center fish swims to left': {494:['2018-04','2018-10'], 495:['2017-10']},
+'camera clears red ferns': {503:['2017-10'],506:['2018-04'],509:['2018-10']},
 'unique end': {662:['2017-10'],663:['2017-11'],666:['2018-03']},
 'octo start': {661:['2017-10'],662:['2018-03'],663:['2017-11']},
 'fish turns': {711:['2017-10','2018-05']},
