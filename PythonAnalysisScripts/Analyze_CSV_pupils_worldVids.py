@@ -1606,27 +1606,6 @@ def draw_unique_pupil_size_fig_avg_zoom(plt_size_dict, plt_stim_order, plt_stim_
     plt.pause(1)
     plt.close()
 
-# debugging
-plt_movement_dict = plot_movement_types
-plt_lum_dict = plot_lum_types
-plt_type = plot_type
-c_type = c
-s_type = side
-a_type = a
-a_name = axis_names[a]
-fsize = fig_size
-fig_title = figure_title
-fig_path = figure_path
-plt_lum_events = plot_lum_events
-plt_lum_events_std = plot_lum_events_std
-plt_alphas = alphas_motion
-pupil_ylims = pupil_motion_ylimits
-lum_ylims = lum_ylimits
-tbucket_size = downsampled_bucket_size_ms
-plt_xticks_step = plotting_xticks_step
-plt_yticks_step = plotting_yticks_percentChange_step
-event_marker_vloc = event_vlocs[plot_type]
-event_marker_hloc = event_hlocs[plot_type]
 def draw_global_pupil_motion_fig_avg_zoom(plt_movement_dict, plt_lum_dict, plt_type, c_type, s_type, a_type, a_name, fsize, fig_title, fig_path, plt_lum_events, plt_lum_events_std, plt_alphas, pupil_ylims, lum_ylims, tbucket_size, plt_xticks_step, plt_yticks_step, event_marker_vloc, event_marker_hloc):
     # prepare data
     plt_type_traces = plt_movement_dict[plt_type][0][s_type][c_type][a_type]
