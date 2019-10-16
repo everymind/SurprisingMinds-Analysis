@@ -113,10 +113,7 @@ def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp, fill_patte
         time_buckets.append(current_bucket)
         current_bucket = current_bucket + window
 
-    bucket_list = dict.fromkeys(time_buckets)
-
-    for key in time_buckets: 
-        bucket_list[key] = fill_pattern
+    bucket_list = {key:fill_pattern.copy() for key in time_buckets}
     # -5 remains in a time bucket, this means no 'near-enough timestamp' frame was found in video
 
     return bucket_list
@@ -142,7 +139,7 @@ def find_pupil(which_eye, which_stimuli, trial_number, video_path, video_timesta
     last_timestamp = video_timestamps[-1]
     initialize_pattern = [-5,-5,-5,-5,-5,-5]
     pupil_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, initialize_pattern)
-    
+
     # Loop through 4ms time buckets of eye video to find nearest frame and save pupil xy positon and area
     timestamps_to_check = video_timestamps[align_frame:]
     for timestamp in timestamps_to_check:
@@ -324,7 +321,7 @@ zipped_names = [item[:-4] for item in zipped_data]
 zipped_data = zipped_data[1:]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
-analysed_drive = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 # when working from laptop
 #analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
 analysed_folders = sorted(os.listdir(analysed_drive))
