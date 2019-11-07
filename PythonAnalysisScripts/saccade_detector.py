@@ -2,37 +2,51 @@ import os
 import glob
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
 
 # TO DO:
 # Save each trials "peaks" as a spereate file (like is done with speeds)
 # funcitons?
 
-# Specify data folder
-data_folder = '/home/kampff/Data/Surprising'
+# grab today's date
+now = datetime.datetime.now()
+todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+current_working_directory = os.getcwd()
+
+# Specify relevant data/output folders
+data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
+plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 
 # Find daily folders
-daily_folders = glob.glob(data_folder + '/*')
-num_days = len(daily_folders)
+daily_folders = glob.glob(data_folder + os.sep + 'SurprisingMinds*')
+# If you only want to find saccades in a subset of the data...
+daily_folders = daily_folders[10:30]
 
 # Count number of files
+num_days = len(daily_folders)
 num_files = 0
 for df, daily_folder in enumerate(daily_folders):
 
     # Find csv paths (platform independent)
-    csv_paths = glob.glob(daily_folder + '/analysis/csv/*.csv')
+    csv_paths = glob.glob(daily_folder + os.sep + 'analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     if(len(csv_paths) == 0):
-        csv_paths = glob.glob(daily_folder + '/Analysis/csv/*.csv')
+        csv_paths = glob.glob(daily_folder + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     num_files = len(csv_paths) + num_files
-print(num_files)
+print('Number of files: {n}'.format(n=num_files))
 
 # Process all daily folders
 trial_count = 0
+speed_data_folder = data_folder + os.sep + 'speeds'
+if not os.path.exists(speed_data_folder):
+    #print("Creating plots folder.")
+    os.makedirs(speed_data_folder)
+
 for df, daily_folder in enumerate(daily_folders):
 
     # Find csv paths
-    csv_paths = glob.glob(daily_folder + '/analysis/csv/*.csv')
+    csv_paths = glob.glob(daily_folder + os.sep + 'analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     if(len(csv_paths) == 0):
-        csv_paths = glob.glob(daily_folder + '/Analysis/csv/*.csv')
+        csv_paths = glob.glob(daily_folder + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     num_files = len(csv_paths)
 
     # Process all csv files in a folder
@@ -87,8 +101,7 @@ for df, daily_folder in enumerate(daily_folders):
                 y[count] = y[count - 1] + step_y
                 area[count] = area[count - 1] + step_area
                 count += 1
-
-        # By now, we have X, Y, and Area for every time bucket (linearly interpolated)
+        # Now we have X, Y, and Area for every time bucket (linearly interpolated)
 
         # Smooth (8 time-buckets: ~ 32 ms, 30 Hz)
         smooth_kernel = np.ones(8) / 8
@@ -103,7 +116,7 @@ for df, daily_folder in enumerate(daily_folders):
         speed = np.float32(speed)
 
         # Store
-        output_path = data_folder + '/speeds/%d_%s_speed_%d.data' % (stimulus, eye, trial_count)
+        output_path = speed_data_folder + os.sep + '%d_%s_speed_%d.data' % (stimulus, eye, trial_count)
         speed.tofile(output_path)
         trial_count = trial_count + 1
 
@@ -127,10 +140,8 @@ for df, daily_folder in enumerate(daily_folders):
         # Report progress
         print(trial_count)
 
-
 # Load speed files
-speed_folder = data_folder + '/speeds'
-speed_files = glob.glob(speed_folder + '/*.data')
+speed_files = glob.glob(speed_data_folder + os.sep + '*.data')
 num_files = len(speed_files)
 peak_raster = np.zeros((num_files, 14000))
 speed_raster = np.zeros((num_files, 14000))
@@ -142,7 +153,20 @@ all_peak_durations = np.zeros(0)
 all_peak_intervals = np.zeros(0)
 count = 0
 
-plt.figure()
+# set boundaries for categories of saccade
+big_upper = 75
+big_lower = 45
+med_upper = 25
+med_lower = 15
+lil_upper = 15
+lil_lower = 1
+
+# set figure save path and title
+figure_name = 'DetectedSaccades_' + todays_datetime + '.png'
+figure_path = os.path.join(plots_dir, figure_name)
+figure_title = 'Detected Saccades, categorized by speed'
+plt.figure(figsize=(14, 14), dpi=fsize)
+plt.suptitle(fig_title, fontsize=12, y=0.98)
 for s in range(6):
     for i, speed_file in enumerate(speed_files):
 
@@ -157,6 +181,7 @@ for s in range(6):
 
             # Load speed_file
             speed = np.fromfile(speed_file, dtype=np.float32)
+            #### WHY GREATER THAN 1.25?? ####
             speed_raster[count, :len(speed)] = speed > 1.25
 
             # Find "peaks" greater than some threshold?
@@ -230,24 +255,30 @@ for s in range(6):
                 all_peak_windows = np.vstack((all_peak_windows, peak_window))
 
             # Make some peak categories
-            big_speeds = (peak_speeds < 75) * (peak_speeds > 45)
-            med_speeds = (peak_speeds < 25) * (peak_speeds > 15)
-            lil_speeds = (peak_speeds < 15) * (peak_speeds > 1)
+            big_speeds = (peak_speeds < big_upper) * (peak_speeds > big_lower)
+            med_speeds = (peak_speeds < med_upper) * (peak_speeds > med_lower)
+            lil_speeds = (peak_speeds < lil_upper) * (peak_speeds > lil_lower)
 
             # Plot a saccade raster
             num_peaks = np.sum(big_speeds)
             row_value = count*np.ones(num_peaks)
             plt.subplot(3,1,1)
+            plt.ylabel('Individual Trials', fontsize=9)
+            plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
             plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.01)
 
             num_peaks = np.sum(med_speeds)
             row_value = count*np.ones(num_peaks)
             plt.subplot(3,1,2)
+            plt.ylabel('Individual Trials', fontsize=9)
+            plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
             plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.01)
 
             num_peaks = np.sum(lil_speeds)
             row_value = count*np.ones(num_peaks)
             plt.subplot(3,1,3)
+            plt.ylabel('Individual Trials', fontsize=9)
+            plt.title('Small Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=lil_lower, u=lil_upper), fontsize=10, color='grey', style='italic')
             plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=0.1)
 
             # Add to all "peak" arrays
@@ -261,14 +292,28 @@ for s in range(6):
             # Report
             print(count)
             count = count + 1
-plt.show()
+# save and display
+plt.subplots_adjust(hspace=0.5)
+plt.savefig(figure_path)
+plt.show(block=False)
+plt.pause(1)
+plt.close()
 
 # PCA (or rather SVD)
 u, s, vh = np.linalg.svd(all_peak_windows, full_matrices=False)
+figure_name = 'SVD_Saccades_' + todays_datetime + '.png'
+figure_path = os.path.join(plots_dir, figure_name)
+figure_title = 'SVD of detected saccades'
+plt.figure(figsize=(14, 14), dpi=fsize)
+plt.suptitle(fig_title, fontsize=12, y=0.98)
 plt.plot(vh[0,:], 'r')
 plt.plot(vh[1,:], 'b')
 plt.plot(vh[2,:], 'g')
-plt.show()
+plt.subplots_adjust(hspace=0.5)
+plt.savefig(figure_path)
+plt.show(block=False)
+plt.pause(1)
+plt.close()
 
 # Project all my peak windows into PC1 and PC2
 PC1 = -vh[0,:]
