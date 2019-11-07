@@ -15,12 +15,12 @@ current_working_directory = os.getcwd()
 
 # Specify relevant data/output folders
 data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
-plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
+plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector"
 
 # Find daily folders
 daily_folders = glob.glob(data_folder + os.sep + 'SurprisingMinds*')
 # If you only want to find saccades in a subset of the data...
-daily_folders = daily_folders[10:30]
+#daily_folders = daily_folders[10:100]
 
 # Count number of files
 num_days = len(daily_folders)
@@ -140,7 +140,9 @@ for df, daily_folder in enumerate(daily_folders):
         # Report progress
         print(trial_count)
 
+######################
 # Load speed files
+######################
 speed_files = glob.glob(speed_data_folder + os.sep + '*.data')
 num_files = len(speed_files)
 peak_raster = np.zeros((num_files, 14000))
@@ -151,7 +153,6 @@ all_peak_windows = np.zeros((0,window_size))
 all_peak_speeds = np.zeros(0)
 all_peak_durations = np.zeros(0)
 all_peak_intervals = np.zeros(0)
-count = 0
 
 # set boundaries for categories of saccade
 big_upper = 75
@@ -161,12 +162,14 @@ med_lower = 15
 lil_upper = 15
 lil_lower = 1
 
+fsize = 200 #dpi
 # set figure save path and title
 figure_name = 'DetectedSaccades_' + todays_datetime + '.png'
-figure_path = os.path.join(plots_dir, figure_name)
-figure_title = 'Detected Saccades, categorized by speed'
+figure_path = os.path.join(plots_folder, figure_name)
+figure_title = 'Detected Saccades, categorized by speed, N={n}'.format(n=num_files)
 plt.figure(figsize=(14, 14), dpi=fsize)
-plt.suptitle(fig_title, fontsize=12, y=0.98)
+plt.suptitle(figure_title, fontsize=12, y=0.98)
+count = 0
 for s in range(6):
     for i, speed_file in enumerate(speed_files):
 
@@ -265,14 +268,14 @@ for s in range(6):
             plt.subplot(3,1,1)
             plt.ylabel('Individual Trials', fontsize=9)
             plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
-            plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.01)
+            plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.1)
 
             num_peaks = np.sum(med_speeds)
             row_value = count*np.ones(num_peaks)
             plt.subplot(3,1,2)
             plt.ylabel('Individual Trials', fontsize=9)
             plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
-            plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.01)
+            plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.1)
 
             num_peaks = np.sum(lil_speeds)
             row_value = count*np.ones(num_peaks)
@@ -299,13 +302,13 @@ plt.show(block=False)
 plt.pause(1)
 plt.close()
 
-# PCA (or rather SVD)
+# SVD (singular value decomposition, aka PCA)
 u, s, vh = np.linalg.svd(all_peak_windows, full_matrices=False)
 figure_name = 'SVD_Saccades_' + todays_datetime + '.png'
-figure_path = os.path.join(plots_dir, figure_name)
+figure_path = os.path.join(plots_folder, figure_name)
 figure_title = 'SVD of detected saccades'
 plt.figure(figsize=(14, 14), dpi=fsize)
-plt.suptitle(fig_title, fontsize=12, y=0.98)
+plt.suptitle(figure_title, fontsize=12, y=0.98)
 plt.plot(vh[0,:], 'r')
 plt.plot(vh[1,:], 'b')
 plt.plot(vh[2,:], 'g')
@@ -320,13 +323,23 @@ PC1 = -vh[0,:]
 PC2 = -vh[2,:]
 all_prj_1 = np.dot(all_peak_windows, PC1)
 all_prj_2 = np.dot(all_peak_windows, PC2)
+figure_name = 'Saccades_Projected-pc1-pc2_' + todays_datetime + '.png'
+figure_path = os.path.join(plots_folder, figure_name)
+figure_title = 'Saccade characteristics projected onto PC1 and PC2'
+plt.figure(figsize=(14, 14), dpi=fsize)
+plt.suptitle(figure_title, fontsize=12, y=0.98)
 plt.plot(all_prj_1, all_prj_2, 'k.', alpha=0.1)
-plt.show()
+plt.subplots_adjust(hspace=0.5)
+plt.savefig(figure_path)
+plt.show(block=False)
+plt.pause(1)
+plt.close()
 
+# What is this?
 plt.plot(s, '.')
 plt.show()
 
-# Meak average peak
+# Mean peak
 mean_peak = np.mean(all_peak_windows, 0)
 plt.plot(all_peak_windows[:1000, :].T, 'r', alpha=0.01)
 plt.plot(mean_peak)
