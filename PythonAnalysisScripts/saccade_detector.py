@@ -3,6 +3,7 @@ import glob
 import numpy as np
 import matplotlib.pyplot as plt
 import datetime
+import os.path
 
 # TO DO:
 # Save each trials "peaks" as a spereate file (like is done with speeds)
@@ -25,22 +26,28 @@ daily_folders = glob.glob(data_folder + os.sep + 'SurprisingMinds*')
 # Count number of files
 num_days = len(daily_folders)
 num_files = 0
-for df, daily_folder in enumerate(daily_folders):
-
+for df_C, daily_folder_count in enumerate(daily_folders):
     # Find csv paths (platform independent)
-    csv_paths = glob.glob(daily_folder + os.sep + 'analysis' + os.sep + 'csv'+ os.sep + '*.csv')
-    if(len(csv_paths) == 0):
-        csv_paths = glob.glob(daily_folder + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
-    num_files = len(csv_paths) + num_files
+    csv_paths_count = glob.glob(daily_folder + os.sep + 'analysis' + os.sep + 'csv'+ os.sep + '*.csv')
+    if(len(csv_paths_count) == 0):
+        csv_paths_count = glob.glob(daily_folder + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
+    num_files = len(csv_paths_count) + num_files
 print('Number of files: {n}'.format(n=num_files))
 
-# Process all daily folders
-trial_count = 0
+# Create an empty folder for speed data [CAUTION, DELETES ALL PREVIOUS SPEED FILES]
 speed_data_folder = data_folder + os.sep + 'speeds'
 if not os.path.exists(speed_data_folder):
     #print("Creating plots folder.")
     os.makedirs(speed_data_folder)
+if os.path.exists(speed_data_folder):
+    # make sure it's empty
+    filelist = glob.glob(os.path.join(speed_data_folder, "*.data"))
+    for f in filelist:
+        os.remove(f)
 
+# Extract pupil tracking data and generate "speed" per frame for each eye video
+trial_count = 0
+stim_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0}
 for df, daily_folder in enumerate(daily_folders):
 
     # Find csv paths
@@ -57,6 +64,7 @@ for df, daily_folder in enumerate(daily_folders):
         fields = trial_name.split(sep='_')
         eye = fields[0]
         stimulus = int(fields[1][-1:])-4
+        stim_count[stimulus] = stim_count[stimulus] + 1
 
         # Load data
         data = np.genfromtxt(csv_path, delimiter=',')
@@ -116,7 +124,7 @@ for df, daily_folder in enumerate(daily_folders):
         speed = np.float32(speed)
 
         # Store
-        output_path = speed_data_folder + os.sep + '%d_%s_speed_%d.data' % (stimulus, eye, trial_count)
+        output_path = speed_data_folder + os.sep + 'stim%d_%s_speed_%d.data' % (stimulus, eye, trial_count)
         speed.tofile(output_path)
         trial_count = trial_count + 1
 
@@ -143,10 +151,11 @@ for df, daily_folder in enumerate(daily_folders):
 ######################
 # Load speed files
 ######################
+trial_len_cutoff = 20000
 speed_files = glob.glob(speed_data_folder + os.sep + '*.data')
 num_files = len(speed_files)
-peak_raster = np.zeros((num_files, 14000))
-speed_raster = np.zeros((num_files, 14000))
+peak_raster = np.zeros((num_files, trial_len_cutoff))
+speed_raster = np.zeros((num_files, trial_len_cutoff))
 
 window_size = 50
 all_peak_windows = np.zeros((0,window_size))
@@ -163,144 +172,146 @@ lil_upper = 15
 lil_lower = 1
 
 fsize = 200 #dpi
-# set figure save path and title
-figure_name = 'DetectedSaccades_' + todays_datetime + '.png'
-figure_path = os.path.join(plots_folder, figure_name)
-figure_title = 'Detected Saccades, categorized by speed, N={n}'.format(n=num_files)
-plt.figure(figsize=(14, 14), dpi=fsize)
-plt.suptitle(figure_title, fontsize=12, y=0.98)
-count = 0
 for s in range(6):
+    # make separate plot for each stimulus
+    # set figure save path and title
+    figure_name = 'DetectedSaccades_Stim' + str(s) + '_' + todays_datetime + '.png'
+    figure_path = os.path.join(plots_folder, figure_name)
+    figure_title = 'Detected Saccades, categorized by speed, N={n}'.format(n=stim_count[s])
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    plt.suptitle(figure_title, fontsize=12, y=0.98)
+    count = 0
     for i, speed_file in enumerate(speed_files):
 
         # Get stimulus number
         trial_name = os.path.basename(speed_file)
         fields = trial_name.split(sep='_')
         eye = fields[1]
-        stimulus = int(fields[0])
+        stimulus = int(fields[0][-1])
 
         # Check if current stimulus number
         if(stimulus == s):
 
             # Load speed_file
             speed = np.fromfile(speed_file, dtype=np.float32)
-            #### WHY GREATER THAN 1.25?? ####
-            speed_raster[count, :len(speed)] = speed > 1.25
+            if speed < trial_len_cutoff:
+                #### WHY GREATER THAN 1.25?? ####
+                speed_raster[count, :len(speed)] = speed > 1.25
 
-            # Find "peaks" greater than some threshold?
-            low_threshold = 0.5
-            high_threshold = 1.5
-            peak_start_times = []
-            peak_stop_times = []
-            peaking = False
-            for i, sp in enumerate(speed):
-                # Look for a new peak
-                if(not peaking):
-                    if(sp > high_threshold):
-                        peaking = True
-                        peak_start_times.append(i)
-                # Track ongoing peak    
-                else:
-                    if(sp < low_threshold):
-                        peaking = False       
-                        peak_stop_times.append(i)
+                # Find "peaks" greater than some threshold?
+                low_threshold = 0.5
+                high_threshold = 1.5
+                peak_start_times = []
+                peak_stop_times = []
+                peaking = False
+                for i, sp in enumerate(speed):
+                    # Look for a new peak
+                    if(not peaking):
+                        if(sp > high_threshold):
+                            peaking = True
+                            peak_start_times.append(i)
+                    # Track ongoing peak    
+                    else:
+                        if(sp < low_threshold):
+                            peaking = False       
+                            peak_stop_times.append(i)
 
-            # Convert to arrays
-            peak_start_times = np.array(peak_start_times)
-            peak_stop_times = np.array(peak_stop_times)
+                # Convert to arrays
+                peak_start_times = np.array(peak_start_times)
+                peak_stop_times = np.array(peak_stop_times)
 
-            # Throw out the first peak
-            peak_start_times = peak_start_times[1:]
-            peak_stop_times = peak_stop_times[1:]
+                # Throw out the first peak
+                peak_start_times = peak_start_times[1:]
+                peak_stop_times = peak_stop_times[1:]
 
-            # Throw out last peak if incomplete
-            if len(peak_start_times) > len(peak_stop_times):
-                peak_start_times = peak_start_times[:-1]
+                # Throw out last peak if incomplete
+                if len(peak_start_times) > len(peak_stop_times):
+                    peak_start_times = peak_start_times[:-1]
 
-            # Find peak durations
-            peak_durations = peak_stop_times - peak_start_times
+                # Find peak durations
+                peak_durations = peak_stop_times - peak_start_times
 
-            # Find peak speed and indices
-            peak_speeds = []
-            peak_indices = []
-            for start, stop in zip(peak_start_times,peak_stop_times):
-                peak_speed = np.max(speed[start:stop])
-                peak_index = np.argmax(speed[start:stop])
-                peak_speeds.append(peak_speed)
-                peak_indices.append(start + peak_index)
+                # Find peak speed and indices
+                peak_speeds = []
+                peak_indices = []
+                for start, stop in zip(peak_start_times,peak_stop_times):
+                    peak_speed = np.max(speed[start:stop])
+                    peak_index = np.argmax(speed[start:stop])
+                    peak_speeds.append(peak_speed)
+                    peak_indices.append(start + peak_index)
 
-            # Convert to arrays
-            peak_speeds = np.array(peak_speeds)
-            peak_indices = np.array(peak_indices)
+                # Convert to arrays
+                peak_speeds = np.array(peak_speeds)
+                peak_indices = np.array(peak_indices)
 
-            # Measure inter-peak_interval
-            peak_intervals = np.diff(peak_indices, prepend=[0])
+                # Measure inter-peak_interval
+                peak_intervals = np.diff(peak_indices, prepend=[0])
 
-            # Filter for good saccades
-            good_peaks = (peak_intervals > 25) * (peak_durations < 30) * (peak_durations > 4) * (peak_speeds < 100)
-            peak_speeds = peak_speeds[good_peaks]
-            peak_indices = peak_indices[good_peaks]
-            peak_durations = peak_durations[good_peaks]
-            peak_intervals = peak_intervals[good_peaks]
+                # Filter for good saccades
+                good_peaks = (peak_intervals > 25) * (peak_durations < 30) * (peak_durations > 4) * (peak_speeds < 100)
+                peak_speeds = peak_speeds[good_peaks]
+                peak_indices = peak_indices[good_peaks]
+                peak_durations = peak_durations[good_peaks]
+                peak_intervals = peak_intervals[good_peaks]
 
-            # Extract windows around peak maxima
-            for peak_index in peak_indices:
-                left_border = np.int(peak_index - np.round(window_size/2))
-                right_border = np.int(left_border + window_size)
+                # Extract windows around peak maxima
+                for peak_index in peak_indices:
+                    left_border = np.int(peak_index - np.round(window_size/2))
+                    right_border = np.int(left_border + window_size)
 
-                # Check that window fits
-                if left_border < 0:
-                    continue
-                if right_border > len(speed):
-                    continue
+                    # Check that window fits
+                    if left_border < 0:
+                        continue
+                    if right_border > len(speed):
+                        continue
 
-                peak_window = speed[left_border:right_border]
-                all_peak_windows = np.vstack((all_peak_windows, peak_window))
+                    peak_window = speed[left_border:right_border]
+                    all_peak_windows = np.vstack((all_peak_windows, peak_window))
 
-            # Make some peak categories
-            big_speeds = (peak_speeds < big_upper) * (peak_speeds > big_lower)
-            med_speeds = (peak_speeds < med_upper) * (peak_speeds > med_lower)
-            lil_speeds = (peak_speeds < lil_upper) * (peak_speeds > lil_lower)
+                # Make some peak categories
+                big_speeds = (peak_speeds < big_upper) * (peak_speeds > big_lower)
+                med_speeds = (peak_speeds < med_upper) * (peak_speeds > med_lower)
+                lil_speeds = (peak_speeds < lil_upper) * (peak_speeds > lil_lower)
 
-            # Plot a saccade raster
-            num_peaks = np.sum(big_speeds)
-            row_value = count*np.ones(num_peaks)
-            plt.subplot(3,1,1)
-            plt.ylabel('Individual Trials', fontsize=9)
-            plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
-            plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.1)
+                # Plot a saccade raster
+                num_peaks = np.sum(big_speeds)
+                row_value = count*np.ones(num_peaks)
+                plt.subplot(3,1,1)
+                plt.ylabel('Individual Trials', fontsize=9)
+                plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
+                plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.05)
 
-            num_peaks = np.sum(med_speeds)
-            row_value = count*np.ones(num_peaks)
-            plt.subplot(3,1,2)
-            plt.ylabel('Individual Trials', fontsize=9)
-            plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
-            plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.1)
+                num_peaks = np.sum(med_speeds)
+                row_value = count*np.ones(num_peaks)
+                plt.subplot(3,1,2)
+                plt.ylabel('Individual Trials', fontsize=9)
+                plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
+                plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.05)
 
-            num_peaks = np.sum(lil_speeds)
-            row_value = count*np.ones(num_peaks)
-            plt.subplot(3,1,3)
-            plt.ylabel('Individual Trials', fontsize=9)
-            plt.title('Small Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=lil_lower, u=lil_upper), fontsize=10, color='grey', style='italic')
-            plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=0.1)
+                num_peaks = np.sum(lil_speeds)
+                row_value = count*np.ones(num_peaks)
+                plt.subplot(3,1,3)
+                plt.ylabel('Individual Trials', fontsize=9)
+                plt.title('Small Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=lil_lower, u=lil_upper), fontsize=10, color='grey', style='italic')
+                plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=0.1)
 
-            # Add to all "peak" arrays
-            all_peak_speeds = np.hstack((all_peak_speeds, peak_speeds))
-            all_peak_durations = np.hstack((all_peak_durations, peak_durations))
-            all_peak_intervals = np.hstack((all_peak_intervals, peak_intervals))
+                # Add to all "peak" arrays
+                all_peak_speeds = np.hstack((all_peak_speeds, peak_speeds))
+                all_peak_durations = np.hstack((all_peak_durations, peak_durations))
+                all_peak_intervals = np.hstack((all_peak_intervals, peak_intervals))
 
-            # Store peaks in peak raster
-            peak_raster[count, peak_intervals] = 1
+                # Store peaks in peak raster
+                peak_raster[count, peak_intervals] = 1
 
-            # Report
-            print(count)
-            count = count + 1
-# save and display
-plt.subplots_adjust(hspace=0.5)
-plt.savefig(figure_path)
-plt.show(block=False)
-plt.pause(1)
-plt.close()
+                # Report
+                print(count)
+                count = count + 1
+    # save and display
+    #plt.subplots_adjust(hspace=0.5)
+    plt.savefig(figure_path)
+    plt.show(block=False)
+    plt.pause(1)
+    plt.close()
 
 # SVD (singular value decomposition, aka PCA)
 u, s, vh = np.linalg.svd(all_peak_windows, full_matrices=False)
