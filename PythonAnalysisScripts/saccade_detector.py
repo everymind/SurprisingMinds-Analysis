@@ -14,9 +14,12 @@ now = datetime.datetime.now()
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 current_working_directory = os.getcwd()
 
-# Specify relevant data/output folders
-data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
-plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector"
+# Specify relevant data/output folders - laptop
+#data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
+#plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+# Specify relevant data/output folders - office
+data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
+plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
 
 # Find daily folders
 daily_folders = glob.glob(data_folder + os.sep + 'SurprisingMinds*')
@@ -28,9 +31,9 @@ num_days = len(daily_folders)
 num_files = 0
 for df_C, daily_folder_count in enumerate(daily_folders):
     # Find csv paths (platform independent)
-    csv_paths_count = glob.glob(daily_folder + os.sep + 'analysis' + os.sep + 'csv'+ os.sep + '*.csv')
+    csv_paths_count = glob.glob(daily_folder_count + os.sep + 'analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     if(len(csv_paths_count) == 0):
-        csv_paths_count = glob.glob(daily_folder + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
+        csv_paths_count = glob.glob(daily_folder_count + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     num_files = len(csv_paths_count) + num_files
 print('Number of files: {n}'.format(n=num_files))
 
