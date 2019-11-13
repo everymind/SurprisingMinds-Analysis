@@ -180,7 +180,7 @@ for s in range(6):
     # set figure save path and title
     figure_name = 'DetectedSaccades_Stim' + str(s) + '_' + todays_datetime + '.png'
     figure_path = os.path.join(plots_folder, figure_name)
-    figure_title = 'Detected Saccades, categorized by speed, N={n}'.format(n=stim_count[s])
+    figure_title = 'Detected Saccades for stimulus {s}, categorized by speed, N={n}'.format(s=s, n=stim_count[s])
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(figure_title, fontsize=12, y=0.98)
     count = 0
@@ -197,7 +197,7 @@ for s in range(6):
 
             # Load speed_file
             speed = np.fromfile(speed_file, dtype=np.float32)
-            if speed < trial_len_cutoff:
+            if len(speed) < trial_len_cutoff:
                 #### WHY GREATER THAN 1.25?? ####
                 speed_raster[count, :len(speed)] = speed > 1.25
 
