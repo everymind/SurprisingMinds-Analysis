@@ -199,7 +199,7 @@ downsample_rate = int(new_bin_size/original_bin_size)
 downsampled_movie_len = int(gaze_movie_len/downsample_rate)
 gaze_movie_resolution = 40
 # Make movie container
-for stim in range(1):
+for stim in range(6):
     movie = np.zeros((gaze_movie_resolution, gaze_movie_resolution, downsampled_movie_len), dtype=np.float32)
     for gaze_file in gaze_files:
         # Get stimulus number
@@ -231,12 +231,6 @@ for stim in range(1):
                 x_pixel = np.int(np.floor((gaze_movie_resolution/2) * (gaze_x_binned[f] + 1.0)))
                 y_pixel = np.int(np.floor((gaze_movie_resolution/2) * (gaze_y_binned[f] + 1.0)))
                 movie[y_pixel, x_pixel, f] = movie[y_pixel, x_pixel, f] + 1
-    '''# DEBUGGING: save movie frames as images
-    image_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\gaze_tracker\frames'
-    for i in range(downsampled_movie_len):
-        frame_num = '{foo:06d}'.format(foo=i)
-        filename = image_folder + os.sep + frame_num + '.png'
-        cv2.imwrite(filename, movie[:,:, i])'''
     # write movie frames to video
     video_path = plots_folder + os.sep + 'GazeTracker_Stim{s}.avi'.format(s=stim)
     writer = cv2.VideoWriter(video_path, cv2.VideoWriter_fourcc(*'PIM1'), 25, (gaze_movie_resolution, gaze_movie_resolution), False)
