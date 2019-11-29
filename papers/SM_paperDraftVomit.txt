@@ -1,0 +1,128 @@
+Surprising Minds: Bringing Neuroscience out of the lab and into the wild
+
+Authors: Danbee Kim, Kerry Perkins, Clive Ramble, Hazel Garnade, Goncalo Lopes, Dario Quinones, Reanna Campbell-Russo, Adam Kampff
+
+Experimental Design: Danbee Kim, Kerry Perkins, Adam Kampff
+
+Construction of interactive station: Clive Ramble, Hazel Garnade
+
+Construction of interactive elements and experimental setup embedded in the interactive station: Danbee Kim, Goncalo Lopes, Dario Quinones
+
+3d printing of custom components: Robb Barrett, Martin Stopps
+
+Data Collection: Danbee Kim, Reanna Campbell-Russo
+
+Data Analysis: Danbee Kim, Adam Kampff
+
+Exhibit maintenance: Kerry Perkins, Goncalo Lopes, Danbee Kim, Clive Ramble
+
+Exhibit video filming, voiceover, and editing: Danbee Kim
+
+Exhibit wall display design: Danbee Kim, Kerry Perkins
+
+# Abstract
+
+In the 1950s and 1960s, modern neuroscience emerged as an exciting new discipline of study, bringing together experts from an enormously diverse range of traditional specialities and unifying them based on their shared curiosity for understanding nervous systems. In the 6 or so decades since, neuroscience research has undergone immense progress in laboratory tools and techniques for studying nervous system structure and function, which in turn have developed incredible computational and theoretical tools for simulating possible interactions between nervous systems and behaviour -- in fact, we can now simulate just about every possible situation we can imagine based on empirical laboratory research. However, some of the neural activity patterns we observe under laboratory conditions may not lead to any natural behaviour developed by evolution in the real world [REF: Krakauer et al 2017]. In addition, most laboratory findings are based on "small samples of convenience" which are too narrow in their representation of broader, theoretically relevant populations [REF: Falk et al 2013]. The low diversity and small quantity of most laboratory studies undermines the replicability and generalizability of any findings beyond the specific individuals, populations, or contexts studied. Field Neuroscience, or the study of nervous systems "in the wild" (as opposed to in the laboratory), can provide a powerful supplementary perspective to help us check the ethological validity of our laboratory experiments, and to meaningfully connect our theories of nervous system function to the experience of living with a nervous system. Many have already called for perspectives beyond that of laboratory neuroscience research
+
+# Intro
+
+"One of the more remarkable developments in Biology in the last two decades has been the unprecedented growth of the traditional fields of Neurophysiology, Neuroanatomy, Neurochemistry and Physiological Psychology, and concurrently, the gradual emergence of a new, interdisciplinary approach to the study of the nervous system which has come to be known as Neuroscience.
+...
+The first, and perhaps the most significant, contributory factor has been the growing appreciation by both scientists and those who support their work, that few things are more important than understanding how the nervous system controls behavior. And with this, there has been a growing sense that the study of the nervous system represents one of the great intellectual challenges of our time."
+
+
+
+Even amongst real-world nervous systems, the variety of neural activity patterns and behaviours can be huge. Neuroscience currently does not practice a standardized way of teasing apart the specialized characteristics unique to a particular species from the general, fundamental characteristics of all nervous systems. An easy place to start is to clarify the language we use when we communicate our research -- for instance, **neuroscientists have a tendency to say "the brain" (implying all brains or nervous systems) when we really mean "my genetically mutated and cloned laboratory mouse's brain" or "the brains of well-educated white male humans in the US"**. The logical follow-through of this idea is to study as many nervous systems(/animals/species/genus) as possible. But then how do you make rigorous and sensible comparisons between nervous systems?
+
+I propose that the careful study of behaviour in the wild can also help neuroscientists with this challenge. All creatures, including humans, collect information about the world using many different kinds of sensors, such as eyes, ears, noses, mouths, and skin. If a creature relies on one sensor more than others, we could assume that its nervous system is most influenced by information collected by that sensor. For instance, humans tend to prioritize sight over our other senses, leading to sayings such as "seeing is believing". By designing experiments focused on observing how creatures move and activate their sensors, especially their "primary" sensor, we can learn what these creatures perceive (aka what they "care about and pay attention to"), which in turn tells us what kind of information their nervous system finds important or interesting. By grouping together species that share the same "primary sensory modality", we could more meaningfully compare experimental data across species and better organize our knowledge of both the general and the specific characteristics of all brains. 
+
+
+
+
+Neuroscience as a discipline is barely half a century old; and yet we've already begun to standardize and narrow the methods and theories explored in neuroscience research. 
+
+Cowan goes on to note that 
+
+"...there has been the increasing awareness that further advances in the field are most likely to be made by those who can address problems without the prejudices and limitations that derive from a technique-bound perspective. This realization, more than any other factor, has given birth to "Neuroscience" as an interdisciplinary approach. It is difficult to pin-point exactly when the jurisdictional boundaries between the various neurological disciplines began to be systematically transgressed. However, as even the most casual perusal of the relevant literature will reveal, such transgressions have now become the rule rather than the exception. For example, the behavioral biologist is concerned to know which neurons are involved in the behavior he is studying, how they are interconnected, and how they function during different phases of the behavioral paradigm. The neurophysiologist is as concerned about the morphology of the neurons he is investigating and their connectivity, as the neuroanatomist, and today both are interested in knowing what synaptic transmitters are involved, and what types of enduring changes may occur following their release. The neurochemist is no longer simply interested in the regional distribution of various enzymes or substrates, but in the chemical characterization of individual neurons, or parts of neurons, and in the changes that can be detected in them during development or after periods of activity." 
+
+Neuroscience was born in the boundary regions between specialities, birthed by those driven by curiosity for the blank spaces which had traditionally kept fields of expertise neatly separated. 30 years before Cowan, Norbert Weiner also noted the rich potential of these interstitial spaces in his book "Cybernetics, or Control and Communication in the Animal and the Machine" (1948):
+
+"There are fields of scientific work, as we shall see in the body of this book, which have been explored from the different sides of pure mathematics, statistics, electrical engineering, and neurophysiology; in which every single notion receives a separate name from each group, and in which important work has been triplicated or quadruplicated, while still other important work is delayed by the unavailability in one field of results that may have already become classical in the next field.
+
+It is these boundary regions which offer the richest opportunities to the qualified investigator. They are at the same time the most refractory to the accepted techniques of mass attack and the division of labor. If the difficulty of a physiological problem is mathematical in essence, then physiologists ignorant of mathematics will get precisely as far as one physiologist ignorant of mathematics, and no further. If a physiologist who knows no mathematics works together with a mathematician who knows no physiology, the one will be unable to state his problem in terms that the other can manipulate, and the second will be unable to put the answers in any form that the first can understand… A proper exploration of these blank spaces on the map of science could only be made by a team of scientists, each a specialist in his own field but each possessing a thoroughly sound and trained acquaintance with the fields of his neighbors; all in the habit of working together, of knowing one another’s intellectual customs, and of recognizing the significance of a colleague’s new suggestion before it has taken on a full formal expression. The mathematician need not have the skill to conduct a physiological experiment, but he must have the skill to understand one, to criticize one, and to suggest one. The physiologist need not be able to prove a certain mathematical theorem, but he must be able to grasp its physiological significance and to tell the mathematician for what he should look. We had dreamed for years of an institution of independent scientists, working together in one of these backwoods of science, not as subordinates of some great executive officer, but joined by the desire, indeed by the spiritual necessity, to understand the region as a whole, and to lend one another the strength of that understanding."
+
+
+
+
+
+
+How do we know what is happening in the brain, in the nervous system? In humans and vertebrates, over 80% of our neural mass is consolidated in our brains and spinal cords, both organs buried deep beneath layers of skin, muscle, and bone. Exceptions - our eyes and the tiny nerve endings in the surface of our skin. 
+
+Humans collect an enormous quantity and richness of information about the world through our eyes, and by watching where other humans look, we can learn a lot about what these other humans know, what they expect, and what they find interesting. This method is heavily used in studies of cognitive development and visual attention, especially in human infants [REFS]. On the other hand, a sophisticated understanding of what "pulls" the gaze of another human, what draws their attention, is skillfully trained and employed by magicians, filmmakers, marketers, and graphic designers [REFS]. This exploitation of visual attention is based on the assumption that we notice more and stare longer at events that we do not expect, while we ignore or don't notice when we think events are proceeding as expected [REFS]. 
+
+more about eye movements and how changes to eye movements can be an indicator of surprise
+we are interested in what people find surprising and eye movements are a nice window into that
+
+As eye tracking technology develops and improves, it is becoming easier to non-invasively yet precisely record and track various changes to the eyes, such as pupil diameter and pupil movement. Previous studies using decision-making tasks have established that unpredictability and surprise can drive pupil dilation [REFs: Pratt 1970, Preuschoff 2011]. Although this literature emphasises the interactive nature of the environment with the state of the organism, most studies are done in tightly controlled laboratory settings, with a well-defined task or decision-making structure that study participants must follow. 
+
+maybe separate the tech point and the laboratory experiments point.
+
+elaborate some more about labs are great for some things and not for others, same with the wild, the museum setting is a nice compromise, we want to test this! so this is a proof of concept paper
+make an "extended intro" that is more philosophical about the methodology, about why we are exploring museum as an experimental setting
+actually philosophy intro first, then introduce the experiment as a case study of testing/exploring this philosophy
+
+However, brains evolved for millions of years before humans built laboratories, and brains continue to develop much of their mechanisms for dealing with unpredictability and surprise outside laboratory settings, where decisions are not limited to a finite and small number choices, and expectations are rarely explicitly communicated from the perspective of someone who knows and controls all possibilities within the space. Even though traditional experiments using simple paradigms in controlled laboratory conditions have contributed significant insights into brain function, throughout neuroscience there is a growing recognition that our understanding of complex cognitive and neural phenomena require further studies of these phenomena in complex realistic environments[REFS]. Given the many challenges of conducting research "in the wild" [REF: Lappi 2015], a manageable middle ground between the laboratory and the wild would be an ideal stepping stone for increasing the complexity of the experimental environment while retaining some amount of precision in measurement.
+
+the real world is very messy
+the diversity of subjects that one can encounter in the wild, in the lab it's a small number and tends to be less diverse
+in museum you could have "laboratory-like" conditions while still having access to large/diverse population, but this would require a host...tech can remove the host and make it closer to the experience of just going and seeing an exhibit
+talk about the compromise between the control gained by lab conditions but the diversity and real-life relevance of wild conditions
+museum setting is a setting that yes it's a stepping stone but also is a very nice compromise for generalization
+
+Previous studies have found successful compromises by embedding experiments within immersive interactive multi-media installations set within public spaces or private spaces regularly opened to the public, such as festivals, museums, and art galleries [REFs: Kovacevic 2015, Pelowski 2018]. In this study, we installed an interactive installation in the main gallery of the Sea Life Brighton aquarium, and embedded within this installation an experiment that explored what eyes do when watching surprising events [Fig 1]. 
+
+more details about the lab's prior work
+
+# Experiment 1: the experiment embedded in an exhibit
+
+## Methods
+
+The exhibit consists of a wall display around the cuttlefish tank, a short video on the wall to the right of the tank, and an interactive station to the left of the tank, into which the experiment was embedded. The wall display was designed by myself and a graphic art printing company recommended by our collaborators at Sea Life Brighton. 
+
+The interactive station consisted of an outer container and an internal hardware/software system that controlled the interactivity of the station and the experiment stimulus presentation and data collection. The outer container was designed under my direction by collaborators Clive Ramble and Hazel Garnade of Sol Vin, an exhibit construction company who has been commissioned by Sea Life Brighton for previous exhibits and thus has extensive experience with building robust exhibits in saline-heavy environments. 
+
+The short video was made by me and explained a cuttlefish behaviour experiment that I had conducted at Woods Hole, USA [ref: Cuttle Shuttle paper]. This is the experiment that led me to establish a collaboration with Sea Life Brighton, as I was hoping to do follow-up experiments with the help of the aquarium's cuttlefish and facilities. Unfortunately, obtaining more animals of the appropriate age proved difficult, and a problem with the aquarium's water systems indefinitely delayed any further progress on the follow-up experiments. Thus we decided to move ahead with aspects of my research that didn't require cuttlefish as experimental subjects, specifically, bringing neuroscience out of the lab and into the wild.
+
+The experimental setup embedded in the interactive station consists of a front button panel that allowed people to pick between 5 languages; two eye cameras just inside the viewing plate; a large monitor facing the viewing plate, visible only to the person looking through the viewing plate; a webcam installed inside the main compartment of the interactive station that recorded each "trial" and served as our "ground truth" of what each person saw; 3 smaller feedback monitors visible from  outside of the interactive station; and a mini PC (OS: Windows 10) that coordinated the other hardware via Bonsai Rx [REF] and stored the video recordings from the 3 cameras in the setup. The internal hardware/software system was co-designed by myself and collaborator Goncalo Lopes of NeuroGEARS, who specialize in building open source tools for complex interactive systems. Me, Goncalo, and collaborator Dario, a visiting PhD student in the lab at the time, sourced all necessary components and installed the internal hardware/software system into the outer casing of the interactive station. 
+
+During the first week of July 2017, we spent 3 days on site at the Sea Life centre in Brighton to install a pilot version of the Surprising Minds exhibit next to the cuttlefish display tank in the main gallery of the Sea Life Centre in Brighton. For the next 3 months, the exhibit ran in "host" mode - a person stood by the exhibit, which at this point had no instructional text on the interactive station, and invited people to interact with the exhibit and answered any questions from aquarium visitors. Hosts were myself and an A-levels student working with us via the Nuffield Research Placements program. 
+
+After this initial pilot phase, we proceeded to fully automate the exhibit in order to enable the exhibit to run without a host. Based on the script we refined during these 3 months, I wrote up explanatory text and sent this text to Sol Vin, who turned the text into panels to be added to the interactive station. We also updated the face plate where participants voluntarily head-fixed themselves to participate in the embedded experiment. The original design required constant cleaning and was not very robust, so a new faceplate, designed to eliminate the need for cleaning and made with studier material, was made and replaced the old faceplate. We also translated all text involved with the embedded experiment into 4 other languages (French, German, Italian, Chinese), picked based on the most common non-English languages of visitors observed during the pilot phase and based on demographic data provided by the Sea Life staff. We added a button panel on the front of the interactive station that clearly offered the language options. 
+
+Starting in Oct 2017, the interactive station ran in "autonomous" mode and collected the data used in this study until the end of Oct 2018. During those 13 months, the exhibit was activated 24641 times, out of which we were able to extract 16201 good trials from the right eye camera and 13414 good trials from the left camera [NEED TO DOUBLE CHECK NUMBERS]. 
+
+## Results
+
+After data collection was complete, we synchronized all cameras (2 eye cameras, 1 world camera), and extracted pupil size and position from each frame recorded by the eye cameras in order to track pupil dilation and location of gaze throughout the stimulus presentation. We chose our analyses based on 2 goals: 1) to compare the pupil dynamics measured by our "experiment embedded in an exhibit" against those previously documented in the scientific literature; and 2) to characterize the ability of this setup to increase the empirical content of current neuroscientific knowledge. 
+
+how do unexpected things influence people's direction of attention
+our proxy for visual attention is where you look
+we want to know when people change where they are looking, and when we can track this across a really large population, we can characterize certain moments as attention grabbing for a lot of people
+when something unexpected happens in your visual world, it will draw your attention, bc it's unexpected, it should be interrogated more 
+so how to generate surprising visual situations that are safe for large swaths of the public
+just by looking for increased rate of saccades, this is a revealing metric for events that were attention grabbing
+surprise is the thing that your mind is not modeling
+we think it be cool to find out when large population of people made many saccades
+if we measure 24000 people's saccade times, and find the moments when lots of people saccade, those moments are moments when everyone finds interesting so there's something inherently "pulling" about that moment
+we should find all the moments when we have coordinated saccades
+regression analysis should take from the saccade detector the momemnts when saccades become correlated in time across many many people - this may be an indicator that this moment was interesting, surprising, etc. so can use population saccade metric as a proxy/read out of salience or what many human mental models find interesting/failed to predict
+human population interest detector, way to probe human mental models
+population saccade detector is very robust to noise - HAS ANYONE USED THIS MEASURE BEFORE?
+given that we don't really control super well for lighting conditions etc we want to see if pupil diameter correlates temporally with the moments found by population saccade detector
+check out optical illusions studies
+
+# Experiment 2: experiment using mobile computing tech, in public parks and at festivals
+
+# Discussion
+
+recipe for how to design your own museum experiment
