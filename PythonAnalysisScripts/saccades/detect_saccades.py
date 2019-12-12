@@ -13,20 +13,17 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 current_working_directory = os.getcwd()
 
 # Specify relevant data/output folders - laptop
-#data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\speeds'
-#plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+#data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
 #folder_name = 'SurprisingMinds*'
 # Specify relevant data/output folders - office (windows)
-#data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\speeds'
-#plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
-#folder_name = 'SurprisingMinds*'
+data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
+folder_name = 'SurprisingMinds*'
 # Specify relevant data/output folders - office (linux)
-data_folder = r'/home/kampff/Data/Surprising/speeds'
-output_folder = r'/home/kampff/Data/Surprising'
-folder_name = 'surprisingminds*'
+#data_folder = r'/home/kampff/Data/Surprising'
+#folder_name = 'surprisingminds*'
 
 # Create an empty folder for saccade data [CAUTION, DELETES ALL PREVIOUS SACCADE FILES]
-saccade_data_folder = output_folder + os.sep + 'saccades'
+saccade_data_folder = data_folder + os.sep + 'saccades'
 if not os.path.exists(saccade_data_folder):
     os.makedirs(saccade_data_folder)
 if os.path.exists(saccade_data_folder):
@@ -38,8 +35,9 @@ if os.path.exists(saccade_data_folder):
 ######################
 # Load speed files
 ######################
+speeds_data_folder = data_folder + os.sep + 'speeds'
 trial_len_cutoff = 20000
-speed_files = glob.glob(data_folder + os.sep + '*.data')
+speed_files = glob.glob(speeds_data_folder + os.sep + '*.data')
 #speed_files = speed_files[0:10]
 num_files = len(speed_files)
 window_size = 50
