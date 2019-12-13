@@ -1834,8 +1834,7 @@ def draw_unique_pupil_motion_fig_avg_zoom(plt_movement_dict, plt_stim_order, plt
 
 ### BEGIN ANALYSIS ###
 # List relevant data locations: these are for KAMPFF-LAB-VIDEO
-#root_folder = r"C:\Users\KAMPFF-LAB-VIDEO\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 pupils_folder = os.path.join(plots_folder, "pupil")

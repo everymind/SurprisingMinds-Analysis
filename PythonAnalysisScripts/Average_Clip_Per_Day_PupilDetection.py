@@ -321,9 +321,9 @@ zipped_names = [item[:-4] for item in zipped_data]
 zipped_data = zipped_data[1:]
 # figure out which days have already been analysed
 # when working from local drive, lab computer
-analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # when working from laptop
-#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv"
+#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 analysed_folders = sorted(os.listdir(analysed_drive))
 already_analysed = [item for item in zipped_names if item in analysed_folders]
 # unzip each folder, do the analysis
