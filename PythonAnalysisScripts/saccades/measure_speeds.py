@@ -60,6 +60,7 @@ for df, daily_folder in enumerate(daily_folders):
     if(len(csv_paths) == 0):
         csv_paths = glob.glob(daily_folder + os.sep + 'Analysis' + os.sep + 'csv'+ os.sep + '*.csv')
     num_files = len(csv_paths)
+    print("Total Number of CSV files: " + str(num_files))
 
     # Process all csv files in a folder
     for cp, csv_path in enumerate(csv_paths):
@@ -87,7 +88,7 @@ for df, daily_folder in enumerate(daily_folders):
         # Exclude crappy trials
         if(len(good_indices) < 200):
             bad_trials += 1
-            break
+            continue
         good_x = x[good_indices]
         good_y = y[good_indices]
         good_area = area[good_indices]
@@ -152,6 +153,6 @@ for df, daily_folder in enumerate(daily_folders):
             plt.show()
 
         # Report progress
-        print("Trial Count:" + str(trial_count) + " | " + str(bad_trials))
+        print("Trial Count: " + str(trial_count) + " | " + str(bad_trials))
 
 #FIN
