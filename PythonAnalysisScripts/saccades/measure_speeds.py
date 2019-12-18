@@ -51,6 +51,7 @@ if os.path.exists(speed_data_folder):
 
 # Extract pupil tracking data and generate "speed" per frame for each eye video
 trial_count = 0
+bad_trials = 0
 stim_count = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0}
 for df, daily_folder in enumerate(daily_folders):
 
@@ -85,6 +86,7 @@ for df, daily_folder in enumerate(daily_folders):
 
         # Exclude crappy trials
         if(len(good_indices) < 200):
+            bad_trials += 1
             break
         good_x = x[good_indices]
         good_y = y[good_indices]
@@ -150,6 +152,6 @@ for df, daily_folder in enumerate(daily_folders):
             plt.show()
 
         # Report progress
-        print(trial_count)
+        print("Trial Count:" + str(trial_count) + " | " + str(bad_trials))
 
 #FIN
