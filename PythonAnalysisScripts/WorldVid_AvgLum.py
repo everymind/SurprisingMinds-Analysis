@@ -1,3 +1,7 @@
+### ------------------------------------------------------------------------- ###
+### Create CSV files with average luminance per frame of world camera vids during
+### trials, categorized by calibration, octopus, and unique sequences.
+### ------------------------------------------------------------------------- ###
 import pdb
 import os
 import glob
@@ -11,12 +15,7 @@ import fnmatch
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from collections import defaultdict
-from scipy import signal
-from itertools import groupby
-from operator import itemgetter
-
 ### FUNCTIONS ###
 def load_avg_world_unraveled(avg_world_folder_path):
     # List all world camera csv files
@@ -85,34 +84,13 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
 ### BEGIN ANALYSIS ###
-# List relevant data locations: these are for KAMPFF-LAB-VIDEO
+# List relevant data locations: these are for KAMPFF-LAB-VIDEO and laptop
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
-plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
-pupils_folder = os.path.join(plots_folder, "pupil")
-pupils_pv_folder = os.path.join(pupils_folder, "withPeaksValleys")
-engagement_folder = os.path.join(plots_folder, "engagement")
-linReg_folder = os.path.join(plots_folder, "linReg")
-pooled_stim_vids_folder = os.path.join(plots_folder, "PooledStimVids")
-# Create plots folder (and sub-folders) if it (they) does (do) not exist
-if not os.path.exists(plots_folder):
-    #print("Creating plots folder.")
-    os.makedirs(plots_folder)
-if not os.path.exists(pupils_folder):
-    #print("Creating camera profiles folder.")
-    os.makedirs(pupils_folder)
-if not os.path.exists(pupils_pv_folder):
-    #print("Creating camera profiles folder.")
-    os.makedirs(pupils_pv_folder)
-if not os.path.exists(engagement_folder):
-    #print("Creating engagement count folder.")
-    os.makedirs(engagement_folder)
-if not os.path.exists(linReg_folder):
-    #print("Creating engagement count folder.")
-    os.makedirs(linReg_folder)
-if not os.path.exists(pooled_stim_vids_folder):
-    #print("Creating engagement count folder.")
-    os.makedirs(pooled_stim_vids_folder)
+worldVid_lums_folder = os.path.join(root_folder, "worldLums")
+# Create folders they do not exist
+if not os.path.exists(worldVid_lums_folder):
+    os.makedirs(worldVid_lums_folder)
 
 ### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
 # downsample = collect data from every 40ms or other multiples of 20
@@ -129,9 +107,11 @@ stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
 
-
 ### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
-all_months_avg_world_vids = {}
+allMonths_meanWorldVidArrays = {}
+for unique_stim in stim_vids:
+    allMonths_meanWorldVidArrays[unique_stim] = {}
+    allMonths_meanWorldVidArrays[unique_stim]['Vid Count'] = 0
 ### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS ###
 # update list of completed world vid average folders on dropbox
 day_folders = sorted(os.listdir(root_folder))
@@ -139,13 +119,16 @@ avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
 updated_folders_to_extract = []
 for avg_world_vid_folder in avg_world_vid_folders:
     folder_year_month = avg_world_vid_folder.split('_')[1]
-    if folder_year_month not in all_months_avg_world_vids.keys():
+    if folder_year_month not in allMonths_meanWorldVidArrays.keys():
         updated_folders_to_extract.append(avg_world_vid_folder)
 
-# extract, unravel, write to video, and save
+#### WHILE DEBUGGING ####
+updated_folders_to_extract = updated_folders_to_extract[4:6]
+#### --------------- ####
+
+# extract, unravel, calculate mean luminance of each frame, create array of mean luminances for each stim type
 for month_folder in updated_folders_to_extract:
     month_name = month_folder.split('_')[1]
-    all_months_avg_world_vids[month_name] = {}
     month_folder_path = os.path.join(root_folder, month_folder)
     # unravel
     unraveled_monthly_world_vids = load_avg_world_unraveled(month_folder_path)
@@ -153,18 +136,278 @@ for month_folder in updated_folders_to_extract:
     print("Downsampling monthly averaged stimulus videos for {month}".format(month=month_name))
     downsampled_monthly_world_vids = downsample_avg_world_vids(unraveled_monthly_world_vids, original_bucket_size_in_ms, downsampled_bucket_size_ms)
     # now need to convert these frame arrays into luminance value, one per timebucket
-
-    
+    for unique_stim in downsampled_monthly_world_vids:
+        thisMonth_thisStim_frames = downsampled_monthly_world_vids[unique_stim]
+        thisMonth_thisStim_lums = []
+        for key in thisMonth_thisStim_frames:
+            if key == 'Vid Count':
+                allMonths_meanWorldVidArrays[unique_stim]['Vid Count'] = allMonths_meanWorldVidArrays[unique_stim]['Vid Count'] + thisMonth_thisStim_frames['Vid Count']
+                continue
+            if key == 'Vid Dimensions':
+                continue
+            else:
+                frame = thisMonth_thisStim_frames[key]
+                lum = np.mean(frame[:])
+                thisMonth_thisStim_lums.append(lum)
+        thisMonth_thisStim_lums_array = np.array(thisMonth_thisStim_lums)
+        allMonths_meanWorldVidArrays[unique_stim][month_name] = thisMonth_thisStim_lums_array
 ### END MONTHLY AVERAGE DATA EXTRACTION ###
+###
+### AVERAGE ACROSS ALL MONTHS ###
+for unique_stim in allMonths_meanWorldVidArrays:
+    allMonthlyMeans = []
+    shortest = 2000
+    for key in allMonths_meanWorldVidArrays[unique_stim]:
+        if key == 'Vid Count':
+            continue
+        else:
+            thisMonthMean = allMonths_meanWorldVidArrays[unique_stim][key]
+            if len(thisMonthMean)<shortest:
+                shortest = len(thisMonthMean)
+            allMonthlyMeans.append(thisMonthMean)       
+    # make all arrays same length
+    allMonthlyMeans_truncated = []
+    for monthlyMean in allMonthlyMeans:
+        monthlyMean_truncated = monthlyMean[:shortest]
+        allMonthlyMeans_truncated.append(monthlyMean_truncated)
+    allMonthlyMeans_array = np.array(allMonthlyMeans_truncated)
+    thisStimMeanLum = np.nanmean(allMonthlyMeans_array, axis=0)
+    allMonths_meanWorldVidArrays[unique_stim]['All Months'] = thisStimMeanLum
 
-stim24_frames = downsampled_monthly_world_vids[24.0]
-lums_stim24 = []
-for key in stim24_frames:
-    if key == 'Vid Count' or key == 'Vid Dimensions':
-        continue
-    else:
-        frame = stim24_frames[key]
-        lum = np.mean(frame[:])
-        lums_stim24.append(lum)
-lums_stim24 = np.array(lums_stim24)
-    
+### SPLIT ARRAYS INTO CALIB, OCTO, AND UNIQUE PHASES ###
+# Moments of interest for each stimulus type
+all_avg_world_moments = {}
+# Stimulus 24.0
+all_avg_world_moments[24.0] = {'calibration start': {0:['2017-10','2018-05']},
+'do not move your head': {3:['2017-10','2018-05']},
+'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
+'lower right dot appears': {170:['2017-10','2018-05']},
+'lower left dot appears': {238:['2017-10','2018-05']},
+'upper right dot appears': {306:['2017-10','2018-05']},
+'center dot appears': {374:['2017-10','2018-05']},
+'calibration end': {441:['2017-10','2017-11','2018-03']},
+'unique start': {442:['2017-10','2018-03','2018-05'],443:['2017-11']},
+'cat appears': {463:['2017-10','2018-01','2018-05'], 464:['2017-11']},
+'cat front paws visible': {473:['2017-10','2018-01','2018-05'], 474:['2017-11']},
+'cat lands on toy': {513:['2017-10'], 514:['2018-05']},
+'cat back paws bounce': {549:['2017-10'],547:['2018-05']},
+'unique end': {596:['2017-10','2017-11'],598:['2018-03']},
+'octo start': {595:['2017-10','2018-03'],596:['2017-11']},
+'fish turns': {645:['2017-10','2018-05']},
+'octopus fully decamouflaged': {766:['2018-05'], 767:['2017-10']},
+'camera zooms in on octopus': {860:['2017-10','2018-05']},
+'octopus inks': {882:['2017-10'],883:['2017-11','2018-03']},
+'camera clears ink cloud': {916:['2017-10'],920:['2018-05']},
+'octo end': {987:['2017-10'],989:['2017-11'],990:['2018-03']}}
+# Stimulus 25.0
+all_avg_world_moments[25.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+'do not move your head': {3:['2017-10','2018-05']},
+'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
+'lower right dot appears': {170:['2017-10','2018-05']},
+'lower left dot appears': {239:['2017-10'],238:['2018-05']},
+'upper right dot appears': {307:['2017-10'],306:['2018-05']},
+'center dot appears': {375:['2017-10'],374:['2018-05']},
+'calibration end': {441:['2017-10','2017-11','2018-03']},
+'unique start': {442:['2018-03'],443:['2017-10','2017-11']},
+'fingers appear': {443:['2017-10'], 442:['2018-05']},
+'bird flies towards fingers': {462:['2018-05'],463:['2017-10']},
+'beak contacts food': {491:['2017-10'],492:['2018-05']},
+'wings at top of frame': {535:['2017-10','2018-05']},
+'bird flutters': {553:['2017-10'], 553:['2018-05']},
+'bird lands': {561:['2017-10'], 562:['2018-05']},
+'bird flies past fingers': {573:['2017-10','2018-05']},
+'unique end': {599:['2017-10'],600:['2017-11'],601:['2018-03']},
+'octo start': {599:['2017-10','2017-11','2018-03']},
+'fish turns': {649:['2017-10','2018-05']},
+'octopus fully decamouflaged': {770:['2017-10','2018-05']},
+'camera zooms in on octopus': {863:['2018-05'],864:['2017-10']},
+'octopus inks': {885:['2017-10','2018-03'],886:['2017-11']},
+'camera clears ink cloud': {919:['2017-10'],923:['2018-05']},
+'octo end': {989:['2017-10'],993:['2017-11'],994:['2018-03']}}
+# Stimulus 26.0
+all_avg_world_moments[26.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+'do not move your head': {2:['2018-05'],3:['2017-10']},
+'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
+'lower right dot appears': {170:['2017-10','2018-05']},
+'lower left dot appears': {238:['2017-10','2018-05']},
+'upper right dot appears': {306:['2017-10','2018-05']},
+'center dot appears': {374:['2017-10','2018-05']},
+'calibration end': {441:['2017-10','2017-11','2018-03']},
+'unique start': {442:['2017-10','2018-03'],443:['2017-11']},
+'eyespots appear': {449:['2017-10', '2018-05']},
+'eyespots disappear, eyes darken': {487:['2017-10','2018-05']},
+'arms spread': {533:['2017-10'], 534:['2018-05']},
+'arms in, speckled mantle': {558:['2017-10'], 561:['2018-05']},
+'unique end': {663:['2017-10'],665:['2017-11','2018-03']},
+'octo start': {662:['2017-10'],663:['2018-03'],664:['2017-11']},
+'fish turns': {712:['2017-10','2018-05']},
+'octopus fully decamouflaged': {833:['2017-10','2018-05']},
+'camera zooms in on octopus': {927:['2017-10','2018-05']},
+'octopus inks': {949:['2017-10'],951:['2017-11','2018-03']},
+'camera clears ink cloud': {983:['2017-10'],987:['2018-05']},
+'octo end': {1054:['2017-10'],1059:['2017-11','2018-03']}}
+# Stimulus 27.0
+all_avg_world_moments[27.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+'do not move your head': {3:['2017-10','2018-05']},
+'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
+'lower right dot appears': {170:['2017-10','2018-05']},
+'lower left dot appears': {238:['2017-10','2018-05']},
+'upper right dot appears': {306:['2018-05'],307:['2017-10']},
+'center dot appears': {374:['2018-05'],375:['2017-10']},
+'calibration end': {441:['2017-10','2017-11','2018-03']},
+'unique start': {443:['2017-10','2017-11','2018-03']},
+'cuttlefish appears': {443:['2017-10','2018-05']},
+'tentacles go ballistic': {530:['2017-10','2018-05']},
+'unique end': {606:['2017-10'],607:['2017-11','2018-03']},
+'octo start': {605:['2017-10','2017-11'],606:['2018-03']},
+'fish turns': {655:['2017-10','2018-05']},
+'octopus fully decamouflaged': {776:['2017-10','2018-05']},
+'camera zooms in on octopus': {869:['2018-05'],870:['2017-10']},
+'octopus inks': {892:['2017-10'],893:['2017-11','2018-03']},
+'camera clears ink cloud': {926:['2017-10'],929:['2018-05']},
+'octo end': {996:['2017-10'],1000:['2017-11','2018-03']}}
+# Stimulus 28.0
+all_avg_world_moments[28.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+'do not move your head': {2:['2018-05'],3:['2017-10']},
+'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
+'lower right dot appears': {170:['2017-10','2018-05']},
+'lower left dot appears': {238:['2017-10','2018-05']},
+'upper right dot appears': {306:['2017-10','2018-05']},
+'center dot appears': {374:['2018-05'],375:['2017-10']},
+'calibration end': {441:['2017-10','2017-11','2018-03']},
+'unique start': {442:['2018-03'],443:['2017-10','2017-11']},
+'fish scatter': {456:['2017-10','2018-04','2018-10']},
+'center fish turns': {469:['2017-10'], 470:['2018-04'], 471:['2018-10']},
+'center fish swims to left': {494:['2018-04','2018-10'], 495:['2017-10']},
+'camera clears red ferns': {503:['2017-10'],506:['2018-04'],509:['2018-10']},
+'unique end': {662:['2017-10'],663:['2017-11'],666:['2018-03']},
+'octo start': {661:['2017-10'],662:['2018-03'],663:['2017-11']},
+'fish turns': {711:['2017-10','2018-05']},
+'octopus fully decamouflaged': {832:['2017-10'],834:['2018-05']},
+'camera zooms in on octopus': {927:['2017-10','2018-05']},
+'octopus inks': {948:['2017-10'],950:['2017-11','2018-03']},
+'camera clears ink cloud': {982:['2017-10'],986:['2018-05']},
+'octo end': {1054:['2017-10'],1056:['2017-11'],1059:['2018-03']}}
+# Stimulus 29.0
+all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+'do not move your head': {3:['2017-10','2018-05']},
+'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
+'lower right dot appears': {170:['2017-10','2018-05']},
+'lower left dot appears': {238:['2017-10','2018-05']},
+'upper right dot appears': {306:['2017-10','2018-05']},
+'center dot appears': {374:['2017-10','2018-05']},
+'calibration end': {441:['2017-10','2017-11','2018-03']},
+'unique start': {442:['2017-10'],443:['2017-11','2018-03']},
+'fish 1 appears': {457:['2017-10','2018-05']},
+'fish 1 turns': {495:['2017-10','2018-05']}, 
+'fish 2 appears': {538:['2017-10','2018-05']},
+'fish 2 touches mirror image': {646:['2017-10','2018-05']},
+'fish 2 disappears': {661:['2017-10','2018-05']}, 
+'fish 1 touches mirror image': {685:['2017-10','2018-05']},
+'fish 1 disappears': {702:['2017-10','2018-05']}, 
+'unique end': {717:['2017-10','2017-11'],718:['2018-03']},
+'octo start': {716:['2017-10','2018-03'],717:['2017-11']},
+'fish turns': {766:['2017-10','2018-03']},
+'octopus fully decamouflaged': {887:['2017-10','2018-05']},
+'camera zooms in on octopus': {981:['2017-10','2018-05']},
+'octopus inks': {1003:['2017-10'],1004:['2017-11','2018-03']},
+'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']},
+'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}}
+# split world vid lum arrays
+allCalib = []
+allOcto = []
+allUnique = [[],[],[],[],[],[]]
+shortestCalib = 2000
+shortestOcto = 2000
+# cut out each phase of the stimuli
+for unique_stim in allMonths_meanWorldVidArrays:
+    fullMeanWorldVid = allMonths_meanWorldVidArrays[unique_stim]['All Months']
+    ## CALIB
+    calibStart = []
+    for key in all_avg_world_moments[unique_stim]['calibration start']:
+        calibStart.append(key)
+    calibStart_tb = np.min(calibStart)
+    calibEnd = []
+    for key in all_avg_world_moments[unique_stim]['calibration end']:
+        calibEnd.append(key)
+    calibEnd_tb = np.max(calibEnd)
+    # cut out calib phase from full world vid lum array
+    thisStim_meanCalib = fullMeanWorldVid[calibStart_tb:calibEnd_tb]
+    if len(thisStim_meanCalib)<shortestCalib:
+        shortestCalib = len(thisStim_meanCalib)
+    allCalib.append(thisStim_meanCalib)
+    ## OCTO
+    octoStart = []
+    for key in all_avg_world_moments[unique_stim]['octo start']:
+        octoStart.append(key)
+    octoStart_tb = np.min(octoStart)
+    octoEnd = []
+    for key in all_avg_world_moments[unique_stim]['octo end']:
+        octoEnd.append(key)
+    octoEnd_tb = np.max(octoEnd)
+    # cut out octo phase from full world vid lum array
+    thisStim_meanOcto = fullMeanWorldVid[octoStart_tb:octoEnd_tb]
+    if len(thisStim_meanOcto)<shortestOcto:
+        shortestOcto = len(thisStim_meanOcto)
+    allOcto.append(thisStim_meanOcto)
+    ### cut out unique
+    ## UNIQUE 24
+    thisUniqueStart = []
+    for key in all_avg_world_moments[unique_stim]['unique start']:
+        thisUniqueStart.append(key)
+    thisUniqueStart_tb = np.min(thisUniqueStart)
+    thisUniqueEnd = []
+    for key in all_avg_world_moments[unique_stim]['unique end']:
+        thisUniqueEnd.append(key)
+    thisUniqueEnd_tb = np.max(thisUniqueEnd)
+    # cut out unique phase from full world vid lum array
+    thisStim_meanUnique = fullMeanWorldVid[thisUniqueStart_tb:thisUniqueEnd_tb]
+    unique_index = stim_vids.index(unique_stim)
+    allUnique[unique_index].append(thisStim_meanUnique)
+# average calib and octo across all stimuli
+allCalib_truncated = []
+for calib in allCalib:
+    calib_truncated = calib[:shortestCalib]
+    allCalib_truncated.append(calib_truncated)
+allCalib_array = np.array(allCalib_truncated)
+allCalib_mean = np.mean(allCalib_array, axis=0)
+allOcto_truncated = []
+for octo in allOcto:
+    octo_truncated = octo[:shortestOcto]
+    allOcto_truncated.append(octo_truncated)
+allOcto_array = np.array(allOcto_truncated)
+allOcto_mean = np.mean(allOcto_array, axis=0)
+
+### SAVE AS CSV FILES ###
+# generate file names to include number of videos that went into the mean lum array
+totalVidCount = 0
+for unique_stim in allMonths_meanWorldVidArrays:
+    totalVidCount = totalVidCount + allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
+calibFN = 'meanCalib_'+str(totalVidCount)+'-Vids.csv'
+octoFN = 'meanOcto_'+str(totalVidCount)+'-Vids.csv'
+unique24FN = 'meanUnique01_'+str(allMonths_meanWorldVidArrays[24.0]['Vid Count'])+'-Vids.csv'
+unique25FN = 'meanUnique02_'+str(allMonths_meanWorldVidArrays[25.0]['Vid Count'])+'-Vids.csv'
+unique26FN = 'meanUnique03_'+str(allMonths_meanWorldVidArrays[26.0]['Vid Count'])+'-Vids.csv'
+unique27FN = 'meanUnique04_'+str(allMonths_meanWorldVidArrays[27.0]['Vid Count'])+'-Vids.csv'
+unique28FN = 'meanUnique05_'+str(allMonths_meanWorldVidArrays[28.0]['Vid Count'])+'-Vids.csv'
+unique29FN = 'meanUnique06_'+str(allMonths_meanWorldVidArrays[29.0]['Vid Count'])+'-Vids.csv'
+# filepath
+calibFP = os.path.join(worldVid_lums_folder, calibFN)
+octoFP = os.path.join(worldVid_lums_folder, octoFN)
+unique24FP = os.path.join(worldVid_lums_folder, unique24FN)
+unique25FP = os.path.join(worldVid_lums_folder, unique25FN)
+unique26FP = os.path.join(worldVid_lums_folder, unique26FN)
+unique27FP = os.path.join(worldVid_lums_folder, unique27FN)
+unique28FP = os.path.join(worldVid_lums_folder, unique28FN)
+unique29FP = os.path.join(worldVid_lums_folder, unique29FN)
+# save to file
+np.savetxt(calibFP, allCalib_mean, delimiter=',')
+np.savetxt(octoFP, allOcto_mean, delimiter=',')
+np.savetxt(unique24FP, allUnique[0][0], delimiter=',')
+np.savetxt(unique25FP, allUnique[1][0], delimiter=',')
+np.savetxt(unique26FP, allUnique[2][0], delimiter=',')
+np.savetxt(unique27FP, allUnique[3][0], delimiter=',')
+np.savetxt(unique28FP, allUnique[4][0], delimiter=',')
+np.savetxt(unique29FP, allUnique[5][0], delimiter=',')
+
+# FIN
