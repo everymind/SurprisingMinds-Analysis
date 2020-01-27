@@ -11,3 +11,4 @@ WorldVidExtraction_log_*.txt
 data-extraction_log*.txt
 PythonWithAdam/plots
 *.zip
+*.json
