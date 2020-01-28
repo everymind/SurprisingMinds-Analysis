@@ -374,6 +374,7 @@ normed_trials = np.array(normed_trials)
 normed_mean = np.nanmean(normed_trials, axis=0)
 
 # need to somehow import lums_stim24 from WorldVid_AvgLum.py
+# import from csv files
 num_tb = len(lums_stim24)
 norm_areas = normed_mean[0:num_tb]
 plt.plot(lums_stim24, norm_areas, '.')

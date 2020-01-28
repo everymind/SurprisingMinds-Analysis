@@ -202,8 +202,8 @@ for gaze_file in gaze_files:
     trial_name = os.path.basename(gaze_file)
     fields = trial_name.split(sep='_')
     eye = fields[1]
-    stimulus = int(fields[0])
-    if(stimulus < 5):
+    stimulus = int(fields[0][-1])
+    if(stimulus < 0):
         gaze_flat = np.fromfile(gaze_file, dtype=np.float32)
 
         # Filter for valid screen positions
