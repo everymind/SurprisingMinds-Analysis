@@ -1,6 +1,6 @@
 ### --------------------------------------------------------------------------- ###
-# this script uses ImageMagick to easily install ffmpeg onto Windows 10:
-# https://www.imagemagick.org/script/download.php
+# loads world vid luminance csv files and creates a scatter plot comparing luminance
+# to pupil size
 ### --------------------------------------------------------------------------- ###
 import pdb
 import os
@@ -15,31 +15,10 @@ import fnmatch
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
 from collections import defaultdict
-from scipy import signal
 from scipy import stats
-from itertools import groupby
-from operator import itemgetter
 # set up log file to store all printed messages
 current_working_directory = os.getcwd()
-class Logger(object):
-    def __init__(self):
-        # grab today's date
-        now = datetime.datetime.now()
-        log_filename = "data-extraction_log_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".txt"
-        log_file = os.path.join(current_working_directory, log_filename)
-        self.terminal = sys.stdout
-        self.log = open(log_file, "a")
-    def write(self, message):
-        self.terminal.write(message)
-        self.log.write(message)
-    def flush(self):
-        #this flush method is needed for python 3 compatibility.
-        #this handles the flush command by doing nothing.
-        #you might want to specify some extra behavior here.
-        pass
-sys.stdout = Logger()
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size):
     if (new_bucket_size % original_bucket_size == 0):
@@ -199,36 +178,20 @@ def filter_to_nan(list_of_dicts, upper_threshold, lower_threshold):
 
 
 ### BEGIN ANALYSIS ###
-# List relevant data locations: these are for KAMPFF-LAB-VIDEO
+# List relevant data locations: these are for laptop
 #root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-# for laptop
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
+# List relevant data locations: these are for office desktop
+root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
 # set up folders
-plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
-pupils_folder = os.path.join(plots_folder, "pupil")
-pupils_pv_folder = os.path.join(pupils_folder, "withPeaksValleys")
-engagement_folder = os.path.join(plots_folder, "engagement")
-linReg_folder = os.path.join(plots_folder, "linReg")
-pooled_stim_vids_folder = os.path.join(plots_folder, "PooledStimVids")
-# Create plots folder (and sub-folders) if it (they) does (do) not exist
-if not os.path.exists(plots_folder):
-    #print("Creating plots folder.")
-    os.makedirs(plots_folder)
-if not os.path.exists(pupils_folder):
-    #print("Creating camera profiles folder.")
-    os.makedirs(pupils_folder)
-if not os.path.exists(pupils_pv_folder):
-    #print("Creating camera profiles folder.")
-    os.makedirs(pupils_pv_folder)
-if not os.path.exists(engagement_folder):
-    #print("Creating engagement count folder.")
-    os.makedirs(engagement_folder)
-if not os.path.exists(linReg_folder):
-    #print("Creating engagement count folder.")
-    os.makedirs(linReg_folder)
-if not os.path.exists(pooled_stim_vids_folder):
-    #print("Creating engagement count folder.")
-    os.makedirs(pooled_stim_vids_folder)
+# world camera average luminance csv files
+worldCamLum_folder = os.path.join(root_folder, 'worldLums')
+# scatter plot output folder
+pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
+# Create folders if they do not exist
+if not os.path.exists(pupilSize_folder):
+    os.makedirs(pupilSize_folder)
 
 ### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
 # downsample = collect data from every 40ms or other multiples of 20
@@ -270,6 +233,8 @@ analysed_count = {}
 stimuli_tbucketed = {key:[] for key in stim_vids}
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
+### WHILE DEBUGGING ###
+day_folders = day_folders[5:10]
 # find pupil data on dropbox
 pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 # first day was a debugging session, so skip it
@@ -362,22 +327,53 @@ for day_folder in pupil_folders:
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
+###################################
+# Normalize pupil size data
+# currently only working with R eyes, contour tracking
+###################################
+R_contours_allStim = [all_trials_size_data[0][24.0], all_trials_size_data[0][25.0], all_trials_size_data[0][26.0], all_trials_size_data[0][27.0], all_trials_size_data[0][28.0], all_trials_size_data[0][29.0]]
+Rc_allStim_normed = []
+for i, stim_trials in enumerate(R_contours_allStim):
+    print('Normalizing trials for unique stim %s'%(i+1))
+    normed_trials = []
+    for trial in stim_trials:
+        trial_median = np.nanmedian(trial)
+        normed_trial = trial/trial_median
+        normed_trials.append(normed_trial)
+    normed_trials = np.array(normed_trials)
+    normed_mean = np.nanmean(normed_trials, axis=0)    
+    Rc_allStim_normed.append(normed_mean)
 
-R_trials_contour_24 = all_trials_size_data[0][24.0]
-# normalize each trial by median of each trial to get a percent change centered around 1.0
-normed_trials = []
-for trial in R_trials_contour_24:
-    trial_median = np.nanmedian(trial)
-    normed_trial = trial/trial_median
-    normed_trials.append(normed_trial)
-normed_trials = np.array(normed_trials)
-normed_mean = np.nanmean(normed_trials, axis=0)
+###################################
+# Load world camera luminance files
+###################################
+worldCamLum_files = glob.glob(worldCamLum_folder + os.sep + '*.data')
+avgLum_allPhases = []
+phaseOrder = []
+uniqueStartsEnds = []
+for file in worldCamLum_files:
+    # get stimuli phase type
+    phase_type = os.path.basename(file).split('_')[0]
+    avgLum = np.fromfile(file, dtype=np.float32)
+    uniqueStart = os.path.basename(file).split('_')[2].split('-')[0][:-2]
+    uniqueEnd = os.path.basename(file).split('_')[2].split('-')[1][:-2]
+    avgLum_allPhases.append(avgLum)
+    phaseOrder.append(phase_type)
+    uniqueStartsEnds.append([uniqueStart,uniqueEnd])
+
+###################################
+# Split pupil size arrays into calib, octo, and unique
+###################################
+
+
+
 
 # need to somehow import lums_stim24 from WorldVid_AvgLum.py
 num_tb = len(lums_stim24)
 norm_areas = normed_mean[0:num_tb]
 plt.plot(lums_stim24, norm_areas, '.')
 plt.show()
+
 
 # least squares lin regression fitting blah
 norm_areas_nonan=norm_areas[np.logical_not(np.isnan(norm_areas))]
