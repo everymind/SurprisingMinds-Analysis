@@ -397,12 +397,12 @@ for unique_stim in allMonths_meanWorldVidArrays:
 # filepaths
 calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTBs.data' % (totalVidCount, max(calibLens))
 octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTBs.data' % (totalVidCount, max(octoLens))
-unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], max(uniqueLens[uniqueOrder.index(24.0)]))
-unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], max(uniqueLens[uniqueOrder.index(25.0)]))
-unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], max(uniqueLens[uniqueOrder.index(26.0)]))
-unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], max(uniqueLens[uniqueOrder.index(27.0)]))
-unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], max(uniqueLens[uniqueOrder.index(28.0)]))
-unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], max(uniqueLens[uniqueOrder.index(29.0)]))
+unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
+unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
+unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
+unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
+unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
+unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.data' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
 # save to file
 allCalib_mean.tofile(calib_output)
 allOcto_mean.tofile(octo_output)
