@@ -84,8 +84,10 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
 ### BEGIN ANALYSIS ###
-# List relevant data locations: these are for KAMPFF-LAB-VIDEO and laptop
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+# List relevant data locations: this is for laptop
+#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+# List relevant data locations: this is for office desktop (windows)
+root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
 worldVid_lums_folder = os.path.join(root_folder, "worldLums")
 # Create folders they do not exist
@@ -123,7 +125,7 @@ for avg_world_vid_folder in avg_world_vid_folders:
         updated_folders_to_extract.append(avg_world_vid_folder)
 
 #### WHILE DEBUGGING ####
-updated_folders_to_extract = updated_folders_to_extract[4:6]
+#updated_folders_to_extract = updated_folders_to_extract[4:6]
 #### --------------- ####
 
 # extract, unravel, calculate mean luminance of each frame, create array of mean luminances for each stim type
@@ -383,31 +385,23 @@ allOcto_mean = np.mean(allOcto_array, axis=0)
 totalVidCount = 0
 for unique_stim in allMonths_meanWorldVidArrays:
     totalVidCount = totalVidCount + allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
-calibFN = 'meanCalib_'+str(totalVidCount)+'-Vids.csv'
-octoFN = 'meanOcto_'+str(totalVidCount)+'-Vids.csv'
-unique24FN = 'meanUnique01_'+str(allMonths_meanWorldVidArrays[24.0]['Vid Count'])+'-Vids.csv'
-unique25FN = 'meanUnique02_'+str(allMonths_meanWorldVidArrays[25.0]['Vid Count'])+'-Vids.csv'
-unique26FN = 'meanUnique03_'+str(allMonths_meanWorldVidArrays[26.0]['Vid Count'])+'-Vids.csv'
-unique27FN = 'meanUnique04_'+str(allMonths_meanWorldVidArrays[27.0]['Vid Count'])+'-Vids.csv'
-unique28FN = 'meanUnique05_'+str(allMonths_meanWorldVidArrays[28.0]['Vid Count'])+'-Vids.csv'
-unique29FN = 'meanUnique06_'+str(allMonths_meanWorldVidArrays[29.0]['Vid Count'])+'-Vids.csv'
-# filepath
-calibFP = os.path.join(worldVid_lums_folder, calibFN)
-octoFP = os.path.join(worldVid_lums_folder, octoFN)
-unique24FP = os.path.join(worldVid_lums_folder, unique24FN)
-unique25FP = os.path.join(worldVid_lums_folder, unique25FN)
-unique26FP = os.path.join(worldVid_lums_folder, unique26FN)
-unique27FP = os.path.join(worldVid_lums_folder, unique27FN)
-unique28FP = os.path.join(worldVid_lums_folder, unique28FN)
-unique29FP = os.path.join(worldVid_lums_folder, unique29FN)
+# filepaths
+calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%s-Vids.data' % (totalVidCount)
+octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%s-Vids.data' % (totalVidCount)
+unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%s-Vids.data' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'])
+unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%s-Vids.data' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'])
+unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%s-Vids.data' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'])
+unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%s-Vids.data' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'])
+unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%s-Vids.data' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'])
+unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%s-Vids.data' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'])
 # save to file
-np.savetxt(calibFP, allCalib_mean, delimiter=',')
-np.savetxt(octoFP, allOcto_mean, delimiter=',')
-np.savetxt(unique24FP, allUnique[0][0], delimiter=',')
-np.savetxt(unique25FP, allUnique[1][0], delimiter=',')
-np.savetxt(unique26FP, allUnique[2][0], delimiter=',')
-np.savetxt(unique27FP, allUnique[3][0], delimiter=',')
-np.savetxt(unique28FP, allUnique[4][0], delimiter=',')
-np.savetxt(unique29FP, allUnique[5][0], delimiter=',')
+allCalib_mean.tofile(calib_output)
+allOcto_mean.tofile(octo_output)
+allUnique[0][0].tofile(unique24_output)
+allUnique[1][0].tofile(unique25_output)
+allUnique[2][0].tofile(unique26_output)
+allUnique[3][0].tofile(unique27_output)
+allUnique[4][0].tofile(unique28_output)
+allUnique[5][0].tofile(unique29_output)
 
 # FIN
