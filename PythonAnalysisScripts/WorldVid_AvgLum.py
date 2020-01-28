@@ -319,6 +319,8 @@ all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','201
 allCalib = []
 allOcto = []
 allUnique = []
+uniqueStartsEnds = []
+uniqueOrder = []
 shortestCalib = 2000
 shortestOcto = 2000
 # cut out each phase of the stimuli
@@ -353,7 +355,6 @@ for unique_stim in allMonths_meanWorldVidArrays:
         shortestOcto = len(thisStim_meanOcto)
     allOcto.append(thisStim_meanOcto)
     ### cut out unique
-    ## UNIQUE 24
     thisUniqueStart = []
     for key in all_avg_world_moments[unique_stim]['unique start']:
         thisUniqueStart.append(key)
@@ -362,10 +363,11 @@ for unique_stim in allMonths_meanWorldVidArrays:
     for key in all_avg_world_moments[unique_stim]['unique end']:
         thisUniqueEnd.append(key)
     thisUniqueEnd_tb = np.max(thisUniqueEnd)
+    uniqueStartsEnds.append([thisUniqueStart_tb,thisUniqueEnd_tb])
     # cut out unique phase from full world vid lum array
     thisStim_meanUnique = fullMeanWorldVid[thisUniqueStart_tb:thisUniqueEnd_tb]
-    unique_index = stim_vids.index(unique_stim)
-    allUnique[unique_index].append(thisStim_meanUnique)
+    allUnique.append(thisStim_meanUnique)
+    uniqueOrder.append(unique_stim)
 # average calib and octo across all stimuli
 allCalib_truncated = []
 for calib in allCalib:
@@ -386,14 +388,14 @@ totalVidCount = 0
 for unique_stim in allMonths_meanWorldVidArrays:
     totalVidCount = totalVidCount + allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
 # filepaths
-calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%s-Vids.data' % (totalVidCount)
-octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%s-Vids.data' % (totalVidCount)
-unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%s-Vids.data' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'])
-unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%s-Vids.data' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'])
-unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%s-Vids.data' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'])
-unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%s-Vids.data' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'])
-unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%s-Vids.data' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'])
-unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%s-Vids.data' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'])
+calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTB-%dTB.data' % (totalVidCount, calibStart_tb, calibEnd_tb)
+octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTB-%dTB.data' % (totalVidCount, octoStart_tb, octoEnd_tb)
+unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTB-%dTB.data' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueStartsEnds[uniqueOrder.index(24.0)][0], uniqueStartsEnds[uniqueOrder.index(24.0)][1])
+unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTB-%dTB.data' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueStartsEnds[uniqueOrder.index(25.0)][0], uniqueStartsEnds[uniqueOrder.index(25.0)][1])
+unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTB-%dTB.data' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueStartsEnds[uniqueOrder.index(26.0)][0], uniqueStartsEnds[uniqueOrder.index(26.0)][1])
+unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTB-%dTB.data' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueStartsEnds[uniqueOrder.index(27.0)][0], uniqueStartsEnds[uniqueOrder.index(27.0)][1])
+unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTB-%dTB.data' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueStartsEnds[uniqueOrder.index(28.0)][0], uniqueStartsEnds[uniqueOrder.index(28.0)][1])
+unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTB-%dTB.data' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueStartsEnds[uniqueOrder.index(29.0)][0], uniqueStartsEnds[uniqueOrder.index(29.0)][1])
 # save to file
 allCalib_mean.tofile(calib_output)
 allOcto_mean.tofile(octo_output)
