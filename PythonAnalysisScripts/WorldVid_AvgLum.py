@@ -318,7 +318,7 @@ all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','201
 # split world vid lum arrays
 allCalib = []
 allOcto = []
-allUnique = [[],[],[],[],[],[]]
+allUnique = []
 shortestCalib = 2000
 shortestOcto = 2000
 # cut out each phase of the stimuli
@@ -397,11 +397,11 @@ unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%s-Vids.data' % 
 # save to file
 allCalib_mean.tofile(calib_output)
 allOcto_mean.tofile(octo_output)
-allUnique[0][0].tofile(unique24_output)
-allUnique[1][0].tofile(unique25_output)
-allUnique[2][0].tofile(unique26_output)
-allUnique[3][0].tofile(unique27_output)
-allUnique[4][0].tofile(unique28_output)
-allUnique[5][0].tofile(unique29_output)
+allUnique[0].tofile(unique24_output)
+allUnique[1].tofile(unique25_output)
+allUnique[2].tofile(unique26_output)
+allUnique[3].tofile(unique27_output)
+allUnique[4].tofile(unique28_output)
+allUnique[5].tofile(unique29_output)
 
 # FIN
