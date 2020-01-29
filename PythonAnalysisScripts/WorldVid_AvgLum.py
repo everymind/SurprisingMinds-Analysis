@@ -154,6 +154,7 @@ for month_folder in updated_folders_to_extract:
                 thisMonth_thisStim_lums.append(lum)
         thisMonth_thisStim_lums_array = np.array(thisMonth_thisStim_lums)
         allMonths_meanWorldVidArrays[unique_stim][month_name] = thisMonth_thisStim_lums_array
+
 ### END MONTHLY AVERAGE DATA EXTRACTION ###
 ###
 ### AVERAGE ACROSS ALL MONTHS ###
@@ -343,6 +344,7 @@ for unique_stim in allMonths_meanWorldVidArrays:
     if len(thisStim_meanCalib)<shortestCalib:
         shortestCalib = len(thisStim_meanCalib)
     allCalib.append(thisStim_meanCalib)
+    print('Unique Stim %d, Calibration length: %d'%(unique_stim, len(thisStim_meanCalib)))
     calibLen = calibEnd_tb - calibStart_tb
     calibLens.append(calibLen)
     ## OCTO
@@ -376,6 +378,7 @@ for unique_stim in allMonths_meanWorldVidArrays:
     thisStim_meanUnique = fullMeanWorldVid[thisUniqueStart_tb:thisUniqueEnd_tb]
     allUnique.append(thisStim_meanUnique)
     uniqueOrder.append(unique_stim)
+
 # average calib and octo across all stimuli
 allCalib_truncated = []
 for calib in allCalib:
