@@ -86,9 +86,9 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
 
 ### BEGIN ANALYSIS ###
 # List relevant data locations: this is for laptop
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # List relevant data locations: this is for office desktop (windows)
-#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
 worldVid_lums_folder = os.path.join(root_folder, "worldLums")
 # Create folders they do not exist
@@ -126,7 +126,7 @@ for avg_world_vid_folder in avg_world_vid_folders:
         updated_folders_to_extract.append(avg_world_vid_folder)
 
 #### WHILE DEBUGGING ####
-updated_folders_to_extract = updated_folders_to_extract[4:6]
+#updated_folders_to_extract = updated_folders_to_extract[4:6]
 #### --------------- ####
 
 # extract, unravel, calculate mean luminance of each frame, create array of mean luminances for each stim type
