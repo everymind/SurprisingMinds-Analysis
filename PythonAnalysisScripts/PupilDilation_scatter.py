@@ -176,14 +176,81 @@ def filter_to_nan(list_of_dicts, upper_threshold, lower_threshold):
                 trial = threshold_to_nan(trial, lower_threshold, 'lower')
     return list_of_dicts
 
+def phaseMeans_withDelay(delay_tb, normedPupils_array, calibLen_tb, allUniqueLens_tb, octoLen_tb):
+    allCalib = []
+    allOcto = []
+    allUnique = []
+    # Split trials into calib, octo, and unique
+    for i, uniqueStim in enumerate(normedPupils_array):
+        thisUnique = []
+        uniqueLen_tb = allUniqueLens_tb[i]
+        for normed_trial in uniqueStim:
+            thisTrial_calib = normed_trial[delay_tb : delay_tb+calibLen_tb]
+            allCalib.append(thisTrial_calib)
+            thisTrial_unique = normed_trial[delay_tb+calibLen_tb+1 : delay_tb+calibLen_tb+1+uniqueLen_tb]
+            thisUnique.append(thisTrial_unique)
+            thisTrial_octo = normed_trial[delay_tb+calibLen_tb+1+uniqueLen_tb+1 : delay_tb+calibLen_tb+1+uniqueLen_tb+1+octoLen_tb]
+            allOcto.append(thisTrial_octo)
+        allUnique.append(thisUnique)
+    calib_mean = np.nanmean(allCalib, axis=0)
+    octo_mean = np.nanmean(allOcto, axis=0)
+    unique_means = []
+    for unique in allUnique:
+        thisUnique_mean = np.nanmean(unique, axis=0)
+        unique_means.append(thisUnique_mean)
+    return calib_mean, octo_mean, unique_means
+
+def leastSquares_pupilSize_lum(pupilSize_array, lum_array):
+    # remove tb where pupil sizes are nans
+    meanPupil_nonan = pupilSize_array[np.logical_not(np.isnan(pupilSize_array))]
+    meanLum_nonan = lum_array[np.logical_not(np.isnan(pupilSize_array))]
+    # remove tb where luminances are nans
+    meanPupil_nonan = meanPupil_nonan[np.logical_not(np.isnan(meanLum_nonan))]
+    meanLum_nonan = meanLum_nonan[np.logical_not(np.isnan(meanLum_nonan))]
+    # calculate least squares regression line
+    slope, intercept, rval, pval, stderr = stats.linregress(meanLum_nonan, meanPupil_nonan)
+    return slope, intercept, rval, pval, stderr
+
+def LumVsPupilSize_ScatterLinRegress(lum_array, pupilSize_array, phase_name, eyeAnalysis_name, pupilDelay_ms, save_folder):
+    # make sure pupil size and world cam lum arrays are same size
+    plotting_numTB = min(len(lum_array), len(pupilSize_array))
+    lum_plot = lum_array[:plotting_numTB]
+    pupil_plot = pupilSize_array[:plotting_numTB]
+    # calculate least squares regression line
+    slope, intercept, rval, pval, stderr = leastSquares_pupilSize_lum(pupilSize_array, lum_array)
+    # figure path and title
+    figPath = os.path.join(save_folder, '%s_meanLum-mean%s_delay%dms.png'%(phase_name, eyeAnalysis_name, pupilDelay_ms))
+    figTitle = 'Mean luminance of world cam vs mean pupil size (%s) during %s, pupil delay = %dms'%(eyeAnalysis_name, phase_name, pupilDelay_ms)
+    print('Plotting %s'%(figTitle))
+    # draw scatter plot
+    plt.figure(figsize=(9, 9), dpi=200)
+    plt.suptitle(figTitle, fontsize=12, y=0.98)
+    plt.ylabel('Mean pupil size (percent change from median of full trial)')
+    plt.xlabel('Mean luminance of world cam')
+    plt.plot(lum_plot, pupil_plot, '.', label='original data')
+    # draw regression line
+    plt.plot(lum_plot, intercept+slope*lum_plot, 'r', label='fitted line, r-squared: %f'%(rval**2))
+    plt.legend()
+    plt.savefig(figPath)
+
+def splitPupils_withDelay_plotScatterLinRegress(delay_tb, lum_array, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb, eyeAnalysis_name, saveFolder):
+    pupil_calib_mean, pupil_octo_mean, pupil_unique_means = phaseMeans_withDelay(delay_tb, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb)
+    LumVsPupilSize_ScatterLinRegress(lum_array[0], pupil_calib_mean, 'calib', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[1], pupil_octo_mean, 'octo', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[2], pupil_unique_means[0], 'unique01', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[3], pupil_unique_means[1], 'unique02', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[4], pupil_unique_means[2], 'unique03', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*40, saveFolder)
+    LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*40, saveFolder)
 
 ### BEGIN ANALYSIS ###
 # List relevant data locations: these are for laptop
-#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-#plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
+root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 # List relevant data locations: these are for office desktop
-root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
+#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
 # set up folders
 # world camera average luminance csv files
 worldCamLum_folder = os.path.join(root_folder, 'worldLums')
@@ -233,14 +300,17 @@ analysed_count = {}
 stimuli_tbucketed = {key:[] for key in stim_vids}
 # consolidate csv files from multiple days into one data structure
 day_folders = sorted(os.listdir(root_folder))
-### WHILE DEBUGGING ###
-day_folders = day_folders[5:10]
 # find pupil data on dropbox
 pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 # first day was a debugging session, so skip it
 pupil_folders = pupil_folders[1:]
-# currently still running pupil finding analysis...
+
+### WHILE DEBUGGING ###
+pupil_folders = pupil_folders[5:10]
+# if currently still running pupil finding analysis...
 pupil_folders = pupil_folders[:-1]
+#### --------------- ####
+
 # collect dates for which pupil extraction fails
 failed_days = []
 for day_folder in pupil_folders:
@@ -328,61 +398,52 @@ for day_folder in pupil_folders:
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 ###################################
-# Normalize pupil size data
+# Load world camera luminance files
+###################################
+worldCamLum_files = glob.glob(worldCamLum_folder + os.sep + '*.npy')
+avgLum_allPhases = []
+phaseOrder = []
+uniqueLens = []
+for lum_file in worldCamLum_files:
+    # get stimuli phase type
+    phase_type = os.path.basename(lum_file).split('_')[0]
+    avgLum = np.load(lum_file)
+    avgLum_allPhases.append(avgLum)
+    phaseOrder.append(phase_type)
+    lumLen = int(os.path.basename(lum_file).split('_')[2].split('.')[0][:-3])
+    if phase_type == 'meanCalib':
+        calibLen = lumLen
+        continue
+    if phase_type == 'meanOcto':
+        octoLen = lumLen
+        continue
+    else:
+        uniqueLens.append(lumLen)
+
+###################################
+# Normalize pupil size data 
 # currently only working with R eyes, contour tracking
 ###################################
 R_contours_allStim = [all_trials_size_data[0][24.0], all_trials_size_data[0][25.0], all_trials_size_data[0][26.0], all_trials_size_data[0][27.0], all_trials_size_data[0][28.0], all_trials_size_data[0][29.0]]
-Rc_allStim_normed = []
+Rc_normed = []
 for i, stim_trials in enumerate(R_contours_allStim):
     print('Normalizing trials for unique stim %s'%(i+1))
-    normed_trials = []
+    thisUnique_normed = []
     for trial in stim_trials:
         trial_median = np.nanmedian(trial)
         normed_trial = trial/trial_median
-        normed_trials.append(normed_trial)
-    normed_trials = np.array(normed_trials)
-    normed_mean = np.nanmean(normed_trials, axis=0)    
-    Rc_allStim_normed.append(normed_mean)
+        thisUnique_normed.append(normed_trial)
+    thisUniqueNormed_array = np.array(thisUnique_normed)
+    Rc_normed.append(thisUniqueNormed_array)
 
 ###################################
-# Load world camera luminance files
+# split normed pupil size arrays based on different delays of pupil reaction
+# create scatter plot of pupil size against world cam luminance values
+# include least squares regression line
 ###################################
-worldCamLum_files = glob.glob(worldCamLum_folder + os.sep + '*.data')
-avgLum_allPhases = []
-phaseOrder = []
-uniqueStartsEnds = []
-for file in worldCamLum_files:
-    # get stimuli phase type
-    phase_type = os.path.basename(file).split('_')[0]
-    avgLum = np.fromfile(file, dtype=np.float32)
-    uniqueStart = os.path.basename(file).split('_')[2].split('-')[0][:-2]
-    uniqueEnd = os.path.basename(file).split('_')[2].split('-')[1][:-2]
-    avgLum_allPhases.append(avgLum)
-    phaseOrder.append(phase_type)
-    uniqueStartsEnds.append([uniqueStart,uniqueEnd])
+delays = range(15)
+for delay in delays:
+    print('Delay: %d'%(delay))
+    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Rc_normed, calibLen, uniqueLens, octoLen, 'RightContour', pupilSize_folder)
 
-###################################
-# Split pupil size arrays into calib, octo, and unique
-###################################
-
-
-
-
-# need to somehow import lums_stim24 from WorldVid_AvgLum.py
-# import from csv files
-num_tb = len(lums_stim24)
-norm_areas = normed_mean[0:num_tb]
-plt.plot(lums_stim24, norm_areas, '.')
-plt.show()
-
-
-# least squares lin regression fitting blah
-norm_areas_nonan=norm_areas[np.logical_not(np.isnan(norm_areas))]
-lums_stim24_nonan=lums_stim24[np.logical_not(np.isnan(norm_areas))]
-norm_areas_nonan=norm_areas_nonan[np.logical_not(np.isnan(lums_stim24_nonan))]
-lums_stim24_nonan=lums_stim24_nonan[np.logical_not(np.isnan(lums_stim24_nonan))]
-stats.linregress(lums_stim24_nonan, norm_areas_nonan)
-
-# shifting
-plt.plot(lums_stim24, np.roll(norm_areas,20), '.')
-
+# FIN
