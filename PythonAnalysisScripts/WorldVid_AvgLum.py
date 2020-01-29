@@ -399,8 +399,8 @@ totalVidCount = 0
 for unique_stim in allMonths_meanWorldVidArrays:
     totalVidCount = totalVidCount + allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
 # filepaths
-calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, max(calibLens))
-octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, max(octoLens))
+calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, min(calibLens))
+octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, min(octoLens))
 unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
 unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
 unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
