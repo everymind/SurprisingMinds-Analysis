@@ -18,7 +18,7 @@ import matplotlib.pyplot as plt
 from collections import defaultdict
 from scipy import stats
 # set up log file to store all printed messages
-current_working_directory = os.getcwd()
+#current_working_directory = os.getcwd()
 ### FUNCTIONS ###
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size):
     if (new_bucket_size % original_bucket_size == 0):
