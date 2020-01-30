@@ -343,7 +343,7 @@ Lco_folder = os.path.join(pupilSize_folder, 'leftContours')
 Lci_folder = os.path.join(pupilSize_folder, 'leftCircles')
 # normed mean pupil sizes output folder
 normedMeanPupilSizes_folder = os.path.join(root_folder, 'normedMeanPupilSizes')
-# Create folders if they do not exist
+# Create output folders if they do not exist
 output_folders = [pupilSize_folder, Rco_folder, Rci_folder, Lco_folder, Lci_folder, normedMeanPupilSizes_folder]
 for output_folder in output_folders:
     if not os.path.exists(output_folder):
