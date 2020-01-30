@@ -19,7 +19,10 @@ from collections import defaultdict
 from scipy import stats
 # set up log file to store all printed messages
 #current_working_directory = os.getcwd()
-### FUNCTIONS ###
+
+###################################
+# FUNCTIONS
+###################################
 def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size):
     if (new_bucket_size % original_bucket_size == 0):
         new_sample_rate = int(new_bucket_size/original_bucket_size)
@@ -244,7 +247,9 @@ def splitPupils_withDelay_plotScatterLinRegress(delay_tb, lum_array, pupilSize_a
     LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*40, saveFolder)
     LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*40, saveFolder)
 
-### BEGIN ANALYSIS ###
+###################################
+# DATA AND OUTPUT FILE LOCATIONS
+###################################
 # List relevant data locations: these are for laptop
 root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
@@ -260,7 +265,9 @@ pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
 if not os.path.exists(pupilSize_folder):
     os.makedirs(pupilSize_folder)
 
-### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
+###################################
+# TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
+###################################
 # downsample = collect data from every 40ms or other multiples of 20
 downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
@@ -270,15 +277,17 @@ downsampled_no_of_time_buckets = max_length_of_stim_vid/downsampled_bucket_size_
 new_time_bucket_sample_rate = downsampled_bucket_size_ms/original_bucket_size_in_ms
 milliseconds_for_baseline = 3000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
-### STIMULI VID INFO
+
+###################################
+# STIMULI VID INFO
+###################################
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-# ------------------------------------------------------------------------ #
-### BEGIN PUPIL DATA EXTRACTION ###
+
+###################################
+# BEGIN PUPIL DATA EXTRACTION 
+###################################
 # prepare to sort pupil data by stimulus
 all_right_trials_contours_X = {key:[] for key in stim_vids}
 all_right_trials_contours_Y = {key:[] for key in stim_vids}
@@ -306,9 +315,9 @@ pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 pupil_folders = pupil_folders[1:]
 
 ### WHILE DEBUGGING ###
-pupil_folders = pupil_folders[5:10]
+#pupil_folders = pupil_folders[5:10]
 # if currently still running pupil finding analysis...
-pupil_folders = pupil_folders[:-1]
+#pupil_folders = pupil_folders[:-1]
 #### --------------- ####
 
 # collect dates for which pupil extraction fails
@@ -392,7 +401,6 @@ for day_folder in pupil_folders:
         failed_days.append(day_name)
         print("Day {day} failed!".format(day=day_name))
 
-### END PUPIL EXTRACTION ###
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
 # ------------------------------------------------------------------------ #
