@@ -414,7 +414,7 @@ for day_folder in pupil_folders:
     analysis_folder = os.path.join(day_folder_path, "Analysis")
     csv_folder = os.path.join(analysis_folder, "csv")
     world_folder = os.path.join(analysis_folder, "world")
-
+    
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
     try:
