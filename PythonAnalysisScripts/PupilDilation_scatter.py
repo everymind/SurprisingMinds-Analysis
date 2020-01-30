@@ -335,9 +335,9 @@ pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 pupil_folders = pupil_folders[1:]
 
 ### WHILE DEBUGGING ###
-pupil_folders = pupil_folders[5:10]
+#pupil_folders = pupil_folders[5:10]
 # if currently still running pupil finding analysis...
-pupil_folders = pupil_folders[:-1]
+#pupil_folders = pupil_folders[:-1]
 #### --------------- ####
 
 # collect dates for which pupil extraction fails
