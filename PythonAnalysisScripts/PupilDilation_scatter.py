@@ -329,11 +329,11 @@ def drawFitScoresVsDelay(rvals_allPhases, eyeAnalysis_name, downsample_ms, save_
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
 # List relevant data locations: these are for laptop
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
+#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 # List relevant data locations: these are for office desktop
-#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-#plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
+root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
 # set up folders
 # world camera average luminance csv files
 worldCamLum_folder = os.path.join(root_folder, 'worldLums')
