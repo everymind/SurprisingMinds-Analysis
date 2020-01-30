@@ -304,12 +304,11 @@ def collectLinRegressParamByStimPhase(param_allDelays_allPhases):
         param_allU6.append(delay[7])
     return [param_allCalib, param_allOcto, param_allU1, param_allU2, param_allU3, param_allU4, param_allU5, param_allU6]
 
-def drawFitScoresVsDelay(rvals_allPhases, eyeAnalysis_name, downsample_ms, save_folder):
-    phase_names = ['calib', 'octo', 'unique1', 'unique2', 'unique3', 'unique4', 'unique5', 'unique6']
+def drawFitScoresVsDelay(rvals_allPhases, phases_strList, eyeAnalysis_name, downsample_ms, save_folder):
     for i, phase in enumerate(rvals_allPhases):
         # figure path and title
-        figPath = os.path.join(save_folder, '%s_rValsVsDelays_%s.png'%(phase_names[i], eyeAnalysis_name))
-        figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n Phase: %s, %s'%(phase_names[i], eyeAnalysis_name)
+        figPath = os.path.join(save_folder, '%s_rValsVsDelays_%s.png'%(phases_strList[i], eyeAnalysis_name))
+        figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n Phase: %s, %s'%(phases_strList[i], eyeAnalysis_name)
         print('Plotting %s'%(figTitle))
         # draw fit scores vs delay
         plt.figure(figsize=(7, 7), dpi=100)
@@ -347,8 +346,9 @@ Lco_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'leftContours', 'rvalVsD
 Lci_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'leftCircles', 'rvalVsDelay')
 # normed mean pupil sizes output folder
 normedMeanPupilSizes_folder = os.path.join(root_folder, 'normedMeanPupilSizes')
+pupilSizeVsDelayLinRegress_folder = os.path.join(root_folder, 'pupilSizeVsDelayLinRegress')
 # Create output folders if they do not exist
-output_folders = [pupilSize_folder, Rco_scatter_folder, Rci_scatter_folder, Lco_scatter_folder, Lci_scatter_folder, Rco_rvalVsDelay_folder, Rci_rvalVsDelay_folder, Lco_rvalVsDelay_folder, Lci_rvalVsDelay_folder, normedMeanPupilSizes_folder]
+output_folders = [pupilSize_folder, Rco_scatter_folder, Rci_scatter_folder, Lco_scatter_folder, Lci_scatter_folder, Rco_rvalVsDelay_folder, Rci_rvalVsDelay_folder, Lco_rvalVsDelay_folder, Lci_rvalVsDelay_folder, normedMeanPupilSizes_folder, pupilSizeVsDelayLinRegress_folder]
 for output_folder in output_folders:
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -372,6 +372,7 @@ baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
+phase_names = ['calib', 'octo', 'unique1', 'unique2', 'unique3', 'unique4', 'unique5', 'unique6']
 
 ###################################
 # BEGIN PUPIL DATA EXTRACTION 
@@ -538,14 +539,14 @@ Lci_normed = normPupilSizeData(L_circles_allStim, 'left circles')
 # include least squares regression line in scatter plot
 ###################################
 delays = range(15)
-slope_Rco_allDelays = []
-slope_Rci_allDelays = []
-slope_Lco_allDelays = []
-slope_Lci_allDelays = []
-intercept_Rco_allDelays = []
-intercept_Rci_allDelays = []
-intercept_Lco_allDelays = []
-intercept_Lci_allDelays = []
+slopes_Rco_allDelays = []
+slopes_Rci_allDelays = []
+slopes_Lco_allDelays = []
+slopes_Lci_allDelays = []
+intercepts_Rco_allDelays = []
+intercepts_Rci_allDelays = []
+intercepts_Lco_allDelays = []
+intercepts_Lci_allDelays = []
 rvals_Rco_allDelays = []
 rvals_Rci_allDelays = []
 rvals_Lco_allDelays = []
@@ -583,14 +584,28 @@ rvals_Rci_allPhases = collectLinRegressParamByStimPhase(rvals_Rci_allDelays)
 rvals_Lco_allPhases = collectLinRegressParamByStimPhase(rvals_Lco_allDelays)
 rvals_Lci_allPhases = collectLinRegressParamByStimPhase(rvals_Lci_allDelays)
 # plot fit scores vs delay for each phase
-drawFitScoresVsDelay(rvals_Rco_allPhases, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
-drawFitScoresVsDelay(rvals_Rci_allPhases, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
-drawFitScoresVsDelay(rvals_Lco_allPhases, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
-drawFitScoresVsDelay(rvals_Lci_allPhases, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Rco_allPhases, phase_names, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Rci_allPhases, phase_names, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Lco_allPhases, phase_names, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Lci_allPhases, phase_names, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
 
 ###################################
 # save linear regression params to data file
 ###################################
+# organise slopes and intercepts by phase
+slopes_Rco_allPhases = collectLinRegressParamByStimPhase(slopes_Rco_allDelays)
+slopes_Rci_allPhases = collectLinRegressParamByStimPhase(slopes_Rci_allDelays)
+slopes_Lco_allPhases = collectLinRegressParamByStimPhase(slopes_Lco_allDelays)
+slopes_Lci_allPhases = collectLinRegressParamByStimPhase(slopes_Lci_allDelays)
+intercepts_Rco_allPhases = collectLinRegressParamByStimPhase(intercepts_Rco_allDelays)
+intercepts_Rci_allPhases = collectLinRegressParamByStimPhase(intercepts_Rci_allDelays)
+intercepts_Lco_allPhases = collectLinRegressParamByStimPhase(intercepts_Lco_allDelays)
+intercepts_Lci_allPhases = collectLinRegressParamByStimPhase(intercepts_Lci_allDelays)
+# save data file per phase
+## WIP: NEED TO GENERALIZE FOR ALL EYEANALYSIS_TYPES
+for i, phase_type in enumerate(slopes_Rco_allPhases):
+    output_name = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegress_slopes_%s_allDelays_RightContours.npy' % (phase_names[i])
+    np.save(output_name, phase_type)
 
 
 # FIN
