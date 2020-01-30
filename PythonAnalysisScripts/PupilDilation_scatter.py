@@ -235,6 +235,7 @@ def LumVsPupilSize_ScatterLinRegress(lum_array, pupilSize_array, phase_name, eye
     plt.plot(lum_plot, intercept+slope*lum_plot, 'r', label='fitted line, r-squared: %f'%(rval**2))
     plt.legend()
     plt.savefig(figPath)
+    plt.close()
 
 def splitPupils_withDelay_plotScatterLinRegress(delay_tb, lum_array, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb, eyeAnalysis_name, saveFolder):
     pupil_calib_mean, pupil_octo_mean, pupil_unique_means = phaseMeans_withDelay(delay_tb, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb)
@@ -246,6 +247,19 @@ def splitPupils_withDelay_plotScatterLinRegress(delay_tb, lum_array, pupilSize_a
     LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*40, saveFolder)
     LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*40, saveFolder)
     LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*40, saveFolder)
+
+def normPupilSizeData(pupilSizeArrays_allStim, eyeAnalysis_name):
+    normed_pupils = []
+    for i, stim_trials in enumerate(pupilSizeArrays_allStim):
+        print('Normalizing trials for %s, unique stim %s'%(eyeAnalysis_name, i+1))
+        thisUnique_normed = []
+        for trial in stim_trials:
+            trial_median = np.nanmedian(trial)
+            normed_trial = trial/trial_median
+            thisUnique_normed.append(normed_trial)
+        thisUniqueNormed_array = np.array(thisUnique_normed)
+        normed_pupils.append(thisUniqueNormed_array)
+    return normed_pupils
 
 ###################################
 # DATA AND OUTPUT FILE LOCATIONS
@@ -261,9 +275,15 @@ plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 worldCamLum_folder = os.path.join(root_folder, 'worldLums')
 # scatter plot output folder
 pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
+Rco_folder = os.path.join(pupilSize_folder, 'rightContours')
+Rci_folder = os.path.join(pupilSize_folder, 'rightCircles')
+Lco_folder = os.path.join(pupilSize_folder, 'leftContours')
+Lci_folder = os.path.join(pupilSize_folder, 'leftCircles')
 # Create folders if they do not exist
-if not os.path.exists(pupilSize_folder):
-    os.makedirs(pupilSize_folder)
+output_folders = [pupilSize_folder, Rco_folder, Rci_folder, Lco_folder, Lci_folder]
+for output_folder in output_folders:
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
 ###################################
 # TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
@@ -315,9 +335,9 @@ pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 pupil_folders = pupil_folders[1:]
 
 ### WHILE DEBUGGING ###
-#pupil_folders = pupil_folders[5:10]
+pupil_folders = pupil_folders[5:10]
 # if currently still running pupil finding analysis...
-#pupil_folders = pupil_folders[:-1]
+pupil_folders = pupil_folders[:-1]
 #### --------------- ####
 
 # collect dates for which pupil extraction fails
@@ -430,19 +450,19 @@ for lum_file in worldCamLum_files:
 
 ###################################
 # Normalize pupil size data 
-# currently only working with R eyes, contour tracking
 ###################################
+# Right Contours
 R_contours_allStim = [all_trials_size_data[0][24.0], all_trials_size_data[0][25.0], all_trials_size_data[0][26.0], all_trials_size_data[0][27.0], all_trials_size_data[0][28.0], all_trials_size_data[0][29.0]]
-Rc_normed = []
-for i, stim_trials in enumerate(R_contours_allStim):
-    print('Normalizing trials for unique stim %s'%(i+1))
-    thisUnique_normed = []
-    for trial in stim_trials:
-        trial_median = np.nanmedian(trial)
-        normed_trial = trial/trial_median
-        thisUnique_normed.append(normed_trial)
-    thisUniqueNormed_array = np.array(thisUnique_normed)
-    Rc_normed.append(thisUniqueNormed_array)
+Rco_normed = normPupilSizeData(R_contours_allStim, 'right contours')
+# Right Circles
+R_circles_allStim = [all_trials_size_data[1][24.0], all_trials_size_data[1][25.0], all_trials_size_data[1][26.0], all_trials_size_data[1][27.0], all_trials_size_data[1][28.0], all_trials_size_data[1][29.0]]
+Rci_normed = normPupilSizeData(R_circles_allStim, 'right circles')
+# Left Contours
+L_contours_allStim = [all_trials_size_data[2][24.0], all_trials_size_data[2][25.0], all_trials_size_data[2][26.0], all_trials_size_data[2][27.0], all_trials_size_data[2][28.0], all_trials_size_data[2][29.0]]
+Lco_normed = normPupilSizeData(L_contours_allStim, 'left contours')
+# Left Circles
+L_circles_allStim = [all_trials_size_data[3][24.0], all_trials_size_data[3][25.0], all_trials_size_data[3][26.0], all_trials_size_data[3][27.0], all_trials_size_data[3][28.0], all_trials_size_data[3][29.0]]
+Lci_normed = normPupilSizeData(L_circles_allStim, 'left circles')
 
 ###################################
 # split normed pupil size arrays based on different delays of pupil reaction
@@ -452,6 +472,9 @@ for i, stim_trials in enumerate(R_contours_allStim):
 delays = range(15)
 for delay in delays:
     print('Delay: %d'%(delay))
-    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Rc_normed, calibLen, uniqueLens, octoLen, 'RightContour', pupilSize_folder)
+    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_folder)
+    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_folder)
+    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_folder)
+    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_folder)
 
 # FIN
