@@ -335,16 +335,20 @@ plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
 # set up folders
 # world camera average luminance csv files
 worldCamLum_folder = os.path.join(root_folder, 'worldLums')
-# scatter plot output folder
+# plots output folder
 pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
-Rco_folder = os.path.join(pupilSize_folder, 'rightContours')
-Rci_folder = os.path.join(pupilSize_folder, 'rightCircles')
-Lco_folder = os.path.join(pupilSize_folder, 'leftContours')
-Lci_folder = os.path.join(pupilSize_folder, 'leftCircles')
+Rco_scatter_folder = os.path.join(pupilSize_folder, 'rightContours', 'scatter')
+Rci_scatter_folder = os.path.join(pupilSize_folder, 'rightCircles', 'scatter')
+Lco_scatter_folder = os.path.join(pupilSize_folder, 'leftContours', 'scatter')
+Lci_scatter_folder = os.path.join(pupilSize_folder, 'leftCircles', 'scatter')
+Rco_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'rightContours', 'rvalVsDelay')
+Rci_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'rightCircles', 'rvalVsDelay')
+Lco_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'leftContours', 'rvalVsDelay')
+Lci_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'leftCircles', 'rvalVsDelay')
 # normed mean pupil sizes output folder
 normedMeanPupilSizes_folder = os.path.join(root_folder, 'normedMeanPupilSizes')
 # Create output folders if they do not exist
-output_folders = [pupilSize_folder, Rco_folder, Rci_folder, Lco_folder, Lci_folder, normedMeanPupilSizes_folder]
+output_folders = [pupilSize_folder, Rco_scatter_folder, Rci_scatter_folder, Lco_scatter_folder, Lci_scatter_folder, Rco_rvalVsDelay_folder, Rci_rvalVsDelay_folder, Lco_rvalVsDelay_folder, Lci_rvalVsDelay_folder, normedMeanPupilSizes_folder]
 for output_folder in output_folders:
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -540,13 +544,13 @@ rvals_Lco_allDelays = []
 rvals_Lci_allDelays = []
 for delay in delays:
     print('Delay: %d timebucket(s)'%(delay))
-    rvals_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_folder, normedMeanPupilSizes_folder)
+    rvals_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_scatter_folder, normedMeanPupilSizes_folder)
     rvals_Rco_allDelays.append(rvals_Rco)
-    rvals_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_folder, normedMeanPupilSizes_folder)
+    rvals_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_scatter_folder, normedMeanPupilSizes_folder)
     rvals_Rci_allDelays.append(rvals_Rci)
-    rvals_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_folder, normedMeanPupilSizes_folder)
+    rvals_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_scatter_folder, normedMeanPupilSizes_folder)
     rvals_Lco_allDelays.append(rvals_Lco)
-    rvals_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_folder, normedMeanPupilSizes_folder)
+    rvals_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_scatter_folder, normedMeanPupilSizes_folder)
     rvals_Lci_allDelays.append(rvals_Lci)
 
 ###################################
@@ -559,9 +563,9 @@ rvals_Rci_allPhases = collectRvalsByStimPhase(rvals_Rci_allDelays)
 rvals_Lco_allPhases = collectRvalsByStimPhase(rvals_Lco_allDelays)
 rvals_Lci_allPhases = collectRvalsByStimPhase(rvals_Lci_allDelays)
 # plot fit scores vs delay for each phase
-drawFitScoresVsDelay(rvals_Rco_allPhases, 'RightContours', downsampled_bucket_size_ms, Rco_folder)
-drawFitScoresVsDelay(rvals_Rci_allPhases, 'RightCircles', downsampled_bucket_size_ms, Rci_folder)
-drawFitScoresVsDelay(rvals_Lco_allPhases, 'LeftContours', downsampled_bucket_size_ms, Lco_folder)
-drawFitScoresVsDelay(rvals_Lci_allPhases, 'LeftCircles', downsampled_bucket_size_ms, Lci_folder)
+drawFitScoresVsDelay(rvals_Rco_allPhases, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Rci_allPhases, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Lco_allPhases, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
+drawFitScoresVsDelay(rvals_Lci_allPhases, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
 
 # FIN
