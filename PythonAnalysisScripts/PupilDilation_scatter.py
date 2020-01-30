@@ -6,7 +6,6 @@
 import pdb
 import os
 import glob
-import cv2
 import datetime
 import math
 import sys
@@ -16,7 +15,6 @@ import fnmatch
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from collections import defaultdict
 from scipy import stats
 # set up log file to store all printed messages
 #current_working_directory = os.getcwd()
@@ -414,18 +412,17 @@ for day_folder in pupil_folders:
     analysis_folder = os.path.join(day_folder_path, "Analysis")
     csv_folder = os.path.join(analysis_folder, "csv")
     world_folder = os.path.join(analysis_folder, "world")
-
+    #
     # Print/save number of users per day
     day_name = day_folder.split("_")[-1]
     try:
         ## EXTRACT PUPIL SIZE AND POSITION
         right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupils("right", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
         left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupils("left", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-
+        #
         analysed_count[day_name] = [num_good_right_trials, num_good_left_trials]
         activation_count[day_name] = [num_right_activations, num_left_activations]
         print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
-
         # separate by stimulus number
         R_contours_X = {key:[] for key in stim_vids}
         R_contours_Y = {key:[] for key in stim_vids}
@@ -439,22 +436,22 @@ for day_folder in pupil_folders:
         L_circles_X = {key:[] for key in stim_vids}
         L_circles_Y = {key:[] for key in stim_vids}
         L_circles = {key:[] for key in stim_vids}
-
+        #
         stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
         stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
         stim_sorted_data_all = [stim_sorted_data_right, stim_sorted_data_left]
-
+        #
         extracted_data_right = [right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles]
         extracted_data_left = [left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles]
         extracted_data_all = [extracted_data_right, extracted_data_left]
-
+        #
         for side in range(len(extracted_data_all)):
             for dataset in range(len(extracted_data_all[side])):
                 for trial in extracted_data_all[side][dataset]:
                     stim_num = trial[-1]
                     if stim_num in stim_sorted_data_all[side][dataset].keys():
                         stim_sorted_data_all[side][dataset][stim_num].append(trial[:-1])
-
+        #
         # filter data for outlier points
         all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
         all_position_Y_data = [R_contours_Y, R_circles_Y, L_contours_Y, L_circles_Y]
@@ -467,7 +464,7 @@ for day_folder in pupil_folders:
         all_position_Y_data = filter_to_nan(all_position_Y_data, 599, 0)
         # contours/circles that are too big
         all_size_data = filter_to_nan(all_size_data, 15000, 0)
-
+        #
         # append position data to global data structure
         for i in range(len(all_position_X_data)):
             for stimulus in all_position_X_data[i]:
