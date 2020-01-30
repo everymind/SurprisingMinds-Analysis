@@ -1,6 +1,7 @@
 ### --------------------------------------------------------------------------- ###
-# loads world vid luminance csv files and creates a scatter plot comparing luminance
-# to pupil size
+# loads world vid luminance csv files 
+# outputs normalized pupil size as binary files
+# creates a scatter plot comparing luminance to pupil size
 ### --------------------------------------------------------------------------- ###
 import pdb
 import os
@@ -236,17 +237,41 @@ def LumVsPupilSize_ScatterLinRegress(lum_array, pupilSize_array, phase_name, eye
     plt.legend()
     plt.savefig(figPath)
     plt.close()
+    return rval
 
-def splitPupils_withDelay_plotScatterLinRegress(delay_tb, lum_array, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb, eyeAnalysis_name, saveFolder):
+def splitPupils_withDelay_plotScatterLinRegress(delay_tb, downsample_ms, lum_array, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb, eyeAnalysis_name, saveFolder):
+    # split normalized pupil size data into trial phases
     pupil_calib_mean, pupil_octo_mean, pupil_unique_means = phaseMeans_withDelay(delay_tb, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb)
-    LumVsPupilSize_ScatterLinRegress(lum_array[0], pupil_calib_mean, 'calib', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[1], pupil_octo_mean, 'octo', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[2], pupil_unique_means[0], 'unique01', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[3], pupil_unique_means[1], 'unique02', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[4], pupil_unique_means[2], 'unique03', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*40, saveFolder)
-    LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*40, saveFolder)
+    # save normalized, split and averaged pupil size data as intermediate files
+    ## output path
+    calib_output = saveFolder + os.sep + 'meanNormedPupilSize_calib_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    octo_output = saveFolder + os.sep + 'meanNormedPupilSize_octo_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    unique1_output = saveFolder + os.sep + 'meanNormedPupilSize_u1_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    unique2_output = saveFolder + os.sep + 'meanNormedPupilSize_u2_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    unique3_output = saveFolder + os.sep + 'meanNormedPupilSize_u3_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    unique4_output = saveFolder + os.sep + 'meanNormedPupilSize_u4_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    unique5_output = saveFolder + os.sep + 'meanNormedPupilSize_u5_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    unique6_output = saveFolder + os.sep + 'meanNormedPupilSize_u6_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
+    ## save file
+    np.save(calib_output, pupil_calib_mean)
+    np.save(octo_output, pupil_octo_mean)
+    np.save(unique1_output, pupil_unique_means[0])
+    np.save(unique2_output, pupil_unique_means[1])
+    np.save(unique3_output, pupil_unique_means[2])
+    np.save(unique4_output, pupil_unique_means[3])
+    np.save(unique5_output, pupil_unique_means[4])
+    np.save(unique6_output, pupil_unique_means[5])
+    # plot scatter plots with regression line
+    rval_calib = LumVsPupilSize_ScatterLinRegress(lum_array[0], pupil_calib_mean, 'calib', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_octo = LumVsPupilSize_ScatterLinRegress(lum_array[1], pupil_octo_mean, 'octo', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_u1 = LumVsPupilSize_ScatterLinRegress(lum_array[2], pupil_unique_means[0], 'unique01', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_u2 = LumVsPupilSize_ScatterLinRegress(lum_array[3], pupil_unique_means[1], 'unique02', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_u3 = LumVsPupilSize_ScatterLinRegress(lum_array[4], pupil_unique_means[2], 'unique03', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_u4 = LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_u5 = LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    rval_u6 = LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*downsample_ms, saveFolder)
+    # return correlation coefficients
+    return [rval_calib, rval_octo, rval_u1, rval_u2, rval_u3, rval_u4, rval_u5, rval_u6]
 
 def normPupilSizeData(pupilSizeArrays_allStim, eyeAnalysis_name):
     normed_pupils = []
@@ -466,15 +491,28 @@ Lci_normed = normPupilSizeData(L_circles_allStim, 'left circles')
 
 ###################################
 # split normed pupil size arrays based on different delays of pupil reaction
+# save split normed pupil size arrays as binary files
 # create scatter plot of pupil size against world cam luminance values
-# include least squares regression line
+# include least squares regression line in scatter plot
 ###################################
 delays = range(15)
+rvals_allDelays = []
 for delay in delays:
-    print('Delay: %d'%(delay))
-    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_folder)
-    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_folder)
-    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_folder)
-    splitPupils_withDelay_plotScatterLinRegress(delay, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_folder)
+    rvals_thisDelay = []
+    print('Delay: %d timebucket(s)'%(delay))
+    rvals_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_folder)
+    rvals_thisDelay.append(rvals_Rco)
+    rvals_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_folder)
+    rvals_thisDelay.append(rvals_Rci)
+    rvals_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_folder)
+    rvals_thisDelay.append(rvals_Lco)
+    rvals_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_folder)
+    rvals_thisDelay.append(rvals_Lci)
+    rvals_allDelays.append(rvals_thisDelay)
+
+###################################
+# plot fit scores (rvals) vs delay
+###################################
+
 
 # FIN
