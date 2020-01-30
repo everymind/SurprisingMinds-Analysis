@@ -286,6 +286,45 @@ def normPupilSizeData(pupilSizeArrays_allStim, eyeAnalysis_name):
         normed_pupils.append(thisUniqueNormed_array)
     return normed_pupils
 
+def collectRvalsByStimPhase(rvals_allDelays_allPhases):
+    rvals_allCalib = []
+    rvals_allOcto = []
+    rvals_allU1 = []
+    rvals_allU2 = []
+    rvals_allU3 = []
+    rvals_allU4 = []
+    rvals_allU5 = []
+    rvals_allU6 = []
+    for delay in rvals_allDelays_allPhases:
+        rvals_allCalib.append(delay[0])
+        rvals_allOcto.append(delay[1])
+        rvals_allU1.append(delay[2])
+        rvals_allU2.append(delay[3])
+        rvals_allU3.append(delay[4])
+        rvals_allU4.append(delay[5])
+        rvals_allU5.append(delay[6])
+        rvals_allU6.append(delay[7])
+    return [rvals_allCalib, rvals_allOcto, rvals_allU1, rvals_allU2, rvals_allU3, rvals_allU4, rvals_allU5, rvals_allU6]
+
+def drawFitScoresVsDelay(rvals_allPhases, eyeAnalysis_name, downsample_ms, save_folder):
+    phase_names = ['calib', 'octo', 'unique1', 'unique2', 'unique3', 'unique4', 'unique5', 'unique6']
+    for i, phase in enumerate(rvals_allPhases):
+        # figure path and title
+        figPath = os.path.join(save_folder, '%s_rValsVsDelays_%s.png'%(phase_names[i], eyeAnalysis_name))
+        figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n Phase: %s, %s'%(phase_names[i], eyeAnalysis_name)
+        print('Plotting %s'%(figTitle))
+        # draw fit scores vs delay
+        plt.figure(figsize=(7, 7), dpi=100)
+        plt.suptitle(figTitle, fontsize=12, y=0.98)
+        plt.xlabel('Delay of pupil size data (ms)')
+        plt.ylabel('Correlation coefficient')
+        plt.xticks(np.arange(15), np.arange(15)*downsample_ms)
+        plt.plot(phase, 'g')
+        # save figure and close
+        plt.savefig(figPath)
+        plt.close()
+
+
 ###################################
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
@@ -496,23 +535,34 @@ Lci_normed = normPupilSizeData(L_circles_allStim, 'left circles')
 # include least squares regression line in scatter plot
 ###################################
 delays = range(15)
-rvals_allDelays = []
+rvals_Rco_allDelays = []
+rvals_Rci_allDelays = []
+rvals_Lco_allDelays = []
+rvals_Lci_allDelays = []
 for delay in delays:
-    rvals_thisDelay = []
     print('Delay: %d timebucket(s)'%(delay))
     rvals_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_folder)
-    rvals_thisDelay.append(rvals_Rco)
+    rvals_Rco_allDelays.append(rvals_Rco)
     rvals_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_folder)
-    rvals_thisDelay.append(rvals_Rci)
+    rvals_Rci_allDelays.append(rvals_Rci)
     rvals_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_folder)
-    rvals_thisDelay.append(rvals_Lco)
+    rvals_Lco_allDelays.append(rvals_Lco)
     rvals_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_folder)
-    rvals_thisDelay.append(rvals_Lci)
-    rvals_allDelays.append(rvals_thisDelay)
+    rvals_Lci_allDelays.append(rvals_Lci)
 
 ###################################
 # plot fit scores (rvals) vs delay
+# for each delay, rvals = [rval_calib, rval_octo, rval_u1, rval_u2, rval_u3, rval_u4, rval_u5, rval_u6]
 ###################################
-
+# collect rvals by stimulus phase
+rvals_Rco_allPhases = collectRvalsByStimPhase(rvals_Rco_allDelays)
+rvals_Rci_allPhases = collectRvalsByStimPhase(rvals_Rci_allDelays)
+rvals_Lco_allPhases = collectRvalsByStimPhase(rvals_Lco_allDelays)
+rvals_Lci_allPhases = collectRvalsByStimPhase(rvals_Lci_allDelays)
+# plot fit scores vs delay for each phase
+drawFitScoresVsDelay(rvals_Rco_allPhases, 'RightContours', downsampled_bucket_size_ms, Rco_folder)
+drawFitScoresVsDelay(rvals_Rci_allPhases, 'RightCircles', downsampled_bucket_size_ms, Rci_folder)
+drawFitScoresVsDelay(rvals_Lco_allPhases, 'LeftContours', downsampled_bucket_size_ms, Lco_folder)
+drawFitScoresVsDelay(rvals_Lci_allPhases, 'LeftCircles', downsampled_bucket_size_ms, Lci_folder)
 
 # FIN
