@@ -235,7 +235,7 @@ def LumVsPupilSize_ScatterLinRegress(lum_array, pupilSize_array, phase_name, eye
     plt.legend()
     plt.savefig(figPath)
     plt.close()
-    return rval
+    return slope, intercept, rval
 
 def splitPupils_withDelay_plotScatterLinRegress(delay_tb, downsample_ms, lum_array, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb, eyeAnalysis_name, savePlotsFolder, saveDataFolder):
     # split normalized pupil size data into trial phases
@@ -260,16 +260,16 @@ def splitPupils_withDelay_plotScatterLinRegress(delay_tb, downsample_ms, lum_arr
     np.save(unique5_output, pupil_unique_means[4])
     np.save(unique6_output, pupil_unique_means[5])
     # plot scatter plots with regression line
-    rval_calib = LumVsPupilSize_ScatterLinRegress(lum_array[0], pupil_calib_mean, 'calib', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_octo = LumVsPupilSize_ScatterLinRegress(lum_array[1], pupil_octo_mean, 'octo', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_u1 = LumVsPupilSize_ScatterLinRegress(lum_array[2], pupil_unique_means[0], 'unique01', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_u2 = LumVsPupilSize_ScatterLinRegress(lum_array[3], pupil_unique_means[1], 'unique02', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_u3 = LumVsPupilSize_ScatterLinRegress(lum_array[4], pupil_unique_means[2], 'unique03', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_u4 = LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_u5 = LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    rval_u6 = LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_calib, intercept_calib, rval_calib = LumVsPupilSize_ScatterLinRegress(lum_array[0], pupil_calib_mean, 'calib', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_octo, intercept_octo, rval_octo = LumVsPupilSize_ScatterLinRegress(lum_array[1], pupil_octo_mean, 'octo', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_u1, intercept_u1, rval_u1 = LumVsPupilSize_ScatterLinRegress(lum_array[2], pupil_unique_means[0], 'unique01', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_u2, intercept_u2, rval_u2 = LumVsPupilSize_ScatterLinRegress(lum_array[3], pupil_unique_means[1], 'unique02', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_u3, intercept_u3, rval_u3 = LumVsPupilSize_ScatterLinRegress(lum_array[4], pupil_unique_means[2], 'unique03', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_u4, intercept_u4, rval_u4 = LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_u5, intercept_u5, rval_u5 = LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
+    slope_u6, intercept_u6, rval_u6 = LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
     # return correlation coefficients
-    return [rval_calib, rval_octo, rval_u1, rval_u2, rval_u3, rval_u4, rval_u5, rval_u6]
+    return [[slope_calib, slope_octo, slope_u1, slope_u2, slope_u3, slope_u4, slope_u5, slope_u6], [intercept_calib, intercept_octo, intercept_u1, intercept_u2, intercept_u3, intercept_u4, intercept_u5, intercept_u6], [rval_calib, rval_octo, rval_u1, rval_u2, rval_u3, rval_u4, rval_u5, rval_u6]] 
 
 def normPupilSizeData(pupilSizeArrays_allStim, eyeAnalysis_name):
     normed_pupils = []
@@ -284,25 +284,25 @@ def normPupilSizeData(pupilSizeArrays_allStim, eyeAnalysis_name):
         normed_pupils.append(thisUniqueNormed_array)
     return normed_pupils
 
-def collectRvalsByStimPhase(rvals_allDelays_allPhases):
-    rvals_allCalib = []
-    rvals_allOcto = []
-    rvals_allU1 = []
-    rvals_allU2 = []
-    rvals_allU3 = []
-    rvals_allU4 = []
-    rvals_allU5 = []
-    rvals_allU6 = []
-    for delay in rvals_allDelays_allPhases:
-        rvals_allCalib.append(delay[0])
-        rvals_allOcto.append(delay[1])
-        rvals_allU1.append(delay[2])
-        rvals_allU2.append(delay[3])
-        rvals_allU3.append(delay[4])
-        rvals_allU4.append(delay[5])
-        rvals_allU5.append(delay[6])
-        rvals_allU6.append(delay[7])
-    return [rvals_allCalib, rvals_allOcto, rvals_allU1, rvals_allU2, rvals_allU3, rvals_allU4, rvals_allU5, rvals_allU6]
+def collectLinRegressParamByStimPhase(param_allDelays_allPhases):
+    param_allCalib = []
+    param_allOcto = []
+    param_allU1 = []
+    param_allU2 = []
+    param_allU3 = []
+    param_allU4 = []
+    param_allU5 = []
+    param_allU6 = []
+    for delay in param_allDelays_allPhases:
+        param_allCalib.append(delay[0])
+        param_allOcto.append(delay[1])
+        param_allU1.append(delay[2])
+        param_allU2.append(delay[3])
+        param_allU3.append(delay[4])
+        param_allU4.append(delay[5])
+        param_allU5.append(delay[6])
+        param_allU6.append(delay[7])
+    return [param_allCalib, param_allOcto, param_allU1, param_allU2, param_allU3, param_allU4, param_allU5, param_allU6]
 
 def drawFitScoresVsDelay(rvals_allPhases, eyeAnalysis_name, downsample_ms, save_folder):
     phase_names = ['calib', 'octo', 'unique1', 'unique2', 'unique3', 'unique4', 'unique5', 'unique6']
@@ -538,34 +538,59 @@ Lci_normed = normPupilSizeData(L_circles_allStim, 'left circles')
 # include least squares regression line in scatter plot
 ###################################
 delays = range(15)
+slope_Rco_allDelays = []
+slope_Rci_allDelays = []
+slope_Lco_allDelays = []
+slope_Lci_allDelays = []
+intercept_Rco_allDelays = []
+intercept_Rci_allDelays = []
+intercept_Lco_allDelays = []
+intercept_Lci_allDelays = []
 rvals_Rco_allDelays = []
 rvals_Rci_allDelays = []
 rvals_Lco_allDelays = []
 rvals_Lci_allDelays = []
 for delay in delays:
     print('Delay: %d timebucket(s)'%(delay))
-    rvals_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_scatter_folder, normedMeanPupilSizes_folder)
-    rvals_Rco_allDelays.append(rvals_Rco)
-    rvals_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_scatter_folder, normedMeanPupilSizes_folder)
-    rvals_Rci_allDelays.append(rvals_Rci)
-    rvals_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_scatter_folder, normedMeanPupilSizes_folder)
-    rvals_Lco_allDelays.append(rvals_Lco)
-    rvals_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_scatter_folder, normedMeanPupilSizes_folder)
-    rvals_Lci_allDelays.append(rvals_Lci)
+    # Right Contours
+    linRegress_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContour', Rco_scatter_folder, normedMeanPupilSizes_folder)
+    slopes_Rco_allDelays.append(linRegress_Rco[0])
+    intercepts_Rco_allDelays.append(linRegress_Rco[1])
+    rvals_Rco_allDelays.append(linRegress_Rco[2])
+    # Right Circles
+    linRegress_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_scatter_folder, normedMeanPupilSizes_folder)
+    slopes_Rci_allDelays.append(linRegress_Rci[0])
+    intercepts_Rci_allDelays.append(linRegress_Rci[1])
+    rvals_Rci_allDelays.append(linRegress_Rci[2])
+    # Left Contours
+    linRegress_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_scatter_folder, normedMeanPupilSizes_folder)
+    slopes_Lco_allDelays.append(linRegress_Lco[0])
+    intercepts_Lco_allDelays.append(linRegress_Lco[1])
+    rvals_Lco_allDelays.append(linRegress_Lco[2])
+    # Left Circles
+    linRegress_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_scatter_folder, normedMeanPupilSizes_folder)
+    slopes_Lci_allDelays.append(linRegress_Lci[0])
+    intercepts_Lci_allDelays.append(linRegress_Lci[1])
+    rvals_Lci_allDelays.append(linRegress_Lci[2])
 
 ###################################
 # plot fit scores (rvals) vs delay
 # for each delay, rvals = [rval_calib, rval_octo, rval_u1, rval_u2, rval_u3, rval_u4, rval_u5, rval_u6]
 ###################################
 # collect rvals by stimulus phase
-rvals_Rco_allPhases = collectRvalsByStimPhase(rvals_Rco_allDelays)
-rvals_Rci_allPhases = collectRvalsByStimPhase(rvals_Rci_allDelays)
-rvals_Lco_allPhases = collectRvalsByStimPhase(rvals_Lco_allDelays)
-rvals_Lci_allPhases = collectRvalsByStimPhase(rvals_Lci_allDelays)
+rvals_Rco_allPhases = collectLinRegressParamByStimPhase(rvals_Rco_allDelays)
+rvals_Rci_allPhases = collectLinRegressParamByStimPhase(rvals_Rci_allDelays)
+rvals_Lco_allPhases = collectLinRegressParamByStimPhase(rvals_Lco_allDelays)
+rvals_Lci_allPhases = collectLinRegressParamByStimPhase(rvals_Lci_allDelays)
 # plot fit scores vs delay for each phase
 drawFitScoresVsDelay(rvals_Rco_allPhases, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
 drawFitScoresVsDelay(rvals_Rci_allPhases, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
 drawFitScoresVsDelay(rvals_Lco_allPhases, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
 drawFitScoresVsDelay(rvals_Lci_allPhases, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
+
+###################################
+# save linear regression params to data file
+###################################
+
 
 # FIN
