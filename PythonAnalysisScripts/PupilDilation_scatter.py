@@ -6,7 +6,6 @@
 import pdb
 import os
 import glob
-import cv2
 import datetime
 import math
 import sys
@@ -16,7 +15,6 @@ import fnmatch
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from collections import defaultdict
 from scipy import stats
 # set up log file to store all printed messages
 #current_working_directory = os.getcwd()
