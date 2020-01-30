@@ -2,22 +2,18 @@
 ### Create CSV files with average luminance per frame of world camera vids during
 ### trials, categorized by calibration, octopus, and unique sequences.
 ### ------------------------------------------------------------------------- ###
-import pdb
 import os
 import glob
-import cv2
 import datetime
-import math
-import sys
-import itertools
 import csv
 import fnmatch
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from collections import defaultdict
 
-### FUNCTIONS ###
+###################################
+# FUNCTIONS
+###################################
 def load_avg_world_unraveled(avg_world_folder_path):
     # List all world camera csv files
     stim_files = glob.glob(avg_world_folder_path + os.sep + "*Avg-World-Vid-tbuckets.csv")
@@ -84,18 +80,22 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
     else:
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
-### BEGIN ANALYSIS ###
+###################################
+# DATA AND OUTPUT FILE LOCATIONS
+###################################
 # List relevant data locations: this is for laptop
-#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # List relevant data locations: this is for office desktop (windows)
-root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
 worldVid_lums_folder = os.path.join(root_folder, "worldLums")
 # Create folders they do not exist
 if not os.path.exists(worldVid_lums_folder):
     os.makedirs(worldVid_lums_folder)
 
-### TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
+###################################
+# TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
+###################################
 # downsample = collect data from every 40ms or other multiples of 20
 downsampled_bucket_size_ms = 40
 original_bucket_size_in_ms = 4
@@ -105,17 +105,20 @@ downsampled_no_of_time_buckets = max_length_of_stim_vid/downsampled_bucket_size_
 new_time_bucket_sample_rate = downsampled_bucket_size_ms/original_bucket_size_in_ms
 milliseconds_for_baseline = 3000
 baseline_no_buckets = int(milliseconds_for_baseline/new_time_bucket_sample_rate)
-### STIMULI VID INFO
+###################################
+# STIMULI VID INFO
+###################################
 stim_vids = [24.0, 25.0, 26.0, 27.0, 28.0, 29.0]
 stim_name_to_float = {"Stimuli24": 24.0, "Stimuli25": 25.0, "Stimuli26": 26.0, "Stimuli27": 27.0, "Stimuli28": 28.0, "Stimuli29": 29.0}
 stim_float_to_name = {24.0: "Stimuli24", 25.0: "Stimuli25", 26.0: "Stimuli26", 27.0: "Stimuli27", 28.0: "Stimuli28", 29.0: "Stimuli29"}
 
-### BEGIN MONTHLY AVERAGE DATA EXTRACTION ###
+###################################
+### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS
+###################################
 allMonths_meanWorldVidArrays = {}
 for unique_stim in stim_vids:
     allMonths_meanWorldVidArrays[unique_stim] = {}
     allMonths_meanWorldVidArrays[unique_stim]['Vid Count'] = 0
-### EXTRACT, UNRAVEL, SAVE TO FILE TIME BINNED STIM VIDEOS ###
 # update list of completed world vid average folders on dropbox
 day_folders = sorted(os.listdir(root_folder))
 avg_world_vid_folders = fnmatch.filter(day_folders, 'WorldVidAverage_*')
@@ -127,6 +130,7 @@ for avg_world_vid_folder in avg_world_vid_folders:
 
 #### WHILE DEBUGGING ####
 #updated_folders_to_extract = updated_folders_to_extract[4:6]
+#debugging_output_folder = os.path.join(root_folder, 'test_WorldLums')
 #### --------------- ####
 
 # extract, unravel, calculate mean luminance of each frame, create array of mean luminances for each stim type
@@ -155,9 +159,9 @@ for month_folder in updated_folders_to_extract:
         thisMonth_thisStim_lums_array = np.array(thisMonth_thisStim_lums)
         allMonths_meanWorldVidArrays[unique_stim][month_name] = thisMonth_thisStim_lums_array
 
-### END MONTHLY AVERAGE DATA EXTRACTION ###
-###
-### AVERAGE ACROSS ALL MONTHS ###
+###################################
+# AVERAGE ACROSS ALL MONTHS
+###################################
 for unique_stim in allMonths_meanWorldVidArrays:
     allMonthlyMeans = []
     shortest = 2000
@@ -178,7 +182,9 @@ for unique_stim in allMonths_meanWorldVidArrays:
     thisStimMeanLum = np.nanmean(allMonthlyMeans_array, axis=0)
     allMonths_meanWorldVidArrays[unique_stim]['All Months'] = thisStimMeanLum
 
-### SPLIT ARRAYS INTO CALIB, OCTO, AND UNIQUE PHASES ###
+###################################
+# SPLIT ARRAYS INTO CALIB, OCTO, AND UNIQUE PHASES
+###################################
 # Moments of interest for each stimulus type
 all_avg_world_moments = {}
 # Stimulus 24.0
@@ -393,7 +399,9 @@ for octo in allOcto:
 allOcto_array = np.array(allOcto_truncated)
 allOcto_mean = np.mean(allOcto_array, axis=0)
 
-### SAVE AS CSV FILES ###
+###################################
+# SAVE INTERMEDIATE DATA FILES
+###################################
 # generate file names to include number of videos that went into the mean lum array
 totalVidCount = 0
 for unique_stim in allMonths_meanWorldVidArrays:
@@ -407,6 +415,19 @@ unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy
 unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
 unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
 unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
+
+#### WHILE DEBUGGING ####
+# filepaths
+#calib_output = debugging_output_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, min(calibLens))
+#octo_output = debugging_output_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, min(octoLens))
+#unique24_output = debugging_output_folder + os.sep + 'meanUnique01_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
+#unique25_output = debugging_output_folder + os.sep + 'meanUnique02_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
+#unique26_output = debugging_output_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
+#unique27_output = debugging_output_folder + os.sep + 'meanUnique04_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
+#unique28_output = debugging_output_folder + os.sep + 'meanUnique05_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
+#unique29_output = debugging_output_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
+#### --------------- ####
+
 # save to file
 np.save(calib_output, allCalib_mean)
 np.save(octo_output, allOcto_mean)
