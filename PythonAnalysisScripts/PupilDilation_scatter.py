@@ -665,9 +665,9 @@ drawFitScoresVsDelay_byPhase(rvals_Rci_allPhases, delays, phase_names, 'RightCir
 drawFitScoresVsDelay_byPhase(rvals_Lco_allPhases, delays, phase_names, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
 drawFitScoresVsDelay_byPhase(rvals_Lci_allPhases, delays, phase_names, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
 # plot fit scores vs delay for all phases
-drawFitScoresVsDelay_full(Rco_allPhasesConcatLinRegress_allDelays, delays, 'RightContour', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
+drawFitScoresVsDelay_full(Rco_allPhasesConcatLinRegress_allDelays, delays, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
 drawFitScoresVsDelay_full(Rci_allPhasesConcatLinRegress_allDelays, delays, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
-drawFitScoresVsDelay_full(Lco_allPhasesConcatLinRegress_allDelays, delays, 'LeftContour', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
+drawFitScoresVsDelay_full(Lco_allPhasesConcatLinRegress_allDelays, delays, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
 drawFitScoresVsDelay_full(Lci_allPhasesConcatLinRegress_allDelays, delays, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
 
 ###################################
