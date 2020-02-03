@@ -300,9 +300,12 @@ def collectRValsByStimPhase(linRegressParams_allPhases_allDelays):
 
 def drawFitScoresVsDelay_byPhase(rvals_allPhases, num_delays, phases_strList, eyeAnalysis_name, downsample_ms, save_folder):
     for i, phase in enumerate(rvals_allPhases):
+        # optimal delay
+        best_rval = min(phase)
+        best_delay = phase.index(best_rval)
         # figure path and title
         figPath = os.path.join(save_folder, '%s_rValsVsDelays_%s.png'%(phases_strList[i], eyeAnalysis_name))
-        figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n Phase: %s, %s'%(phases_strList[i], eyeAnalysis_name)
+        figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n Phase: %s, %s; Best delay = %dms (rval = %d)'%(phases_strList[i], eyeAnalysis_name, best_delay, best_rval)
         print('Plotting %s'%(figTitle))
         # draw fit scores vs delay
         plt.figure(dpi=150)
@@ -321,9 +324,12 @@ def drawFitScoresVsDelay_full(allPhases_fullLinRegress, num_delays, eyeAnalysis_
     for delay in allPhases_fullLinRegress: 
         rvals.append(delay[2])
     rvals_plot = np.array(rvals)
+    # optimal delay
+    best_rval = min(rvals_plot)
+    best_delay = phase.index(best_rval)
     # figure path and title
     figPath = os.path.join(save_folder, 'AllPhases_rValsVsDelays_%s.png'%(eyeAnalysis_name))
-    figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n All Phases (calib, octo, all uniques), %s'%(eyeAnalysis_name)
+    figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n All Phases (calib, octo, all uniques), %s; Best delay = %dms (rval = %d)'%(eyeAnalysis_name, best_delay, best_rval)
     print('Plotting %s'%(figTitle))
     # draw fit scores vs delay
     plt.figure(dpi=150)
