@@ -1,6 +1,7 @@
 ### ------------------------------------------------------------------------- ###
-### Create CSV files with average luminance per frame of world camera vids during
-### trials, categorized by calibration, octopus, and unique sequences.
+### Create CSV files with average luminance per frame of stimulus vids
+### use world camera vids for timing, stretch and interpolate raw stim vid lum values
+### output as data files categorized by calibration, octopus, and unique sequences.
 ### ------------------------------------------------------------------------- ###
 import os
 import glob
@@ -88,10 +89,11 @@ root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPython
 # List relevant data locations: this is for office desktop (windows)
 #root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
-worldVid_lums_folder = os.path.join(root_folder, "worldLums")
+rawStim_lums_folder = os.path.join(root_folder, "rawStimLums")
+stimVid_lums_folder = os.path.join(root_folder, "stimVidLums")
 # Create folders they do not exist
-if not os.path.exists(worldVid_lums_folder):
-    os.makedirs(worldVid_lums_folder)
+if not os.path.exists(stimVid_lums_folder):
+    os.makedirs(stimVid_lums_folder)
 
 ###################################
 # TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
@@ -129,8 +131,8 @@ for avg_world_vid_folder in avg_world_vid_folders:
         updated_folders_to_extract.append(avg_world_vid_folder)
 
 #### WHILE DEBUGGING ####
-#updated_folders_to_extract = updated_folders_to_extract[4:6]
-#debugging_output_folder = os.path.join(root_folder, 'test_WorldLums')
+updated_folders_to_extract = updated_folders_to_extract[4:6]
+debugging_output_folder = os.path.join(root_folder, 'test_stimVidLums')
 #### --------------- ####
 
 # extract, unravel, calculate mean luminance of each frame, create array of mean luminances for each stim type
@@ -324,35 +326,51 @@ all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','201
 'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']},
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}}
 # split world vid lum arrays
-allCalib = []
+allDoNotMove = []
+allPulsingDots = []
 allOcto = []
 allUnique = []
-calibLens = []
+doNotMoveLens = []
+pulsingDotsLens = []
 octoLens = []
 uniqueLens = []
 uniqueOrder = []
-shortestCalib = 2000
+shortestDoNotMove = 2000
+shortestPulsingDots = 2000
 shortestOcto = 2000
 # cut out each phase of the stimuli
 for unique_stim in allMonths_meanWorldVidArrays:
     fullMeanWorldVid = allMonths_meanWorldVidArrays[unique_stim]['All Months']
     ## CALIB
+    # Do Not Move section
     calibStart = []
     for key in all_avg_world_moments[unique_stim]['calibration start']:
         calibStart.append(key)
     calibStart_tb = np.min(calibStart)
+    doNotMoveEnd = []
+    for key in all_avg_world_moments[unique_stim]['upper left dot appears']:
+        doNotMoveEnd.append(key)
+    doNotMoveEnd_tb = np.min(doNotMoveEnd) - 1
+    # pulsing dots section
+    pulsingDotsStart_tb = doNotMoveEnd_tb + 1
     calibEnd = []
     for key in all_avg_world_moments[unique_stim]['calibration end']:
         calibEnd.append(key)
     calibEnd_tb = np.max(calibEnd)
-    # cut out calib phase from full world vid lum array
-    thisStim_meanCalib = fullMeanWorldVid[calibStart_tb:calibEnd_tb]
-    if len(thisStim_meanCalib)<shortestCalib:
-        shortestCalib = len(thisStim_meanCalib)
-    allCalib.append(thisStim_meanCalib)
-    print('Unique Stim %d, Calibration length: %d'%(unique_stim, len(thisStim_meanCalib)))
-    calibLen = calibEnd_tb - calibStart_tb
-    calibLens.append(calibLen)
+    # cut out Do Not Move section of calib phase from full world vid lum array
+    thisStim_meanDoNotMove = fullMeanWorldVid[calibStart_tb:doNotMoveEnd_tb]
+    if len(thisStim_meanDoNotMove)<shortestDoNotMove:
+        shortestDoNotMove = len(thisStim_meanDoNotMove)
+    allDoNotMove.append(thisStim_meanDoNotMove)
+    thisStim_meanPulsingDots = fullMeanWorldVid[pulsingDotsStart_tb:calibEnd_tb]
+    if len(thisStim_meanPulsingDots)<shortestPulsingDots:
+        shortestPulsingDots = len(thisStim_meanPulsingDots)
+    allPulsingDots.append(thisStim_meanPulsingDots)
+    print('Unique Stim %d, "Do Not Move" length: %d, Pulsing Dots length: %d'%(unique_stim, len(thisStim_meanDoNotMove), len(thisStim_meanPulsingDots)))
+    doNotMoveLen = doNotMoveEnd_tb - calibStart_tb
+    doNotMoveLens.append(doNotMoveLen)
+    pulsingDotsLen = calibEnd_tb - pulsingDotsStart_tb
+    pulsingDotsLens.append(pulsingDotsLen)
     ## OCTO
     octoStart = []
     for key in all_avg_world_moments[unique_stim]['octo start']:
@@ -385,19 +403,67 @@ for unique_stim in allMonths_meanWorldVidArrays:
     allUnique.append(thisStim_meanUnique)
     uniqueOrder.append(unique_stim)
 
-# average calib and octo across all stimuli
-allCalib_truncated = []
-for calib in allCalib:
-    calib_truncated = calib[:shortestCalib]
-    allCalib_truncated.append(calib_truncated)
-allCalib_array = np.array(allCalib_truncated)
-allCalib_mean = np.mean(allCalib_array, axis=0)
+# average doNotMove, pulsingDots, and octo across all stimuli
+allDoNotMove_truncated = []
+for doNotMove in allDoNotMove:
+    doNotMove_truncated = doNotMove[:shortestDoNotMove]
+    allDoNotMove_truncated.append(doNotMove_truncated)
+allDoNotMove_array = np.array(allDoNotMove_truncated)
+allDoNotMove_mean = np.mean(allDoNotMove_array, axis=0)
+allPulsingDots_truncated = []
+for pulsingDots in allPulsingDots:
+    pulsingDots_truncated = pulsingDots[:shortestPulsingDots]
+    allPulsingDots_truncated.append(pulsingDots_truncated)
+allPulsingDots_array = np.array(allPulsingDots_truncated)
+allPulsingDots_mean = np.mean(allPulsingDots_array, axis=0)
 allOcto_truncated = []
 for octo in allOcto:
     octo_truncated = octo[:shortestOcto]
     allOcto_truncated.append(octo_truncated)
 allOcto_array = np.array(allOcto_truncated)
 allOcto_mean = np.mean(allOcto_array, axis=0)
+
+###################################
+# LOAD CSV OF RAW STIM VIDEOS
+###################################
+rawStimLum_files = glob.glob(rawStim_lums_folder + os.sep + '*.csv')
+allRaw_doNotMove = []
+allRaw_doNotMove_languageOrder = []
+allRaw_pulsingDots = []
+allRaw_unique = []
+allRaw_unique_order = []
+allRaw_octo = []
+rawUniqueLens_frames = {'stimuli024':168, 'stimuli025':172, 'stimuli026':247, 'stimuli027':179, 'stimuli028':246, 'stimuli029':313}
+for rawStimLumFile in rawStimLum_files:
+    stim_phase = os.path.basename(rawStimLumFile).split('_')[0].split('-')[0]
+    if stim_phase == 'Calibration':
+        rawPulsingDots = np.genfromtxt(rawStimLumFile, delimiter=',')
+        allRaw_pulsingDots.append(rawPulsingDots)
+        continue
+    if stim_phase == 'DoNotMove':
+        stim_language = os.path.basename(rawStimLumFile).split('_')[0].split('-')[1]
+        raw_doNotMove = np.genfromtxt(rawStimLumFile, delimiter=',')
+        allRaw_doNotMove.append(raw_doNotMove)
+        allRaw_doNotMove_languageOrder.append(stim_language)
+        continue
+    if stim_phase == 'CenterEye' or stim_phase == 'Replay' or stim_phase == 'RestingState':
+        print('Skipping %s raw stimulus video'%(stim_phase))
+        continue
+    else:
+        rawUniqueLen_frames = rawUniqueLens_frames[stim_phase]
+        rawUniqueStim_full = np.genfromtxt(rawStimLumFile, delimiter=',')
+        thisRawUnique = rawUniqueStim_full[:rawUniqueLen_frames]
+        allRaw_unique.append(thisRawUnique)
+        allRaw_unique_order.append(stim_phase)
+        thisRawOcto = rawUniqueStim_full[rawUniqueLen_frames+1:]
+        allRaw_octo.append(thisRawOcto)
+        print('%s, unique phase: %d frames, octo phase: %d frames'%(stim_phase, len(thisRawUnique), len(thisRawOcto)))
+
+###################################
+# STRETCH AND INTERPOLATE RAW STIM PHASES TO LENGTH OF WORLD CAM STIM PHASES
+###################################
+
+
 
 ###################################
 # SAVE INTERMEDIATE DATA FILES
@@ -407,14 +473,14 @@ totalVidCount = 0
 for unique_stim in allMonths_meanWorldVidArrays:
     totalVidCount = totalVidCount + allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
 # filepaths
-calib_output = worldVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, min(calibLens))
-octo_output = worldVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, min(octoLens))
-unique24_output = worldVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
-unique25_output = worldVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
-unique26_output = worldVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
-unique27_output = worldVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
-unique28_output = worldVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
-unique29_output = worldVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
+calib_output = stimVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, min(calibLens))
+octo_output = stimVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, min(octoLens))
+unique24_output = stimVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
+unique25_output = stimVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
+unique26_output = stimVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
+unique27_output = stimVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
+unique28_output = stimVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
+unique29_output = stimVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
 
 #### WHILE DEBUGGING ####
 # filepaths
