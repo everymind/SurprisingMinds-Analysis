@@ -650,50 +650,5 @@ for delay in range(delays):
 # plot fit scores (rvals) vs delay
 # for each delay, rvals = [rval_calib, rval_octo, rval_u1, rval_u2, rval_u3, rval_u4, rval_u5, rval_u6]
 ###################################
-Rco_linRegress_allPhases = [Rco_calibLinRegress_allDelays, Rco_octoLinRegress_allDelays, Rco_u1LinRegress_allDelays, Rco_u2LinRegress_allDelays, Rco_u3LinRegress_allDelays, Rco_u4LinRegress_allDelays, Rco_u5LinRegress_allDelays, Rco_u6LinRegress_allDelays]
-Rci_linRegress_allPhases = [Rci_calibLinRegress_allDelays, Rci_octoLinRegress_allDelays, Rci_u1LinRegress_allDelays, Rci_u2LinRegress_allDelays, Rci_u3LinRegress_allDelays, Rci_u4LinRegress_allDelays, Rci_u5LinRegress_allDelays, Rci_u6LinRegress_allDelays]
-Lco_linRegress_allPhases = [Lco_calibLinRegress_allDelays, Lco_octoLinRegress_allDelays, Lco_u1LinRegress_allDelays, Lco_u2LinRegress_allDelays, Lco_u3LinRegress_allDelays, Lco_u4LinRegress_allDelays, Lco_u5LinRegress_allDelays, Lco_u6LinRegress_allDelays]
-Lci_linRegress_allPhases = [Lci_calibLinRegress_allDelays, Lci_octoLinRegress_allDelays, Lci_u1LinRegress_allDelays, Lci_u2LinRegress_allDelays, Lci_u3LinRegress_allDelays, Lci_u4LinRegress_allDelays, Lci_u5LinRegress_allDelays, Lci_u6LinRegress_allDelays]
-# collect rvals 
-rvals_Rco_allPhases = collectRValsByStimPhase(Rco_linRegress_allPhases)
-rvals_Rci_allPhases = collectRValsByStimPhase(Rci_linRegress_allPhases)
-rvals_Lco_allPhases = collectRValsByStimPhase(Lco_linRegress_allPhases)
-rvals_Lci_allPhases = collectRValsByStimPhase(Lci_linRegress_allPhases)
-# plot fit scores vs delay for each phase
-drawFitScoresVsDelay_byPhase(rvals_Rco_allPhases, delays, phase_names, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
-drawFitScoresVsDelay_byPhase(rvals_Rci_allPhases, delays, phase_names, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
-drawFitScoresVsDelay_byPhase(rvals_Lco_allPhases, delays, phase_names, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
-drawFitScoresVsDelay_byPhase(rvals_Lci_allPhases, delays, phase_names, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
-# plot fit scores vs delay for all phases
-drawFitScoresVsDelay_full(Rco_allPhasesConcatLinRegress_allDelays, delays, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
-drawFitScoresVsDelay_full(Rci_allPhasesConcatLinRegress_allDelays, delays, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
-drawFitScoresVsDelay_full(Lco_allPhasesConcatLinRegress_allDelays, delays, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
-drawFitScoresVsDelay_full(Lci_allPhasesConcatLinRegress_allDelays, delays, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
-
-###################################
-# save linear regression params to data file
-###################################
-# save allPhase "master" trial, all params per delay
-## output filepaths
-Rco_allPhasesConcatLinRegress_allDelays_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_allPhasesConcat_%dTBDelays_RightContours.npy'%(delays)
-Rci_allPhasesConcatLinRegress_allDelays_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_allPhasesConcat_%dTBDelays_RightCircles.npy'%(delays)
-Lco_allPhasesConcatLinRegress_allDelays_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_allPhasesConcat_%dTBDelays_LeftContours.npy'%(delays)
-Lci_allPhasesConcatLinRegress_allDelays_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_allPhasesConcat_%dTBDelays_LeftCircles.npy'%(delays)
-## save files
-np.save(Rco_allPhasesConcatLinRegress_allDelays_output, Rco_allPhasesConcatLinRegress_allDelays)
-np.save(Rci_allPhasesConcatLinRegress_allDelays_output, Rci_allPhasesConcatLinRegress_allDelays)
-np.save(Lco_allPhasesConcatLinRegress_allDelays_output, Lco_allPhasesConcatLinRegress_allDelays)
-np.save(Lci_allPhasesConcatLinRegress_allDelays_output, Lci_allPhasesConcatLinRegress_allDelays)
-# save all params per delay for each stimulus phase
-## output filepaths
-Rco_linRegress_allPhases_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_byPhase_%dTBDelays_RightContours.npy'%(delays)
-Rci_linRegress_allPhases_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_byPhase_%dTBDelays_RightCircles.npy'%(delays)
-Lco_linRegress_allPhases_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_byPhase_%dTBDelays_LeftContours.npy'%(delays)
-Lci_linRegress_allPhases_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'linRegressParams_byPhase_%dTBDelays_LeftCircles.npy'%(delays)
-## save files
-np.save(Rco_linRegress_allPhases_output, Rco_linRegress_allPhases)
-np.save(Rci_linRegress_allPhases_output, Rci_linRegress_allPhases)
-np.save(Lco_linRegress_allPhases_output, Lco_linRegress_allPhases)
-np.save(Lci_linRegress_allPhases_output, Lci_linRegress_allPhases)
-
+ 
 # FIN
