@@ -1,5 +1,5 @@
 ### --------------------------------------------------------------------------- ###
-# loads world vid luminance csv files 
+# loads stim vid luminance data files 
 # outputs normalized pupil size as binary files
 # creates a scatter plot comparing luminance to pupil size
 ### --------------------------------------------------------------------------- ###
@@ -354,8 +354,8 @@ def drawFitScoresVsDelay_full(allPhases_fullLinRegress, num_delays, eyeAnalysis_
 root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
 # set up folders
-# world camera average luminance csv files
-worldCamLum_folder = os.path.join(root_folder, 'worldLums')
+# stimulus video average luminance csv files
+stimVidLums_folder = os.path.join(root_folder, 'stimVidLums')
 # plots output folder
 pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
 Rco_scatter_folder = os.path.join(pupilSize_folder, 'rightContours', 'scatter')
@@ -518,7 +518,7 @@ for day_folder in pupil_folders:
 ###################################
 # Load world camera luminance files
 ###################################
-worldCamLum_files = glob.glob(worldCamLum_folder + os.sep + '*.npy')
+worldCamLum_files = glob.glob(stimVidLums_folder + os.sep + '*.npy')
 avgLum_allPhases = []
 phaseOrder = []
 uniqueLens = []

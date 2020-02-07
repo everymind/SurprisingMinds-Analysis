@@ -1,17 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <WorkflowBuilder Version="2.4.1"
                  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                 xmlns:rx="clr-namespace:Bonsai.Reactive;assembly=Bonsai.Core"
                  xmlns:io="clr-namespace:Bonsai.IO;assembly=Bonsai.System"
-                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
+                 xmlns:rx="clr-namespace:Bonsai.Reactive;assembly=Bonsai.Core"
                  xmlns:scr="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting"
                  xmlns:cv="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision"
+                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
                  xmlns="https://bonsai-rx.org/2018/workflow">
   <Workflow>
     <Nodes>
       <Expression xsi:type="Combinator">
         <Combinator xsi:type="io:GetFiles">
-          <io:Path>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp</io:Path>
+          <io:Path>C:\Users\taunsquared\Dropbox\SurprisingMinds\SurprisingMinds-Stimuli\automated</io:Path>
           <io:SearchPattern>*.avi</io:SearchPattern>
           <io:SearchOption>AllDirectories</io:SearchOption>
         </Combinator>
@@ -72,29 +72,11 @@ def process(value):
                 <Property Name="FileName" />
               </PropertyMappings>
             </Expression>
-            <Expression xsi:type="SubscribeSubject">
-              <Name>Filename</Name>
-            </Expression>
-            <Expression xsi:type="scr:PythonTransform">
-              <scr:Script>@returns(int)
-def process(value):
-  global output
-  octo_clip_start = {"stimuli024": 438, "stimuli025": 442, "stimuli026": 517, "stimuli027": 449, "stimuli028": 516, "stimuli029": 583}
-  filename_split = value.split("_")
-  stimulus_type = filename_split[3]
-  output = octo_clip_start[stimulus_type]
-  return output</scr:Script>
-            </Expression>
-            <Expression xsi:type="PropertyMapping">
-              <PropertyMappings>
-                <Property Name="StartPosition" />
-              </PropertyMappings>
-            </Expression>
             <Expression xsi:type="Combinator">
               <Combinator xsi:type="cv:FileCapture">
-                <cv:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_13-23-18\2017-10-15_13-23-18_stimuli028_world.avi</cv:FileName>
+                <cv:FileName>C:\Users\taunsquared\Dropbox\SurprisingMinds\SurprisingMinds-Stimuli\automated\Calibration.avi</cv:FileName>
                 <cv:PlaybackRate>0</cv:PlaybackRate>
-                <cv:StartPosition>516</cv:StartPosition>
+                <cv:StartPosition>0</cv:StartPosition>
                 <cv:PositionUnits>Frames</cv:PositionUnits>
                 <cv:Loop>false</cv:Loop>
                 <cv:Playing>true</cv:Playing>
@@ -109,36 +91,13 @@ def process(value):
             <Expression xsi:type="MemberSelector">
               <Selector>Val0</Selector>
             </Expression>
-            <Expression xsi:type="SubscribeSubject">
-              <Name>Filename</Name>
-            </Expression>
-            <Expression xsi:type="scr:PythonTransform">
-              <scr:Script>@returns(str)
-def process(value):
-  global output
-  L = len(value)-4
-  output = value[0:L] + ".csv"
-  return output</scr:Script>
-            </Expression>
-            <Expression xsi:type="PropertyMapping">
-              <PropertyMappings>
-                <Property Name="FileName" />
-              </PropertyMappings>
-            </Expression>
-            <Expression xsi:type="io:CsvReader">
-              <io:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_13-23-18\2017-10-15_13-23-18_stimuli028_world.csv</io:FileName>
-              <io:SkipRows>517</io:SkipRows>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="rx:Zip" />
-            </Expression>
             <Expression xsi:type="io:CsvWriter">
-              <io:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_13-23-18\2017-10-15_13-23-18_stimuli028_world_LuminancePerFrame.csv</io:FileName>
+              <io:FileName>C:\Users\taunsquared\Dropbox\SurprisingMinds\SurprisingMinds-Stimuli\automated\Calibration_LuminancePerFrame.csv</io:FileName>
               <io:Append>false</io:Append>
               <io:Overwrite>false</io:Overwrite>
               <io:Suffix>None</io:Suffix>
               <io:IncludeHeader>false</io:IncludeHeader>
-              <io:Selector>Item1,Item2</io:Selector>
+              <io:Selector>it</io:Selector>
               <io:CompatibilityMode>true</io:CompatibilityMode>
             </Expression>
             <Expression xsi:type="WorkflowOutput" />
@@ -147,22 +106,14 @@ def process(value):
             <Edge From="0" To="1" Label="Source1" />
             <Edge From="2" To="3" Label="Source1" />
             <Edge From="3" To="4" Label="Source1" />
-            <Edge From="4" To="19" Label="Source2" />
+            <Edge From="4" To="11" Label="Source2" />
             <Edge From="5" To="6" Label="Source1" />
-            <Edge From="6" To="10" Label="Source1" />
+            <Edge From="6" To="7" Label="Source1" />
             <Edge From="7" To="8" Label="Source1" />
             <Edge From="8" To="9" Label="Source1" />
-            <Edge From="9" To="10" Label="Source2" />
+            <Edge From="9" To="10" Label="Source1" />
             <Edge From="10" To="11" Label="Source1" />
-            <Edge From="11" To="12" Label="Source1" />
-            <Edge From="12" To="13" Label="Source1" />
-            <Edge From="13" To="18" Label="Source2" />
-            <Edge From="14" To="15" Label="Source1" />
-            <Edge From="15" To="16" Label="Source1" />
-            <Edge From="16" To="17" Label="Source1" />
-            <Edge From="17" To="18" Label="Source1" />
-            <Edge From="18" To="19" Label="Source1" />
-            <Edge From="18" To="20" Label="Source1" />
+            <Edge From="10" To="12" Label="Source1" />
           </Edges>
         </Workflow>
       </Expression>

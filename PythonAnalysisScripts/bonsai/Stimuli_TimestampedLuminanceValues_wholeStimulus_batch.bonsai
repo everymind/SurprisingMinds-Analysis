@@ -1,19 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<WorkflowBuilder Version="2.3.0">
-  <Workflow xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:q1="clr-namespace:Bonsai.IO;assembly=Bonsai.System" xmlns:q2="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp" xmlns:q3="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting" xmlns:q4="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision" xmlns="https://horizongir.org/bonsai">
+<WorkflowBuilder Version="2.4.1"
+                 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                 xmlns:rx="clr-namespace:Bonsai.Reactive;assembly=Bonsai.Core"
+                 xmlns:io="clr-namespace:Bonsai.IO;assembly=Bonsai.System"
+                 xmlns:dsp="clr-namespace:Bonsai.Dsp;assembly=Bonsai.Dsp"
+                 xmlns:scr="clr-namespace:Bonsai.Scripting;assembly=Bonsai.Scripting"
+                 xmlns:cv="clr-namespace:Bonsai.Vision;assembly=Bonsai.Vision"
+                 xmlns="https://bonsai-rx.org/2018/workflow">
+  <Workflow>
     <Nodes>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="Concat" />
-      </Expression>
-      <Expression xsi:type="Combinator">
-        <Combinator xsi:type="q1:GetFiles">
-          <q1:Path>C:\Users\taunsquared\Desktop\temp</q1:Path>
-          <q1:SearchPattern>*world.avi</q1:SearchPattern>
-          <q1:SearchOption>AllDirectories</q1:SearchOption>
+        <Combinator xsi:type="io:GetFiles">
+          <io:Path>C:\Users\taunsquared\Desktop\temp</io:Path>
+          <io:SearchPattern>*world.avi</io:SearchPattern>
+          <io:SearchOption>AllDirectories</io:SearchOption>
         </Combinator>
       </Expression>
       <Expression xsi:type="Combinator">
-        <Combinator xsi:type="Concat" />
+        <Combinator xsi:type="rx:Concat" />
       </Expression>
       <Expression xsi:type="SelectMany">
         <Workflow>
@@ -21,60 +25,34 @@
             <Expression xsi:type="WorkflowInput">
               <Name>Source1</Name>
             </Expression>
-            <Expression xsi:type="WorkflowOutput" />
             <Expression xsi:type="Combinator">
-              <Combinator xsi:type="RepeatCount">
-                <Count>1</Count>
+              <Combinator xsi:type="rx:RepeatCount">
+                <rx:Count>1</rx:Count>
               </Combinator>
             </Expression>
+            <Expression xsi:type="WorkflowOutput" />
           </Nodes>
           <Edges>
-            <Edge>
-              <From>0</From>
-              <To>2</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>2</From>
-              <To>1</To>
-              <Label>Source1</Label>
-            </Edge>
+            <Edge From="0" To="1" Label="Source1" />
+            <Edge From="1" To="2" Label="Source1" />
           </Edges>
         </Workflow>
       </Expression>
-      <Expression xsi:type="WindowWorkflow">
+      <Expression xsi:type="CreateObservable">
         <Workflow>
           <Nodes>
             <Expression xsi:type="WorkflowInput">
               <Name>Source1</Name>
             </Expression>
-            <Expression xsi:type="WorkflowOutput" />
-            <Expression xsi:type="q1:CsvWriter">
-              <q1:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame\2018-08-12_11-44-48_stimuli025_world_LuminancePerFrame.csv</q1:FileName>
-              <q1:Append>false</q1:Append>
-              <q1:Overwrite>false</q1:Overwrite>
-              <q1:Suffix>None</q1:Suffix>
-              <q1:IncludeHeader>false</q1:IncludeHeader>
-              <q1:Selector>Source.Item1,Source.Item2</q1:Selector>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="Zip" />
-            </Expression>
-            <Expression xsi:type="q1:CsvReader">
-              <q1:FileName>C:\Users\taunsquared\Desktop\temp\2018-08-12_11-44-48\2018-08-12_11-44-48_stimuli025_world.csv</q1:FileName>
-              <q1:SkipRows>0</q1:SkipRows>
-            </Expression>
-            <Expression xsi:type="MemberSelector">
-              <Selector>Source.Val0</Selector>
+            <Expression xsi:type="ReplaySubject">
+              <Name>Filename</Name>
+              <BufferSize xsi:nil="true" />
             </Expression>
             <Expression xsi:type="SubscribeSubject">
               <Name>Filename</Name>
             </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q2:Sum" />
-            </Expression>
-            <Expression xsi:type="q3:PythonTransform">
-              <q3:Script>import os
+            <Expression xsi:type="scr:PythonTransform">
+              <scr:Script>import os
 
 @returns(str)
 def process(value):
@@ -82,200 +60,114 @@ def process(value):
   dirname, filename = os.path.split(filename)
   dirname = r'C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame'
   output = os.path.join(dirname, filename + "_LuminancePerFrame.csv")
-  return output</q3:Script>
+  return output</scr:Script>
             </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q4:Grayscale" />
-            </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name>OutputFileName</Name>
-              <Value>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_13-16-48\2017-10-15_13-16-48_stimuli026_world.csv</Value>
-            </Expression>
-            <Expression xsi:type="Combinator">
-              <Combinator xsi:type="q4:FileCapture">
-                <q4:FileName>C:\Users\taunsquared\Desktop\temp\2018-08-12_11-44-48\2018-08-12_11-44-48_stimuli025_world.avi</q4:FileName>
-                <q4:PlaybackRate>0</q4:PlaybackRate>
-                <q4:StartPosition>0</q4:StartPosition>
-                <q4:PositionUnits>Frames</q4:PositionUnits>
-                <q4:Loop>false</q4:Loop>
-                <q4:Playing>true</q4:Playing>
-              </Combinator>
-            </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringFileCapture">
-              <MemberName>FileName</MemberName>
-              <Name>VideoFileName</Name>
-              <Value />
+            <Expression xsi:type="PropertyMapping">
+              <PropertyMappings>
+                <Property Name="FileName" />
+              </PropertyMappings>
             </Expression>
             <Expression xsi:type="SubscribeSubject">
               <Name>Filename</Name>
             </Expression>
-            <Expression xsi:type="ReplaySubject">
+            <Expression xsi:type="PropertyMapping">
+              <PropertyMappings>
+                <Property Name="FileName" />
+              </PropertyMappings>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="cv:FileCapture">
+                <cv:FileName>C:\Users\taunsquared\Desktop\temp\2018-08-12_11-44-48\2018-08-12_11-44-48_stimuli025_world.avi</cv:FileName>
+                <cv:PlaybackRate>0</cv:PlaybackRate>
+                <cv:StartPosition>0</cv:StartPosition>
+                <cv:PositionUnits>Frames</cv:PositionUnits>
+                <cv:Loop>false</cv:Loop>
+                <cv:Playing>true</cv:Playing>
+              </Combinator>
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="cv:Grayscale" />
+            </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="dsp:Sum" />
+            </Expression>
+            <Expression xsi:type="MemberSelector">
+              <Selector>Val0</Selector>
+            </Expression>
+            <Expression xsi:type="SubscribeSubject">
               <Name>Filename</Name>
-              <BufferSize xsi:nil="true" />
             </Expression>
-            <Expression xsi:type="ExternalizedPropertyOfStringCsvReader">
-              <MemberName>FileName</MemberName>
-              <Name>VideoCSVFileName</Name>
-              <Value>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\temp\2017-10-15_13-16-48\2017-10-15_13-16-48_stimuli026_world.csv</Value>
-            </Expression>
-            <Expression xsi:type="q3:PythonTransform">
-              <q3:Script>@returns(str)
+            <Expression xsi:type="scr:PythonTransform">
+              <scr:Script>@returns(str)
 def process(value):
   global output
   L = len(value)-4
   output = value[0:L] + ".csv"
-  return output</q3:Script>
+  return output</scr:Script>
             </Expression>
-            <Expression xsi:type="SubscribeSubject">
-              <Name>Filename</Name>
+            <Expression xsi:type="PropertyMapping">
+              <PropertyMappings>
+                <Property Name="FileName" />
+              </PropertyMappings>
+            </Expression>
+            <Expression xsi:type="io:CsvReader">
+              <io:FileName>C:\Users\taunsquared\Desktop\temp\2018-08-12_11-44-48\2018-08-12_11-44-48_stimuli025_world.csv</io:FileName>
+              <io:SkipRows>0</io:SkipRows>
             </Expression>
             <Expression xsi:type="Combinator">
-              <Combinator xsi:type="Catch" />
+              <Combinator xsi:type="rx:Zip" />
+            </Expression>
+            <Expression xsi:type="io:CsvWriter">
+              <io:FileName>C:\Users\taunsquared\Documents\GitHub\SurprisingMinds-Analysis\PythonWithAdam\bonsai\LuminancePerFrame\2018-08-12_11-44-48_stimuli025_world_LuminancePerFrame.csv</io:FileName>
+              <io:Append>false</io:Append>
+              <io:Overwrite>false</io:Overwrite>
+              <io:Suffix>None</io:Suffix>
+              <io:IncludeHeader>false</io:IncludeHeader>
+              <io:Selector>Item1,Item2</io:Selector>
+              <io:CompatibilityMode>true</io:CompatibilityMode>
             </Expression>
             <Expression xsi:type="Combinator">
-              <Combinator xsi:type="Take">
-                <Count>1</Count>
+              <Combinator xsi:type="rx:Take">
+                <rx:Count>1</rx:Count>
               </Combinator>
             </Expression>
+            <Expression xsi:type="Combinator">
+              <Combinator xsi:type="rx:Catch" />
+            </Expression>
+            <Expression xsi:type="WorkflowOutput" />
           </Nodes>
           <Edges>
-            <Edge>
-              <From>0</From>
-              <To>14</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>2</From>
-              <To>18</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>3</From>
-              <To>2</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>3</From>
-              <To>19</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>4</From>
-              <To>3</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>5</From>
-              <To>3</To>
-              <Label>Source2</Label>
-            </Edge>
-            <Edge>
-              <From>6</From>
-              <To>8</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>7</From>
-              <To>5</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>8</From>
-              <To>10</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>9</From>
-              <To>7</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>10</From>
-              <To>2</To>
-              <Label>Source2</Label>
-            </Edge>
-            <Edge>
-              <From>11</From>
-              <To>9</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>12</From>
-              <To>11</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>13</From>
-              <To>12</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>15</From>
-              <To>4</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>16</From>
-              <To>15</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>17</From>
-              <To>16</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>18</From>
-              <To>1</To>
-              <Label>Source1</Label>
-            </Edge>
-            <Edge>
-              <From>19</From>
-              <To>18</To>
-              <Label>Source2</Label>
-            </Edge>
+            <Edge From="0" To="1" Label="Source1" />
+            <Edge From="2" To="3" Label="Source1" />
+            <Edge From="3" To="4" Label="Source1" />
+            <Edge From="4" To="16" Label="Source2" />
+            <Edge From="5" To="6" Label="Source1" />
+            <Edge From="6" To="7" Label="Source1" />
+            <Edge From="7" To="8" Label="Source1" />
+            <Edge From="8" To="9" Label="Source1" />
+            <Edge From="9" To="10" Label="Source1" />
+            <Edge From="10" To="15" Label="Source2" />
+            <Edge From="11" To="12" Label="Source1" />
+            <Edge From="12" To="13" Label="Source1" />
+            <Edge From="13" To="14" Label="Source1" />
+            <Edge From="14" To="15" Label="Source1" />
+            <Edge From="15" To="16" Label="Source1" />
+            <Edge From="15" To="17" Label="Source1" />
+            <Edge From="16" To="18" Label="Source1" />
+            <Edge From="17" To="18" Label="Source2" />
+            <Edge From="18" To="19" Label="Source1" />
           </Edges>
         </Workflow>
       </Expression>
+      <Expression xsi:type="Combinator">
+        <Combinator xsi:type="rx:Concat" />
+      </Expression>
     </Nodes>
     <Edges>
-      <Edge>
-        <From>1</From>
-        <To>2</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>2</From>
-        <To>3</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>3</From>
-        <To>4</To>
-        <Label>Source1</Label>
-      </Edge>
-      <Edge>
-        <From>4</From>
-        <To>0</To>
-        <Label>Source1</Label>
-      </Edge>
+      <Edge From="0" To="1" Label="Source1" />
+      <Edge From="1" To="2" Label="Source1" />
+      <Edge From="2" To="3" Label="Source1" />
+      <Edge From="3" To="4" Label="Source1" />
     </Edges>
   </Workflow>
-  <ExtensionTypes>
-    <Type>Bonsai.Reactive.Concat, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.IO.GetFiles, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.RepeatCount, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.IO.CsvWriter, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Zip, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Dsp.Sum, Bonsai.Dsp, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Scripting.PythonTransform, Bonsai.Scripting, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.Grayscale, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.IO.CsvReader, Bonsai.System, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Expressions.ExternalizedProperty`2[[System.String, mscorlib, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089],[Bonsai.Vision.FileCapture, Bonsai.Vision, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null]], Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Catch, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-    <Type>Bonsai.Reactive.Take, Bonsai.Core, Version=2.3.0.0, Culture=neutral, PublicKeyToken=null</Type>
-  </ExtensionTypes>
 </WorkflowBuilder>
