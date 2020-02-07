@@ -156,7 +156,7 @@ for month_folder in updated_folders_to_extract:
                 continue
             else:
                 frame = thisMonth_thisStim_frames[key]
-                lum = np.mean(frame[:])
+                lum = np.nanmean(frame[:])
                 thisMonth_thisStim_lums.append(lum)
         thisMonth_thisStim_lums_array = np.array(thisMonth_thisStim_lums)
         allMonths_meanWorldVidArrays[unique_stim][month_name] = thisMonth_thisStim_lums_array
@@ -326,10 +326,11 @@ all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','201
 'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']},
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}}
 # split world vid lum arrays
-allDoNotMove = []
-allPulsingDots = []
-allOcto = []
-allMeanWorldUnique = []
+uniqueWeights = {}
+allWeightedDoNotMove = []
+allWeightedPulsingDots = []
+allWeightedOcto = []
+allWeightedUnique = []
 doNotMoveLens = []
 pulsingDotsLens = []
 octoLens = []
@@ -340,7 +341,9 @@ shortestPulsingDots = 2000
 shortestOcto = 2000
 # cut out each phase of the stimuli
 for unique_stim in allMonths_meanWorldVidArrays:
-    fullMeanWorldVid = allMonths_meanWorldVidArrays[unique_stim]['All Months']
+    thisUniqueStim_weight = allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
+    uniqueWeights[unique_stim] = thisUniqueStim_weight
+    fullWeightedMeanWorldVid = allMonths_meanWorldVidArrays[unique_stim]['All Months']*thisUniqueStim_weight
     ## CALIB
     # Do Not Move section
     calibStart = []
@@ -357,16 +360,16 @@ for unique_stim in allMonths_meanWorldVidArrays:
     for key in all_avg_world_moments[unique_stim]['calibration end']:
         calibEnd.append(key)
     calibEnd_tb = np.max(calibEnd)
-    # cut out Do Not Move section of calib phase from full world vid lum array
-    thisStim_meanDoNotMove = fullMeanWorldVid[calibStart_tb:doNotMoveEnd_tb]
-    if len(thisStim_meanDoNotMove)<shortestDoNotMove:
-        shortestDoNotMove = len(thisStim_meanDoNotMove)
-    allDoNotMove.append(thisStim_meanDoNotMove)
-    thisStim_meanPulsingDots = fullMeanWorldVid[pulsingDotsStart_tb:calibEnd_tb]
-    if len(thisStim_meanPulsingDots)<shortestPulsingDots:
-        shortestPulsingDots = len(thisStim_meanPulsingDots)
-    allPulsingDots.append(thisStim_meanPulsingDots)
-    print('Unique Stim %d, "Do Not Move" length: %d, Pulsing Dots length: %d'%(unique_stim, len(thisStim_meanDoNotMove), len(thisStim_meanPulsingDots)))
+    # cut out Do Not Move section of calib phase from full weighted mean world vid lum array
+    thisStim_weightedMeanDoNotMove = fullWeightedMeanWorldVid[calibStart_tb:doNotMoveEnd_tb]
+    if len(thisStim_weightedMeanDoNotMove)<shortestDoNotMove:
+        shortestDoNotMove = len(thisStim_weightedMeanDoNotMove)
+    allWeightedDoNotMove.append(thisStim_weightedMeanDoNotMove)
+    thisStim_weightedMeanPulsingDots = fullWeightedMeanWorldVid[pulsingDotsStart_tb:calibEnd_tb]
+    if len(thisStim_weightedMeanPulsingDots)<shortestPulsingDots:
+        shortestPulsingDots = len(thisStim_weightedMeanPulsingDots)
+    allWeightedPulsingDots.append(thisStim_weightedMeanPulsingDots)
+    print('Unique Stim %d, "Do Not Move" length: %d, Pulsing Dots length: %d'%(unique_stim, len(thisStim_weightedMeanDoNotMove), len(thisStim_weightedMeanPulsingDots)))
     doNotMoveLen = doNotMoveEnd_tb - calibStart_tb
     doNotMoveLens.append(doNotMoveLen)
     pulsingDotsLen = calibEnd_tb - pulsingDotsStart_tb
@@ -381,10 +384,10 @@ for unique_stim in allMonths_meanWorldVidArrays:
         octoEnd.append(key)
     octoEnd_tb = np.max(octoEnd)
     # cut out octo phase from full world vid lum array
-    thisStim_meanOcto = fullMeanWorldVid[octoStart_tb:octoEnd_tb]
-    if len(thisStim_meanOcto)<shortestOcto:
-        shortestOcto = len(thisStim_meanOcto)
-    allOcto.append(thisStim_meanOcto)
+    thisStim_weightedMeanOcto = fullWeightedMeanWorldVid[octoStart_tb:octoEnd_tb]
+    if len(thisStim_weightedMeanOcto)<shortestOcto:
+        shortestOcto = len(thisStim_weightedMeanOcto)
+    allWeightedOcto.append(thisStim_weightedMeanOcto)
     octoLen = octoEnd_tb - octoStart_tb
     octoLens.append(octoLen)
     ### UNIQUE
@@ -399,29 +402,37 @@ for unique_stim in allMonths_meanWorldVidArrays:
     uniqueLen = thisUniqueEnd_tb - thisUniqueStart_tb
     uniqueLens.append(uniqueLen)
     # cut out unique phase from full world vid lum array
-    thisStim_meanUnique = fullMeanWorldVid[thisUniqueStart_tb:thisUniqueEnd_tb]
-    allMeanWorldUnique.append(thisStim_meanUnique)
+    thisStim_weightedMeanUnique = fullWeightedMeanWorldVid[thisUniqueStart_tb:thisUniqueEnd_tb]
+    allWeightedUnique.append(thisStim_weightedMeanUnique)
     uniqueOrder.append(unique_stim)
 
-# average doNotMove, pulsingDots, and octo across all stimuli
+# calculate weighted mean of doNotMove, pulsingDots, octo and unique phases
+total_worldVids = sum(uniqueWeights.values())
 allDoNotMove_truncated = []
-for doNotMove in allDoNotMove:
+for doNotMove in allWeightedDoNotMove:
     doNotMove_truncated = doNotMove[:shortestDoNotMove]
     allDoNotMove_truncated.append(doNotMove_truncated)
-allDoNotMove_array = np.array(allDoNotMove_truncated)
-allDoNotMove_mean = np.mean(allDoNotMove_array, axis=0)
+meanWorld_doNotMove = np.nansum(allDoNotMove_truncated, axis=0)/total_worldVids
 allPulsingDots_truncated = []
-for pulsingDots in allPulsingDots:
+for pulsingDots in allWeightedPulsingDots:
     pulsingDots_truncated = pulsingDots[:shortestPulsingDots]
     allPulsingDots_truncated.append(pulsingDots_truncated)
-allPulsingDots_array = np.array(allPulsingDots_truncated)
-allPulsingDots_mean = np.mean(allPulsingDots_array, axis=0)
+meanWorld_pulsingDots = np.nansum(allPulsingDots_truncated, axis=0)/total_worldVids
 allOcto_truncated = []
-for octo in allOcto:
+for octo in allWeightedOcto:
     octo_truncated = octo[:shortestOcto]
     allOcto_truncated.append(octo_truncated)
-allOcto_array = np.array(allOcto_truncated)
-allOcto_mean = np.mean(allOcto_array, axis=0)
+meanWorld_octo = np.nansum(allOcto_truncated, axis=0)/total_worldVids
+allMeanWorld_unique = []
+for i, unique in enumerate(allWeightedUnique):
+    thisMeanWorld_unique = unique/uniqueWeights[uniqueOrder[i]]
+    allMeanWorld_unique.append(thisMeanWorld_unique)
+meanWorld_u1 = allMeanWorld_unique[0]
+meanWorld_u2 = allMeanWorld_unique[1]
+meanWorld_u3 = allMeanWorld_unique[2]
+meanWorld_u4 = allMeanWorld_unique[3]
+meanWorld_u5 = allMeanWorld_unique[4]
+meanWorld_u6 = allMeanWorld_unique[5]
 
 ###################################
 # LOAD CSV OF RAW STIM VIDEOS
@@ -470,18 +481,18 @@ allWeighted_DoNotMove = []
 for language in allLanguages_activationCount.keys():
     thisLanguage_weighted = allRaw_doNotMove[allRaw_doNotMove_languageOrder.index(language)]*allLanguages_activationCount[language]
     allWeighted_DoNotMove.append(thisLanguage_weighted)
-meanRawDoNotMove = sum(allWeighted_DoNotMove)/total_activations
+meanRaw_doNotMove = sum(allWeighted_DoNotMove)/total_activations
 # PULSING DOTS
-meanRawPulsingDots = sum(allRaw_pulsingDots)/len(allRaw_pulsingDots)
+meanRaw_pulsingDots = sum(allRaw_pulsingDots)/len(allRaw_pulsingDots)
 # OCTO
-meanRawOcto = sum(allRaw_octo)/len(allRaw_octo)
+meanRaw_octo = sum(allRaw_octo)/len(allRaw_octo)
 # UNIQUE SEQUENCES
-meanRawU1 = allRaw_unique[0]
-meanRawU2 = allRaw_unique[1]
-meanRawU3 = allRaw_unique[2]
-meanRawU4 = allRaw_unique[3]
-meanRawU5 = allRaw_unique[4]
-meanRawU6 = allRaw_unique[5]
+meanRaw_u1 = allRaw_unique[0]
+meanRaw_u2 = allRaw_unique[1]
+meanRaw_u3 = allRaw_unique[2]
+meanRaw_u4 = allRaw_unique[3]
+meanRaw_u5 = allRaw_unique[4]
+meanRaw_u6 = allRaw_unique[5]
 
 ###################################
 # STRETCH AND INTERPOLATE RAW STIM PHASES TO LENGTH OF WORLD CAM STIM PHASES
