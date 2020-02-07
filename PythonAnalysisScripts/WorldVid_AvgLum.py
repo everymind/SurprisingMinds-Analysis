@@ -85,9 +85,9 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
 # List relevant data locations: this is for laptop
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # List relevant data locations: this is for office desktop (windows)
-#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
 rawStim_lums_folder = os.path.join(root_folder, "rawStimLums")
 stimVid_lums_folder = os.path.join(root_folder, "stimVidLums")
@@ -329,7 +329,7 @@ all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','201
 allDoNotMove = []
 allPulsingDots = []
 allOcto = []
-allUnique = []
+allMeanWorldUnique = []
 doNotMoveLens = []
 pulsingDotsLens = []
 octoLens = []
@@ -400,7 +400,7 @@ for unique_stim in allMonths_meanWorldVidArrays:
     uniqueLens.append(uniqueLen)
     # cut out unique phase from full world vid lum array
     thisStim_meanUnique = fullMeanWorldVid[thisUniqueStart_tb:thisUniqueEnd_tb]
-    allUnique.append(thisStim_meanUnique)
+    allMeanWorldUnique.append(thisStim_meanUnique)
     uniqueOrder.append(unique_stim)
 
 # average doNotMove, pulsingDots, and octo across all stimuli
@@ -460,10 +460,32 @@ for rawStimLumFile in rawStimLum_files:
         print('%s, unique phase: %d frames, octo phase: %d frames'%(stim_phase, len(thisRawUnique), len(thisRawOcto)))
 
 ###################################
+# BUILD MEAN RAW STIM VID LUMINANCE ARRAYS
+###################################
+allLanguages_activationCount = {'Chinese':15, 'English':934, 'French':44, 'German':95, 'Italian':15}
+# start counting again at 2017-12-20
+# DO NOT MOVE
+total_activations = sum(allLanguages_activationCount.values())
+allWeighted_DoNotMove = []
+for language in allLanguages_activationCount.keys():
+    thisLanguage_weighted = allRaw_doNotMove[allRaw_doNotMove_languageOrder.index(language)]*allLanguages_activationCount[language]
+    allWeighted_DoNotMove.append(thisLanguage_weighted)
+meanRawDoNotMove = sum(allWeighted_DoNotMove)/total_activations
+# PULSING DOTS
+meanRawPulsingDots = sum(allRaw_pulsingDots)/len(allRaw_pulsingDots)
+# OCTO
+meanRawOcto = sum(allRaw_octo)/len(allRaw_octo)
+# UNIQUE SEQUENCES
+meanRawU1 = allRaw_unique[0]
+meanRawU2 = allRaw_unique[1]
+meanRawU3 = allRaw_unique[2]
+meanRawU4 = allRaw_unique[3]
+meanRawU5 = allRaw_unique[4]
+meanRawU6 = allRaw_unique[5]
+
+###################################
 # STRETCH AND INTERPOLATE RAW STIM PHASES TO LENGTH OF WORLD CAM STIM PHASES
 ###################################
-allLanguages_activationCount = {'Chinese':1, 'English':42, 'French':0, 'German':6, 'Italian':0}
-# start counting again at 2017-10-15
 
 
 ###################################
@@ -498,11 +520,11 @@ unique29_output = stimVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy'
 # save to file
 np.save(calib_output, allCalib_mean)
 np.save(octo_output, allOcto_mean)
-np.save(unique24_output, allUnique[0])
-np.save(unique25_output, allUnique[1])
-np.save(unique26_output, allUnique[2])
-np.save(unique27_output, allUnique[3])
-np.save(unique28_output, allUnique[4])
-np.save(unique29_output, allUnique[5])
+np.save(unique24_output, allMeanWorldUnique[0])
+np.save(unique25_output, allMeanWorldUnique[1])
+np.save(unique26_output, allMeanWorldUnique[2])
+np.save(unique27_output, allMeanWorldUnique[3])
+np.save(unique28_output, allMeanWorldUnique[4])
+np.save(unique29_output, allMeanWorldUnique[5])
 
 # FIN
