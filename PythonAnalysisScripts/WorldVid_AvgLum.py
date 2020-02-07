@@ -462,7 +462,8 @@ for rawStimLumFile in rawStimLum_files:
 ###################################
 # STRETCH AND INTERPOLATE RAW STIM PHASES TO LENGTH OF WORLD CAM STIM PHASES
 ###################################
-
+allLanguages_activationCount = {'Chinese':1, 'English':42, 'French':0, 'German':6, 'Italian':0}
+# start counting again at 2017-10-15
 
 
 ###################################
