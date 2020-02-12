@@ -25,6 +25,26 @@ def predictPupilSizeFromStimVidLums(stimVidLumArrays_allPhases, linRegParams_all
         predictedPupilSizes_allPhases.append(np.array(predictedPupilSizes_thisPhase))
     return predictedPupilSizes_allPhases
 
+def drawPredictedVsRealPupilSize(predictedPupilSizes_allPhases, realPupilSizes_allPhases_bestDelay, phaseOrderStrList, bestDelay_ms, downsample_ms, saveFolder):
+    for i, phase in enumerate(predictedPupilSizes_allPhases):
+        lenOfPhase = len(realPupilSizes_allPhases_bestDelay[i])
+        # figure path and title
+        figPath = os.path.join(saveFolder, '%s_predVsRealPupilSizes_%s.png'%(phaseOrderStrList[i], 'RightContours'))
+        figTitle = 'Predicted (based on stimulus luminance) vs Real Pupil Sizes \n Phase: %s; %s; Best delay = %dms'%(phaseOrderStrList[i], 'RightContours', bestDelay_ms)
+        print('Plotting %s'%(figTitle))
+        # draw predicted vs real pupil size
+        plt.figure(dpi=150)
+        plt.suptitle(figTitle, fontsize=12, y=0.98)
+        plt.xlabel('Time (ms)')
+        plt.ylabel('Pupil diameter (normalised change from baseline)')
+        plt.xticks(np.arange(0,lenOfPhase,50), np.arange(0,lenOfPhase,50)*downsample_ms)
+        plt.plot(predictedPupilSizes_allPhases[i], label='predicted')
+        plt.plot(realPupilSizes_allPhases_bestDelay[i], label='real')
+        plt.legend()
+        plt.tight_layout(rect=[0,0.03,1,0.93])
+        plt.savefig(figPath)
+        plt.close()
+
 ###################################
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
@@ -40,6 +60,17 @@ normedMeanPupils_folder = os.path.join(root_folder, 'normedMeanPupilSizes')
 linRegressParams_folder = os.path.join(root_folder, 'pupilSizeVsDelayLinRegress')
 # stim vid luminance data
 stimVidLums_folder = os.path.join(root_folder, 'stimVidLums')
+# output folders
+pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
+Rco_predictedVsReal_folder = os.path.join(pupilSize_folder, 'rightContours', 'predVsReal')
+Rci_predictedVsReal_folder = os.path.join(pupilSize_folder, 'rightCircles', 'predVsReal')
+Lco_predictedVsReal_folder = os.path.join(pupilSize_folder, 'leftContours', 'predVsReal')
+Lci_predictedVsReal_folder = os.path.join(pupilSize_folder, 'leftCircles', 'predVsReal')
+# Create output folders if they do not exist
+output_folders = [pupilSize_folder, Rco_predictedVsReal_folder, Rci_predictedVsReal_folder, Lco_predictedVsReal_folder, Lci_predictedVsReal_folder]
+for output_folder in output_folders:
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
 ###################################
 # TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
@@ -79,6 +110,7 @@ for linReg_file in linRegressParams_files:
         Lci_linRegParams = thisEyeAnalysis_linRegParams
         Lci_bestRVal = best_rVal
         Lci_bestDelay_index = best_delay
+
 # now we should have:
 # Rco_linRegParams, Rco_bestRVal, Rco_bestDelay_index
 # Rci_linRegParams, Rci_bestRVal, Rci_bestDelay_index
@@ -156,9 +188,9 @@ for nmpSize_file in normedMeanPupils_files:
 ###################################
 # plot predicted vs real pupil size
 ###################################
-plt.plot(Rco_predictedPupilSizes_allPhases[0], label='predicted')
-plt.plot(Rco_bestDelay_allPhases[0], label='real')
-plt.legend()
-plt.show()
+drawPredictedVsRealPupilSize(Rco_predictedPupilSizes_allPhases, Rco_bestDelay_allPhases, Rco_bestDelay_phaseOrder, Rco_bestDelay_ms, downsampled_bucket_size_ms, Rco_predictedVsReal_folder)
+drawPredictedVsRealPupilSize(Rci_predictedPupilSizes_allPhases, Rci_bestDelay_allPhases, Rci_bestDelay_phaseOrder, Rci_bestDelay_ms, downsampled_bucket_size_ms, Rci_predictedVsReal_folder)
+drawPredictedVsRealPupilSize(Lco_predictedPupilSizes_allPhases, Lco_bestDelay_allPhases, Lco_bestDelay_phaseOrder, Lco_bestDelay_ms, downsampled_bucket_size_ms, Lco_predictedVsReal_folder)
+drawPredictedVsRealPupilSize(Lci_predictedPupilSizes_allPhases, Lci_bestDelay_allPhases, Lci_bestDelay_phaseOrder, Lci_bestDelay_ms, downsampled_bucket_size_ms, Lci_predictedVsReal_folder)
 
 # FIN
