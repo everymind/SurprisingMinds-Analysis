@@ -618,7 +618,7 @@ for delay in range(delays):
     Rci_u5LinRegress_allDelays.append(linRegress_Rci[7])
     Rci_u6LinRegress_allDelays.append(linRegress_Rci[8])
     # Left Contours
-    linRegress_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContour', Lco_scatter_folder, normedMeanPupilSizes_folder)
+    linRegress_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContours', Lco_scatter_folder, normedMeanPupilSizes_folder)
     Lco_allPhasesConcatLinRegress_allDelays.append(linRegress_Lco[0])
     Lco_calibLinRegress_allDelays.append(linRegress_Lco[1])
     Lco_octoLinRegress_allDelays.append(linRegress_Lco[2])
