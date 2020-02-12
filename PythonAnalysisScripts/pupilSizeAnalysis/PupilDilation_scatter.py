@@ -337,16 +337,15 @@ def drawFitScoresVsDelay_byPhase(linRegress_allPhases_list, num_delays, phases_s
         plt.savefig(figPath)
         plt.close()
 
-
 ###################################
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
 # List relevant data locations: these are for laptop
-root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
+#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 # List relevant data locations: these are for office desktop
-#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
-#plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
+root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
 # set up folders
 # stimulus video average luminance csv files
 stimVidLums_folder = os.path.join(root_folder, 'stimVidLums')
@@ -420,9 +419,9 @@ pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
 pupil_folders = pupil_folders[1:]
 
 ### WHILE DEBUGGING ###
-pupil_folders = pupil_folders[5:10]
+#pupil_folders = pupil_folders[5:10]
 # if currently still running pupil finding analysis...
-pupil_folders = pupil_folders[:-1]
+#pupil_folders = pupil_folders[:-1]
 #### --------------- ####
 
 # collect dates for which pupil extraction fails
