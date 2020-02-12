@@ -11,6 +11,8 @@ import fnmatch
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+from scipy.signal import savgol_filter, argrelextrema
+from scipy import interpolate
 
 ###################################
 # FUNCTIONS
@@ -81,19 +83,79 @@ def downsample_avg_world_vids(unraveled_world_vids_dict, original_bucket_size_ms
     else:
         print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
 
+def matchArrays_RawVsWorld(inputArrayRaw, inputArrayWorld, phaseName, plot_saveFolder):
+    # create array of nans, size = larger array (either World or Raw)
+    meanAdjusted_outputArray = np.empty((len(inputArrayWorld),))
+    meanAdjusted_outputArray.fill(np.nan)
+    # get first and last values of Raw
+    meanAdjusted_outputArray[0] = inputArrayRaw[0]
+    meanAdjusted_outputArray[-1] = inputArrayRaw[-1]
+    # get major peaks and troughs of Raw
+    goodDataPoints = []
+    inputArrayRaw_maximas = argrelextrema(inputArrayRaw, np.greater)
+    inputArrayRaw_minimas = argrelextrema(inputArrayRaw, np.less)
+    for maxima in inputArrayRaw_maximas[0]:
+        adjustedIndex = int(round((maxima/len(inputArrayRaw))*len(inputArrayWorld), 0))
+        meanAdjusted_outputArray[adjustedIndex] = inputArrayRaw[maxima]
+        goodDataPoints.append(adjustedIndex)
+    for minima in inputArrayRaw_minimas[0]:
+        adjustedIndex = int(round((minima/len(inputArrayRaw))*len(inputArrayWorld), 0))
+        meanAdjusted_outputArray[adjustedIndex] = inputArrayRaw[minima]
+        goodDataPoints.append(adjustedIndex)
+    # fill in as many values as can be transferred
+    for i,value in enumerate(inputArrayRaw):
+        adjustedIndex = int(round((i/len(inputArrayRaw))*len(inputArrayWorld), 0))
+        if adjustedIndex not in goodDataPoints:
+            meanAdjusted_outputArray[adjustedIndex] = value
+            goodDataPoints.append(adjustedIndex)
+    # if World array is longer than Raw, interpolate to fill in remaining nans
+    if len(inputArrayWorld)>len(inputArrayRaw):
+        goodDataPoints.sort()
+        num_valid = len(goodDataPoints)
+        count = 1
+        for i in range(1, num_valid):
+            next_valid_index = goodDataPoints[i]
+            next_valid_lum = meanAdjusted_outputArray[next_valid_index]
+            step_count = (next_valid_index - count + 1)
+            step_lum = (next_valid_lum - meanAdjusted_outputArray[count - 1]) / step_count
+            for j in range(step_count):
+                meanAdjusted_outputArray[count] = meanAdjusted_outputArray[count - 1] + step_lum
+                count += 1
+    # draw output array against world cam avg array
+    meanWorldScaled_array = inputArrayWorld*(inputArrayRaw[0]/inputArrayWorld[0])
+    # figure path and title
+    figPath = os.path.join(plot_saveFolder, 'meanWorldScaled%s_Vs_meanAdjusted%s.png'%(phaseName, phaseName))
+    figTitle = 'Mean luminance of world cam (scaled) vs mean luminance of raw stimulus (adjusted) during %s'%(phaseName)
+    print('Plotting %s'%(figTitle))
+    # draw comparison plot
+    plt.figure(figsize=(9, 9), dpi=150)
+    plt.suptitle(figTitle, fontsize=12, y=0.98)
+    plt.ylabel('Timebuckets')
+    plt.xlabel('Mean luminance')
+    plt.plot(meanWorldScaled_array, label='World cam (scaled)')
+    plt.plot(meanAdjusted_outputArray, label='Raw Stim (adjusted)')
+    plt.legend()
+    plt.savefig(figPath)
+    plt.close()
+    return meanAdjusted_outputArray
+
 ###################################
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
 # List relevant data locations: this is for laptop
-#root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+root_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+plots_folder = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots"
 # List relevant data locations: this is for office desktop (windows)
-root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#root_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # set up folders
 rawStim_lums_folder = os.path.join(root_folder, "rawStimLums")
 stimVid_lums_folder = os.path.join(root_folder, "stimVidLums")
+stimVid_plots = os.path.join(plots_folder, "stimulusAvgLum")
 # Create folders they do not exist
-if not os.path.exists(stimVid_lums_folder):
-    os.makedirs(stimVid_lums_folder)
+output_folders = [stimVid_lums_folder, stimVid_plots]
+for folder in output_folders:
+    if not os.path.exists(folder):
+        os.makedirs(folder)
 
 ###################################
 # TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
@@ -131,8 +193,8 @@ for avg_world_vid_folder in avg_world_vid_folders:
         updated_folders_to_extract.append(avg_world_vid_folder)
 
 #### WHILE DEBUGGING ####
-updated_folders_to_extract = updated_folders_to_extract[4:6]
-debugging_output_folder = os.path.join(root_folder, 'test_stimVidLums')
+#updated_folders_to_extract = updated_folders_to_extract[4:6]
+#debugging_output_folder = os.path.join(root_folder, 'test_stimVidLums')
 #### --------------- ####
 
 # extract, unravel, calculate mean luminance of each frame, create array of mean luminances for each stim type
@@ -495,9 +557,28 @@ meanRaw_u5 = allRaw_unique[4]
 meanRaw_u6 = allRaw_unique[5]
 
 ###################################
-# STRETCH AND INTERPOLATE RAW STIM PHASES TO LENGTH OF WORLD CAM STIM PHASES
+# MATCH SIZES OF RAW STIM PHASES TO WORLD CAM STIM PHASES
+# look for peaks/important moments in raw vid and match timing in world vids
 ###################################
-
+# CALIB
+## do not move
+meanAdjusted_doNotMove = np.empty((len(meanWorld_doNotMove),))
+meanAdjusted_doNotMove.fill(meanRaw_doNotMove[0])
+## pulsing dots
+meanAdjusted_pulsingDots = matchArrays_RawVsWorld(meanRaw_pulsingDots, meanWorld_pulsingDots, 'pulsingDots', stimVid_plots)
+# FULL CALIB - concatenate doNotMove and pulsingDots
+meanWorld_calib = np.concatenate((meanWorld_doNotMove, meanWorld_pulsingDots), axis=0)
+meanRaw_calib = np.concatenate((meanRaw_doNotMove, meanRaw_pulsingDots), axis=0)
+meanAdjusted_calib = np.concatenate((meanAdjusted_doNotMove, meanAdjusted_pulsingDots), axis=0)
+# OCTO
+meanAdjusted_octo = matchArrays_RawVsWorld(meanRaw_octo, meanWorld_octo, 'octo', stimVid_plots)
+# UNIQUE
+meanAdjusted_u1 = matchArrays_RawVsWorld(meanRaw_u1, meanWorld_u1, 'u1', stimVid_plots)
+meanAdjusted_u2 = matchArrays_RawVsWorld(meanRaw_u2, meanWorld_u2, 'u2', stimVid_plots)
+meanAdjusted_u3 = matchArrays_RawVsWorld(meanRaw_u3, meanWorld_u3, 'u3', stimVid_plots)
+meanAdjusted_u4 = matchArrays_RawVsWorld(meanRaw_u4, meanWorld_u4, 'u4', stimVid_plots)
+meanAdjusted_u5 = matchArrays_RawVsWorld(meanRaw_u5, meanWorld_u5, 'u5', stimVid_plots)
+meanAdjusted_u6 = matchArrays_RawVsWorld(meanRaw_u6, meanWorld_u6, 'u6', stimVid_plots)
 
 ###################################
 # SAVE INTERMEDIATE DATA FILES
@@ -507,35 +588,23 @@ totalVidCount = 0
 for unique_stim in allMonths_meanWorldVidArrays:
     totalVidCount = totalVidCount + allMonths_meanWorldVidArrays[unique_stim]['Vid Count']
 # filepaths
-calib_output = stimVid_lums_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, min(calibLens))
-octo_output = stimVid_lums_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, min(octoLens))
-unique24_output = stimVid_lums_folder + os.sep + 'meanUnique01_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
-unique25_output = stimVid_lums_folder + os.sep + 'meanUnique02_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
-unique26_output = stimVid_lums_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
-unique27_output = stimVid_lums_folder + os.sep + 'meanUnique04_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
-unique28_output = stimVid_lums_folder + os.sep + 'meanUnique05_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
-unique29_output = stimVid_lums_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
-
-#### WHILE DEBUGGING ####
-# filepaths
-#calib_output = debugging_output_folder + os.sep + 'meanCalib_%sVids_%dTBs.npy' % (totalVidCount, min(calibLens))
-#octo_output = debugging_output_folder + os.sep + 'meanOcto_%sVids_%dTBs.npy' % (totalVidCount, min(octoLens))
-#unique24_output = debugging_output_folder + os.sep + 'meanUnique01_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], uniqueLens[uniqueOrder.index(24.0)])
-#unique25_output = debugging_output_folder + os.sep + 'meanUnique02_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], uniqueLens[uniqueOrder.index(25.0)])
-#unique26_output = debugging_output_folder + os.sep + 'meanUnique03_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], uniqueLens[uniqueOrder.index(26.0)])
-#unique27_output = debugging_output_folder + os.sep + 'meanUnique04_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], uniqueLens[uniqueOrder.index(27.0)])
-#unique28_output = debugging_output_folder + os.sep + 'meanUnique05_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], uniqueLens[uniqueOrder.index(28.0)])
-#unique29_output = debugging_output_folder + os.sep + 'meanUnique06_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], uniqueLens[uniqueOrder.index(29.0)])
-#### --------------- ####
+calib_output = stimVid_lums_folder + os.sep + 'meanAdjustedCalib_%sVids_%dTBs.npy' % (totalVidCount, len(meanAdjusted_calib))
+octo_output = stimVid_lums_folder + os.sep + 'meanAdjustedOcto_%sVids_%dTBs.npy' % (totalVidCount, len(meanAdjusted_octo))
+unique24_output = stimVid_lums_folder + os.sep + 'meanAdjustedU1_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[24.0]['Vid Count'], len(meanAdjusted_u1))
+unique25_output = stimVid_lums_folder + os.sep + 'meanAdjustedU2_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[25.0]['Vid Count'], len(meanAdjusted_u2))
+unique26_output = stimVid_lums_folder + os.sep + 'meanAdjustedU3_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[26.0]['Vid Count'], len(meanAdjusted_u3))
+unique27_output = stimVid_lums_folder + os.sep + 'meanAdjustedU4_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[27.0]['Vid Count'], len(meanAdjusted_u4))
+unique28_output = stimVid_lums_folder + os.sep + 'meanAdjustedU5_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[28.0]['Vid Count'], len(meanAdjusted_u5))
+unique29_output = stimVid_lums_folder + os.sep + 'meanAdjustedU6_%sVids_%dTBs.npy' % (allMonths_meanWorldVidArrays[29.0]['Vid Count'], len(meanAdjusted_u6))
 
 # save to file
-np.save(calib_output, allCalib_mean)
-np.save(octo_output, allOcto_mean)
-np.save(unique24_output, allMeanWorldUnique[0])
-np.save(unique25_output, allMeanWorldUnique[1])
-np.save(unique26_output, allMeanWorldUnique[2])
-np.save(unique27_output, allMeanWorldUnique[3])
-np.save(unique28_output, allMeanWorldUnique[4])
-np.save(unique29_output, allMeanWorldUnique[5])
+np.save(calib_output, meanAdjusted_calib)
+np.save(octo_output, meanAdjusted_octo)
+np.save(unique24_output, meanAdjusted_u1)
+np.save(unique25_output, meanAdjusted_u2)
+np.save(unique26_output, meanAdjusted_u3)
+np.save(unique27_output, meanAdjusted_u4)
+np.save(unique28_output, meanAdjusted_u5)
+np.save(unique29_output, meanAdjusted_u6)
 
 # FIN
