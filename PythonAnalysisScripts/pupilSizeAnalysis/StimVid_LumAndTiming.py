@@ -1,9 +1,9 @@
 ### ------------------------------------------------------------------------- ###
 ### Create binary files of raw stim vid luminance values fitted to world cam stim vid presentation timings
 ### use world camera vids for timing, use raw vid luminance values extracted via bonsai
-### also save world cam luminance as sanity check/ground truth
-### also count how many times each language was chosen
-### output as data files categorized by calibration, octopus, and unique sequences.
+### also save world cam luminance as sanity check/ground truth 
+### create monthly averages of both raw live stim vid and world cam sanity check
+### output as data files 
 ### ------------------------------------------------------------------------- ###
 import os
 import glob
@@ -166,6 +166,21 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
     np.save(rawLiveVid_output, supersampled_rawLiveVid_array)
     np.save(worldCam_output, supersampled_worldCam_array)
 
+def add_to_daily_worldCam_dict(this_trial_world_vid_frames, this_trial_stim_num, daily_world_vid_dict):
+    # keep track of how many videos are going into the average for this stim
+    daily_world_vid_dict[this_trial_stim_num]['Vid Count'] = daily_world_vid_dict[this_trial_stim_num].get('Vid Count', 0) + 1
+    this_trial_stim_vid = {}
+    for tb, row in enumerate(this_trial_world_vid_frames):
+        tbucket_num = tb
+        flattened_frame = row
+        this_trial_stim_vid[tbucket_num] = flattened_frame
+    for tbucket in this_trial_stim_vid.keys():
+        if tbucket in daily_world_vid_dict[this_trial_stim_num].keys():
+            daily_world_vid_dict[this_trial_stim_num][tbucket][0] = daily_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
+            daily_world_vid_dict[this_trial_stim_num][tbucket][1] = daily_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
+        else: 
+            daily_world_vid_dict[this_trial_stim_num][tbucket] = {'Trial Count': 0, 'Summed Frames': this_trial_stim_vid[tbucket]}
+
 ###################################
 # SET CURRENT WORKING DIRECTORY
 ###################################
@@ -288,6 +303,13 @@ for item in zipped_data:
         # List all trial folders
         trial_folders = list_sub_folders(day_folder)
         num_trials = len(trial_folders)
+        # intialize time bucket dictionary for world vids
+        this_day_worldCam_tbucket = {key:{'Vid Count':0} for key in stim_vids}
+        this_day_world_vids_height = []
+        this_day_world_vids_width = []
+        # initialize time bucket dictionary for raw live stim vids
+        this_day_rawLiveVid_tbucket = {key:{'Vid Count':0} for key in stim_vids}
+        # extract world vid from each trial
         current_trial = 0
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
