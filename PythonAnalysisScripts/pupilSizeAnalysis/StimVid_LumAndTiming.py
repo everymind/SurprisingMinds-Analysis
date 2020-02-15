@@ -213,12 +213,12 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
 ###################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ###################################
-for folder in daily_csv_files:
-    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-    if 'world' in subdirs:
-        os.rmdir(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
-    if 'npy' in subdirs:
-        os.rmdir(os.path.join(analysed_drive, folder, 'Analysis', 'npy'))
+# for folder in daily_csv_files:
+#     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+#     if 'world' in subdirs:
+#         os.rmdir(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+#     if 'npy' in subdirs:
+#         os.rmdir(os.path.join(analysed_drive, folder, 'Analysis', 'npy'))
 
 ###################################
 # STIMULUS INFO
