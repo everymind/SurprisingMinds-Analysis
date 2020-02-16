@@ -160,11 +160,11 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
         else:
             supersampled_worldCam.append(current_frame)
     supersampled_worldCam_array = np.array(supersampled_worldCam)
-    # save rawLiveVid and worldCam sanityCheck
+    # save rawLiveVid
     rawLiveVid_output = output_folder + os.sep + video_name[:-10] + '_rawLiveVid_%dmsTBs.npy' % (bucket_size_ms)
-    worldCam_output = output_folder + os.sep + video_name[:-10] + '_worldCamSanityCheck_%dmsTBs_%dBy%d.npy' % (bucket_size_ms, vid_width, vid_height)
     np.save(rawLiveVid_output, supersampled_rawLiveVid_array)
-    np.save(worldCam_output, supersampled_worldCam_array)
+    # return worldCam sanity check
+    return vid_width, vid_height, supersampled_worldCam_array, supersampled_rawLiveVid_array
 
 def add_to_daily_worldCam_dict(this_trial_world_vid_frames, this_trial_stim_num, daily_world_vid_dict):
     # keep track of how many videos are going into the average for this stim
@@ -176,10 +176,149 @@ def add_to_daily_worldCam_dict(this_trial_world_vid_frames, this_trial_stim_num,
         this_trial_stim_vid[tbucket_num] = flattened_frame
     for tbucket in this_trial_stim_vid.keys():
         if tbucket in daily_world_vid_dict[this_trial_stim_num].keys():
-            daily_world_vid_dict[this_trial_stim_num][tbucket][0] = daily_world_vid_dict[this_trial_stim_num][tbucket][0] + 1
-            daily_world_vid_dict[this_trial_stim_num][tbucket][1] = daily_world_vid_dict[this_trial_stim_num][tbucket][1] + this_trial_stim_vid[tbucket]
+            daily_world_vid_dict[this_trial_stim_num][tbucket]['Trial Count'] = daily_world_vid_dict[this_trial_stim_num][tbucket]['Trial Count'] + 1
+            daily_world_vid_dict[this_trial_stim_num][tbucket]['Summed Frame'] = daily_world_vid_dict[this_trial_stim_num][tbucket]['Summed Frame'] + this_trial_stim_vid[tbucket]
         else: 
-            daily_world_vid_dict[this_trial_stim_num][tbucket] = {'Trial Count': 0, 'Summed Frames': this_trial_stim_vid[tbucket]}
+            daily_world_vid_dict[this_trial_stim_num][tbucket] = {'Trial Count': 1, 'Summed Frame': this_trial_stim_vid[tbucket]}
+
+def add_to_daily_rawLiveVid_dict(this_trial_rawLive_vid_frames, this_trial_stim_num, daily_rawLive_vid_dict):
+    # keep track of how many videos are going into the average for this stim
+    daily_rawLive_vid_dict[this_trial_stim_num]['Vid Count'] = daily_rawLive_vid_dict[this_trial_stim_num].get('Vid Count', 0) + 1
+    this_trial_stim_vid = {}
+    for tb, row in enumerate(this_trial_world_vid_frames):
+        tbucket_num = tb
+        flattened_frame = row
+        this_trial_stim_vid[tbucket_num] = flattened_frame
+    for tbucket in this_trial_stim_vid.keys():
+        if tbucket in daily_rawLive_vid_dict[this_trial_stim_num].keys():
+            daily_rawLive_vid_dict[this_trial_stim_num][tbucket]['Trial Count'] = daily_rawLive_vid_dict[this_trial_stim_num][tbucket]['Trial Count'] + 1
+            daily_rawLive_vid_dict[this_trial_stim_num][tbucket]['Summed Luminance'] = daily_rawLive_vid_dict[this_trial_stim_num][tbucket]['Summed Luminance'] + this_trial_stim_vid[tbucket]
+        else: 
+            daily_rawLive_vid_dict[this_trial_stim_num][tbucket] = {'Trial Count': 1, 'Summed Luminance': this_trial_stim_vid[tbucket]}
+
+def calculate_meanPerDay_worldCam(day_worldCam_tbDict):
+    # intialize time bucket dict for mean worldcam for each day
+    meanPerDay_worldCam = {key:{'Vid Count':0} for key in stim_vids}
+    for stim_num in day_worldCam_tbDict.keys():
+        for key in day_worldCam_tbDict[stim_num].keys():
+            if key == 'Vid Count':
+                meanPerDay_worldCam[stim_num]['Vid Count'] = meanPerDay_worldCam[stim_num]['Vid Count'] + day_worldCam_tbDict[stim_num]['Vid Count']
+            else: 
+                meanFrame = day_worldCam_tbDict[stim_num][key]['Summed Frame'] / day_worldCam_tbDict[stim_num][key]['Trial Count']
+                meanPerDay_worldCam[stim_num][key] = {'Mean Frame': meanFrame, 'Trial Count': day_worldCam_tbDict[stim_num][key]['Trial Count']}
+    return meanPerDay_worldCam
+
+def add_to_monthly_worldCam_dict(this_day_meanWorld_dict, this_day_month, monthly_world_vid_dict):
+    for stim in this_day_meanWorld_dict.keys():
+        if this_day_month in monthly_world_vid_dict[stim].keys():
+            for timebucket in this_day_meanWorld_dict[stim].keys():
+                if timebucket == 'Vid Count':
+                    # collect vid count
+                    monthly_world_vid_dict[stim][this_day_month]['Vid Count'] = monthly_world_vid_dict[stim][this_day_month]['Vid Count'] + this_day_meanWorld_dict[stim]['Vid Count']
+                else:
+                    monthly_world_vid_dict[stim][this_day_month][key] = monthly_world_vid_dict[stim][this_day_month][timebucket] + this_day_meanWorld_dict[stim][timebucket]
+        else:
+            for timebucket in this_day_meanWorld_dict[stim].keys():
+                if timebucket == 'Vid Count':
+                    monthly_world_vid_dict[stim][this_day_month] = {'Vid Count': this_day_meanWorld_dict[stim]['Vid Count']}
+                else: 
+                    monthly_world_vid_dict[stim][this_day_month][timebucket] = this_day_meanWorld_dict[stim][timebucket]
+
+
+
+
+def average_day_world_vids(day_world_vid_dict, day_date, avg_world_vid_dir, vid_height, vid_width):
+    for stim in day_world_vid_dict.keys(): 
+        print("Averaging world videos for stimuli {s}...".format(s=stim))
+        avg_vid = []
+        avg_vid.append([vid_height, vid_width])
+        avg_vid.append([day_world_vid_dict[stim]['Vid Count']])
+        for tbucket in day_world_vid_dict[stim].keys():
+            if tbucket=='Vid Count':
+                continue
+            this_bucket = [tbucket]
+            frame_count = day_world_vid_dict[stim][tbucket][0]
+            summed_frame = day_world_vid_dict[stim][tbucket][1]
+            avg_frame = summed_frame/frame_count
+            avg_frame_list = avg_frame.tolist()
+            for pixel in avg_frame_list:
+                this_bucket.append(pixel)
+            avg_vid.append(this_bucket)
+        # save average world vid for each stimulus to csv
+        avg_vid_csv_name = day_date + '_' + str(int(stim)) + '_Avg-World-Vid-tbuckets.csv'
+        csv_file = os.path.join(avg_world_vid_dir, avg_vid_csv_name)
+        print("Saving average world video of stimulus {s} for {d}".format(s=stim, d=day_date))
+        with open(csv_file, 'w', newline='') as f:
+            writer = csv.writer(f, quoting=csv.QUOTE_NONNUMERIC)
+            writer.writerows(avg_vid)
+
+def extract_daily_avg_world_vids(daily_avg_world_folder):
+    stim_files = glob.glob(daily_avg_world_folder + os.sep + "*Avg-World-Vid-tbuckets.csv")
+    world_vids_tbucketed = {}
+    for stim_file in stim_files: 
+        stim_name = stim_file.split(os.sep)[-1]
+        stim_type = stim_name.split('_')[1]
+        stim_number = np.float(stim_type)
+        world_vids_tbucketed[stim_number] = {}
+        extracted_rows = []
+        with open(stim_file) as f:
+            csvReader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
+            for row in csvReader:
+                extracted_rows.append(row)
+        for i in range(len(extracted_rows)):
+            if i==0:
+                unravel_height = int(extracted_rows[i][0])
+                unravel_width = int(extracted_rows[i][1])
+                world_vids_tbucketed[stim_number]["Vid Dimensions"] = [unravel_height, unravel_width]
+            elif i==1:
+                vid_count = int(extracted_rows[i][0])
+                world_vids_tbucketed[stim_number]["Vid Count"] = vid_count
+            else:
+                tbucket_num = extracted_rows[i][0]
+                flattened_frame = extracted_rows[i][1:]
+                world_vids_tbucketed[stim_number][tbucket_num] = flattened_frame
+    return world_vids_tbucketed
+
+def add_to_monthly_world_vids(analysis_folder_paths_for_month, list_of_stim_types):
+    this_month_sum_world_vids = {key:{} for key in list_of_stim_types}
+    this_month_vid_heights = []
+    this_month_vid_widths = []
+    for analysed_day in analysis_folder_paths_for_month:
+        day_name = analysed_day.split(os.sep)[-1]
+        print("Collecting world vid data from {day}".format(day=day_name))
+        analysis_folder = os.path.join(analysed_day, "Analysis")
+        world_folder = os.path.join(analysis_folder, "world")
+        if not os.path.exists(world_folder):
+            print("No average world frames exist for folder {name}!".format(name=day_name))
+            continue
+        this_day_avg_world_vids = extract_daily_avg_world_vids(world_folder)
+        for stim_type in this_day_avg_world_vids.keys():
+            this_month_sum_world_vids[stim_type] = {}
+            this_stim_vid_height = this_day_avg_world_vids[stim_type]['Vid Dimensions'][0]
+            this_month_vid_heights.append(this_stim_vid_height)
+            this_stim_vid_width = this_day_avg_world_vids[stim_type]['Vid Dimensions'][1]
+            this_month_vid_widths.append(this_stim_vid_width)
+            this_stim_vid_count = this_day_avg_world_vids[stim_type]['Vid Count']
+            this_month_sum_world_vids[stim_type]['Vid Count'] = this_month_sum_world_vids[stim_type].get('Vid Count', 0) + this_stim_vid_count
+            for tbucket_num in this_day_avg_world_vids[stim_type].keys():
+                if tbucket_num=='Vid Dimensions':
+                    continue
+                elif tbucket_num=='Vid Count':
+                    continue
+                elif tbucket_num in this_month_sum_world_vids[stim_type].keys():
+                    this_month_sum_world_vids[stim_type][tbucket_num][0] = this_month_sum_world_vids[stim_type][tbucket_num][0] + 1
+                    this_month_sum_world_vids[stim_type][tbucket_num][1] = this_month_sum_world_vids[stim_type][tbucket_num][1] + this_day_avg_world_vids[stim_type][tbucket_num]
+                else:
+                    this_month_sum_world_vids[stim_type][tbucket_num] = [1, this_day_avg_world_vids[stim_type][tbucket_num]]
+    if not this_month_vid_heights:
+            print("No world vids averaged for {date}".format(date=day_name))
+    elif all(x == this_month_vid_heights[0] for x in this_month_vid_heights):
+        if all(x == this_month_vid_widths[0] for x in this_month_vid_widths):
+            this_month_vid_height = this_month_vid_heights[0]
+            this_month_vid_width = this_month_vid_widths[0]
+    else:
+        print("Not all video heights and widths are equal!")
+    return this_month_sum_world_vids, this_month_vid_height, this_month_vid_width
 
 ###################################
 # SET CURRENT WORKING DIRECTORY
@@ -228,12 +367,10 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
 ###################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ###################################
-# for folder in daily_csv_files:
-#     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-#     if 'world' in subdirs:
-#         os.rmdir(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
-#     if 'npy' in subdirs:
-#         os.rmdir(os.path.join(analysed_drive, folder, 'Analysis', 'npy'))
+for folder in daily_csv_files:
+    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+    if 'world' in subdirs:
+        shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
 
 ###################################
 # STIMULUS INFO
@@ -255,6 +392,7 @@ for rSL_file in rawStimLum_files:
 
 ###################################
 # EXTRACT WORLD CAM VID TIMING AND LUMINANCE
+# SAVE RAW LIVE VIDEOS FROM EACH TRIAL AS BINARY FILE
 ###################################
 # get the subfolders, sort their names
 data_folders = sorted(os.listdir(data_drive))
@@ -269,17 +407,64 @@ for folder in daily_csv_files:
     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
     if 'world' in subdirs:
         already_extracted_daily.append(folder)
-   
+
 # DAYS THAT CANNOT BE UNZIPPED 
 invalid_zipped = ['2017-12-28','2018-01-25']
+# MONTHLY MEAN WORLD CAM
+meanPerMonth_worldCam = {key:{'Vid Count': 0} for key in stim_vids}
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING 
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
+    this_month = this_day_date[:-3]
+    ########################################################################
     # check to see if this folder has already had world vid frames extracted
+    ########################################################################
     if item[:-4] in already_extracted_daily:
         print("World vid frames from {name} has already been extracted".format(name=item))
+        # check to see if this folder has already been averaged into a monthly world cam average
+        item_year_month = this_day_date[:7]
+        if item_year_month in extracted_months:
+            print("World camera frames from {name} have already been consolidated into a monthly average".format(name=item_year_month))
+            continue
+        # if no monthly world cam average made yet for this month
+        # check that the full month has been extracted by checking for a meanPerDay_worldCam binary file for each day
+
+
+        this_month_extracted = fnmatch.filter(already_extracted_daily, 'SurprisingMinds_' + item_year_month + '*')
+        this_month_data = fnmatch.filter(zipped_data, 'SurprisingMinds_' + item_year_month + '*')
+        this_month_invalid = fnmatch.filter(invalid_zipped, item_year_month)
+        if len(this_month_extracted) != len(this_month_data) + len(this_month_invalid):
+            print("World vid frames for {month} not yet completed".format(month=item_year_month))
+            continue
+        # full month extracted?
+        print('This month extraction completed: {month_list}'.format(month_list=this_month_extracted))
+        
+        # take world cam frames for each day and build a monthly average world cam sequence for each stim
+        search_pattern = os.path.join(analysed_drive, 'SurprisingMinds_'+item_year_month+'-*')
+        current_month_analysed = glob.glob(search_pattern)
+        current_month_summed_world_vids, world_vid_height, world_vid_width = add_to_monthly_world_vids(current_month_analysed, stim_vids)
+        average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
+        
+        # update list of already extracted months
+        print("Updating list of extracted months...")
+        analysed_folders = sorted(os.listdir(analysed_drive))
+        monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
+        extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
+        # delete daily videos
+        for daily_folder in current_month_analysed:
+            current_date = daily_folder.split(os.sep)[-1].split('_')[1]
+            analysis_folder = os.path.join(daily_folder, "Analysis")
+            world_folder = os.path.join(analysis_folder, "world")
+            print("Deleting daily world vid average files for {date}...".format(date=current_date))
+            shutil.rmtree(world_folder)
+            print("Delete successful!")
+            print("Making empty 'world' folder for {date}...".format(date=current_date))
+            os.makedirs(world_folder)
+        print("Finished averaging world video frames for {month}!".format(month=item_year_month))
         continue
+    #############################################################################
     # if world vid frames in this folder haven't already been extracted, EXTRACT!
+    #############################################################################
     print("Extracting World Vid frames from folder {name}".format(name=item))
     # Build relative analysis paths, these folders should already exist
     analysis_folder = os.path.join(analysed_drive, item[:-4], "Analysis")
@@ -297,6 +482,8 @@ for item in zipped_data:
         os.makedirs(world_folder)
     # create a temp folder in current working directory to store data (contents of unzipped folder)
     day_folder = os.path.join(current_working_directory, "world_temp")
+    # at what time resolution to build raw live stim and world camera data?
+    bucket_size = 4 #milliseconds
     # unzip current zipped folder into temp folder, this function checks whether the folder is unzippable
     # if it unzips, the function returns True; if it doesn't unzip, the function returns False
     if unpack_to_temp(day_zipped, day_folder):
@@ -309,7 +496,9 @@ for item in zipped_data:
         this_day_world_vids_width = []
         # initialize time bucket dictionary for raw live stim vids
         this_day_rawLiveVid_tbucket = {key:{'Vid Count':0} for key in stim_vids}
+        ###################################
         # extract world vid from each trial
+        ###################################
         current_trial = 0
         for trial_folder in trial_folders:
             # add exception handling so that a weird day doesn't totally break everything 
@@ -325,7 +514,6 @@ for item in zipped_data:
                     monitor_score = np.sum(monitor_zoom)
                     # pick a pixel where it should be bright because people are centering their eyes in the cameras
                     if monitor_zoom[115,200]>=0.7:
-                        # calculate language choice - STILL NEED TO DEBUG
                         ###################################
                         # Load CSVs and create timestamps
                         # ------------------------------
@@ -341,15 +529,16 @@ for item in zipped_data:
                         ####################################
                         stimuli_name = world_csv_path.split("_")[-2]
                         stimuli_number = stim_name_to_float[stimuli_name]
-                        # at what time resolution to build eye and world camera data?
-                        bucket_size = 4 #milliseconds
                         # Load world CSV
                         world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ') # row = timestamp, not frame
                         ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                         # create a "raw live stimulus video" array by combining framerate info from world cam with luminance values from raw vids
                         print("Extracting world vid frames and creating raw live stim vid for %s..." % os.path.basename(world_video_path))
-                        # save raw live stim vid and save world cam frames as a sanity check
-                        supersampled_worldCam_rawLiveVid(world_video_path, world_timestamps, rawStimLum_dict, world_folder, bucket_size)
+                        # save raw live stim vid as binary files and return world cam frames as a sanity check
+                        worldCam_vidWidth, worldCam_vidHeight, worldCam_supersampledFrames, rawLiveVid_supersampledFrames = supersampled_worldCam_rawLiveVid(world_video_path, world_timestamps, rawStimLum_dict, world_folder, bucket_size)
+                        add_to_daily_worldCam_dict(worldCam_supersampledFrames, stimuli_number, this_day_worldCam_tbucket)
+                        this_day_world_vids_width.append(worldCam_vidWidth)
+                        this_day_world_vids_height.append(worldCam_vidHeight)
                         # ------------------------------
                         # ------------------------------
                         # Report progress
@@ -366,9 +555,41 @@ for item in zipped_data:
                 cv2.destroyAllWindows()
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
+
+        ##################################################
+        # check that all videos have same height and width
+        ##################################################
+        if not this_day_world_vids_height:
+            print("No world vids averaged for {date}".format(date=this_day_date))
+            # delete temporary file with unzipped data contents
+            print("Deleting temp folder of unzipped data...")
+            shutil.rmtree(day_folder)
+            print("Delete successful!")
+            continue
+        if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
+            if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
+                unravel_height = this_day_world_vids_height[0]
+                unravel_width = this_day_world_vids_width[0]
+        ###########################################
+        # average worldCam sanityCheck for each day
+        ###########################################
+        print('Calculating mean world camera videos for %s' % (this_day_date))
+        thisDay_meanWorldCam = calculate_meanPerDay_worldCam(this_day_worldCam_tbucket)
+        print('Adding daily mean world camera to monthly summed world camera video...')
+        add_to_monthly_worldCam_dict(thisDay_meanWorldCam, this_month, meanPerMonth_worldCam)
+
+
+  
+
+
+
+        #################
         # report progress
+        #################
         print("Finished extracting from {day}".format(day=day_zipped[:-4]))
+        ###################################################
         # delete temporary file with unzipped data contents
+        ###################################################
         print("Deleting temp folder of unzipped data...")
         shutil.rmtree(day_folder)
         print("Delete successful!")
