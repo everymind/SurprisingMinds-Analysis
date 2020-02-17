@@ -448,19 +448,14 @@ for item in zipped_data:
         monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
         extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
         # delete daily mean intermediate files
-
-
-        
-        for daily_folder in current_month_analysed:
-            current_date = daily_folder.split(os.sep)[-1].split('_')[1]
-            analysis_folder = os.path.join(daily_folder, "Analysis")
-            world_folder = os.path.join(analysis_folder, "world")
-            print("Deleting daily world vid average files for {date}...".format(date=current_date))
-            shutil.rmtree(world_folder)
+        for day_extracted in this_month_extracted:
+            daily_mean_folder = os.path.join(analysed_drive, day_extracted, 'Analysis', 'world')
+            print("Deleting daily mean worldCam and rawStim video files for %s..." % (day_extracted.split('_')[1]))
+            shutil.rmtree(daily_mean_folder)
             print("Delete successful!")
-            print("Making empty 'world' folder for {date}...".format(date=current_date))
-            os.makedirs(world_folder)
-        print("Finished averaging world video frames for {month}!".format(month=item_year_month))
+            print("Making empty 'world' folder for %s..." % (day_extracted.split('_')[1]))
+            os.makedirs(daily_mean_folder)
+        print("Finished averaging world video frames for %s!" % (item_year_month))
         continue
     #############################################################################
     # if world vid frames in this folder haven't already been extracted, EXTRACT!
