@@ -160,9 +160,6 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
         else:
             supersampled_worldCam.append(current_frame)
     supersampled_worldCam_array = np.array(supersampled_worldCam)
-    # save rawLiveVid
-    rawLiveVid_output = output_folder + os.sep + video_name[:-10] + '_rawLiveVid_%dmsTBs.npy' % (bucket_size_ms)
-    np.save(rawLiveVid_output, supersampled_rawLiveVid_array)
     # return worldCam sanity check
     return vid_width, vid_height, supersampled_worldCam_array, supersampled_rawLiveVid_array
 
@@ -185,7 +182,7 @@ def add_to_daily_rawLiveVid_dict(this_trial_rawLive_vid_frames, this_trial_stim_
     # keep track of how many videos are going into the average for this stim
     daily_rawLive_vid_dict[this_trial_stim_num]['Vid Count'] = daily_rawLive_vid_dict[this_trial_stim_num].get('Vid Count', 0) + 1
     this_trial_stim_vid = {}
-    for tb, row in enumerate(this_trial_world_vid_frames):
+    for tb, row in enumerate(this_trial_rawLive_vid_frames):
         tbucket_num = tb
         flattened_frame = row
         this_trial_stim_vid[tbucket_num] = flattened_frame
@@ -207,6 +204,18 @@ def calculate_meanPerDay_worldCam(day_worldCam_tbDict):
                 meanFrame = day_worldCam_tbDict[stim_num][key]['Summed Frame'] / day_worldCam_tbDict[stim_num][key]['Trial Count']
                 meanPerDay_worldCam[stim_num][key] = {'Mean Frame': meanFrame, 'Trial Count': day_worldCam_tbDict[stim_num][key]['Trial Count']}
     return meanPerDay_worldCam
+
+def calculate_meanPerDay_rawLiveVid(day_rawLiveVid_tbDict):
+    # intialize time bucket dict for mean worldcam for each day
+    meanPerDay_rawLiveVid = {key:{'Vid Count':0} for key in stim_vids}
+    for stim_num in day_rawLiveVid_tbDict.keys():
+        for key in day_rawLiveVid_tbDict[stim_num].keys():
+            if key == 'Vid Count':
+                meanPerDay_rawLiveVid[stim_num]['Vid Count'] = meanPerDay_rawLiveVid[stim_num]['Vid Count'] + day_rawLiveVid_tbDict[stim_num]['Vid Count']
+            else: 
+                meanLuminance = day_rawLiveVid_tbDict[stim_num][key]['Summed Luminance'] / day_rawLiveVid_tbDict[stim_num][key]['Trial Count']
+                meanPerDay_rawLiveVid[stim_num][key] = {'Mean Luminance': meanLuminance, 'Trial Count': day_rawLiveVid_tbDict[stim_num][key]['Trial Count']}
+    return meanPerDay_rawLiveVid
 
 def add_to_monthly_worldCam_dict(this_day_meanWorld_dict, this_day_month, monthly_world_vid_dict):
     for stim in this_day_meanWorld_dict.keys():
@@ -411,7 +420,9 @@ for folder in daily_csv_files:
 # DAYS THAT CANNOT BE UNZIPPED 
 invalid_zipped = ['2017-12-28','2018-01-25']
 # MONTHLY MEAN WORLD CAM
-meanPerMonth_worldCam = {key:{'Vid Count': 0} for key in stim_vids}
+meanPerMonth_worldCam = {key:{} for key in stim_vids}
+# MONTHLY MEAN RAW LIVE VID
+meanPerMonth_rawLiveStim = {key:{} for key in stim_vids}
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING 
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
@@ -540,6 +551,7 @@ for item in zipped_data:
                         this_day_world_vids_width.append(worldCam_vidWidth)
                         this_day_world_vids_height.append(worldCam_vidHeight)
                         # ------------------------------
+                        add_to_daily_rawLiveVid_dict(rawLiveVid_supersampledFrames, stimuli_number, this_day_rawLiveVid_tbucket)
                         # ------------------------------
                         # Report progress
                         cv2.destroyAllWindows()
@@ -555,7 +567,6 @@ for item in zipped_data:
                 cv2.destroyAllWindows()
                 print("Trial {trial} failed!".format(trial=current_trial))
                 current_trial = current_trial + 1
-
         ##################################################
         # check that all videos have same height and width
         ##################################################
@@ -577,6 +588,29 @@ for item in zipped_data:
         thisDay_meanWorldCam = calculate_meanPerDay_worldCam(this_day_worldCam_tbucket)
         print('Adding daily mean world camera to monthly summed world camera video...')
         add_to_monthly_worldCam_dict(thisDay_meanWorldCam, this_month, meanPerMonth_worldCam)
+        ###########################################
+        # average rawLiveStim video for each day
+        ###########################################
+        print('Calculating mean raw live stim videos for %s' % (this_day_date))
+        thisDay_meanRawLiveVid = calculate_meanPerDay_rawLiveVid(this_day_rawLiveVid_tbucket)
+        print('Adding daily mean raw live stim vid to monthly summed raw live stim vids...')
+        add_to_monthly_rawLiveStim_dict(thisDay_meanRawLiveVid, this_month, meanPerMonth_rawLiveStim)
+
+def add_to_monthly_rawLiveStim_dict(this_day_meanRawLive_dict, this_day_month, monthly_rawLive_vid_dict):
+    for stim in this_day_meanRawLive_dict.keys():
+        if this_day_month in monthly_rawLive_vid_dict[stim].keys():
+            for timebucket in this_day_meanRawLive_dict[stim].keys():
+                if timebucket == 'Vid Count':
+                    # collect vid count
+                    monthly_rawLive_vid_dict[stim][this_day_month]['Vid Count'] = monthly_rawLive_vid_dict[stim][this_day_month]['Vid Count'] + this_day_meanRawLive_dict[stim]['Vid Count']
+                else:
+                    monthly_rawLive_vid_dict[stim][this_day_month][key] = monthly_rawLive_vid_dict[stim][this_day_month][timebucket] + this_day_meanRawLive_dict[stim][timebucket]
+        else:
+            for timebucket in this_day_meanRawLive_dict[stim].keys():
+                if timebucket == 'Vid Count':
+                    monthly_rawLive_vid_dict[stim][this_day_month] = {'Vid Count': this_day_meanRawLive_dict[stim]['Vid Count']}
+                else: 
+                    monthly_rawLive_vid_dict[stim][this_day_month][timebucket] = this_day_meanRawLive_dict[stim][timebucket]
 
 
   
