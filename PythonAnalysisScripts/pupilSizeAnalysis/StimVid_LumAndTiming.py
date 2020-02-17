@@ -335,9 +335,11 @@ sys.stdout = Logger()
 # DATA AND OUTPUT FILE LOCATIONS
 ###################################
 # Synology drive
-# on lab computer
+# on lab computer - THE REAL THING
 #data_drive = r"\\Diskstation\SurprisingMinds"
 #analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+# on lab computer - DEBUGGING
+#data_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\debuggingData"
 # on laptop
 data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
 analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
