@@ -246,6 +246,63 @@ def save_daily_rawLiveStim_meanLums(this_day_rawLiveStim_dict, this_day_month, s
         thisStimRawLive_output = save_folder + os.sep + '%s_Stim%d_meanRawLiveStim_%dVids.npy' % (this_day_month, int(stim), vidCount)
         np.save(thisStimRawLive_output, thisStimRawLive)
 
+def extract_daily_means_and_add_to_worldCam_or_rawLiveStim(dailyMean_binaryFiles, this_month_all_worldCam, this_month_all_rawLiveStim):
+    for daily_mean_file in dailyMean_binaryFiles:
+        daily_date = os.path.basename(daily_mean_file).split('_')[0]
+        daily_mean_stim_num = stim_name_to_float[os.path.basename(daily_mean_file).split('_')[1]]
+        daily_mean_type = os.path.basename(daily_mean_file).split('_')[2]
+        daily_mean_vid_count = int(os.path.basename(daily_mean_file).split('_')[3][:-8])
+        if daily_mean_type == 'meanWorldCam':
+            this_file_dictionary = this_month_all_worldCam
+            timebucket_mean_name = 'Mean Frame'
+        if daily_mean_type == 'meanRawLiveStim':
+            this_file_dictionary = this_month_all_rawLiveStim
+            timebucket_mean_name = 'Mean Luminance'
+        this_file_dictionary[daily_mean_stim_num]['Vid Count'] = this_file_dictionary[daily_mean_stim_num]['Vid Count'] + daily_mean_vid_count
+        daily_mean = np.load(daily_mean_file)
+        # format of daily_mean: [timebucket, thisTimebucketMean_trialCount, thisTimebucketMean]
+        for row in daily_mean:
+            timebucket = row[0]
+            thisTimebucketMean_trialCount = row[1]
+            thisTimebucketMean = row[2]
+            if timebucket in this_file_dictionary[daily_mean_stim_num].keys():
+                this_file_dictionary[daily_mean_stim_num][timebucket][daily_date] = {'Trial Count': thisTimebucketMean_trialCount, timebucket_mean_name: thisTimebucketMean}
+            else:
+                this_file_dictionary[daily_mean_stim_num][timebucket] = {daily_date: {'Trial Count': thisTimebucketMean_trialCount, timebucket_mean_name: thisTimebucketMean}}
+
+def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
+    monthly_mean_stim = {key:{'Vid Count':0} for key in stim_vids}
+    if stim_type == 'meanWorldCam':
+        timebucket_mean_name = 'Mean Frame'
+    if stim_type == 'meanRawLiveStim':
+        timebucket_mean_name = 'Mean Luminance'
+    for stim in this_month_allStim_dict.keys():
+        for timebucket in this_month_allStim_dict[stim].keys():
+            if timebucket == 'Vid Count':
+                monthly_mean_stim[stim]['Vid Count'] = monthly_mean_stim[stim]['Vid Count'] + this_month_allStim_dict[stim]['Vid Count']
+            else:
+                weighted_means = []
+                weights = []
+                for month in this_month_allStim_dict[stim][timebucket].keys():
+                    weighted_mean = this_month_allStim_dict[stim][timebucket][month]['Trial Count'] * this_month_allStim_dict[stim][timebucket][month][timebucket_mean_name]
+                    weighted_means.append(weighted_mean)
+                    weights.append(this_month_allStim_dict[stim][timebucket][month]['Trial Count'])
+                weighted_means_array = np.array(weighted_means)
+                weights_array = np.array(weights)
+                this_timebucket_weighted_mean = np.sum(weighted_means, axis=0)/np.sum(weights_array)
+                monthly_mean_stim[stim][timebucket] = {'Trial Count':np.sum(weights_array), timebucket_mean_name: this_timebucket_weighted_mean}
+    for stim in monthly_mean_stim.keys():
+        this_stim_weighted_mean = []
+        for timebucket in monthly_mean_stim[stim].keys():
+            if timebucket == 'Vid Count':
+                vid_count = monthly_mean_stim[stim][timebucket]
+            else:
+                this_mean_frame = monthly_mean_stim[stim][timebucket][timebucket_mean_name]
+                this_mean_frame_weight = monthly_mean_stim[stim][timebucket]['Trial Count']
+                this_stim_weighted_mean.append([timebucket, this_mean_frame_weight, this_mean_frame])
+        this_stim_weighted_mean_output = monthly_mean_folder + os.sep + '%s_Stim%d_%s_%dVids.npy' % (item_year_month, int(stim), stim_type, vid_count)
+        np.save(this_stim_weighted_mean_output, this_stim_weighted_mean)
+
 ###################################
 # SET CURRENT WORKING DIRECTORY
 ###################################
@@ -288,7 +345,7 @@ analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPyt
 rawStimLum_data = os.path.join(analysed_drive, "rawStimLums")
 analysed_folders = sorted(os.listdir(analysed_drive))
 daily_csv_files = fnmatch.filter(analysed_folders, 'SurprisingMinds_*')
-monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
+monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 
 ###################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
@@ -371,31 +428,29 @@ for item in zipped_data:
         ##################################################################
         print('This month extraction completed: {month_list}'.format(month_list=this_month_extracted))
         # load daily mean files and organize by worldCam/rawLiveStim and by stim
-        thisMonth_worldCam = {key for key in stim_vids}
-        thisMonth_rawLiveStim = {key for key in stim_vids}
+        thisMonth_worldCam = {key:{'Vid Count':0} for key in stim_vids}
+        thisMonth_rawLiveStim = {key:{'Vid Count':0} for key in stim_vids}
         for day_extracted in this_month_extracted:
             daily_mean_files = glob.glob(analysed_drive + os.sep + day_extracted + os.sep + 'Analysis' + os.sep + 'world' + os.sep + '*.npy')
-            for daily_mean_file in daily_mean_files:
-                daily_mean_stim_num = stim_name_to_float[os.path.basename(daily_mean_file).split('_')[1]]
-                daily_mean_type = os.path.basename(daily_mean_file).split('_')[2]
-                daily_mean_weight = int(os.path.basename(daily_mean_file).split('_')[3][:-8])
-                daily_mean = np.load(daily_mean_file)
-                if daily_mean_type == 'meanWorldCam':
-                    thisMonth_worldCam[daily_mean_stim_num] = 
-                
-
-        # take world cam frames for each day and build a monthly average world cam sequence for each stim
-        search_pattern = os.path.join(analysed_drive, 'SurprisingMinds_'+item_year_month+'-*')
-        current_month_analysed = glob.glob(search_pattern)
-        current_month_summed_world_vids, world_vid_height, world_vid_width = add_to_monthly_world_vids(current_month_analysed, stim_vids)
-        average_monthly_world_vids(current_month_summed_world_vids, world_vid_height, world_vid_width, item_year_month, analysed_drive)
-        
+            extract_daily_means_and_add_to_worldCam_or_rawLiveStim(daily_mean_files, thisMonth_worldCam, thisMonth_rawLiveStim)
+        # create folder for this month mean files
+        monthly_mean_folder = analysed_drive + os.sep + 'MeanStimuli_' + item_year_month
+        if not os.path.exists(monthly_mean_folder):
+            os.makedirs(monthly_mean_folder)
+        # take weighted mean at each timebucket and save as monthly mean intermediate binary file
+        print('Saving monthly weighted mean of worldCam for %s...'%(item_year_month))
+        save_monthly_weighted_meanStim(thisMonth_worldCam, 'meanWorldCam')
+        print('Saving monthly weighted mean of rawLive for %s...'%(item_year_month))
+        save_monthly_weighted_meanStim(thisMonth_rawLiveStim, 'meanRawLiveStim')
         # update list of already extracted months
         print("Updating list of extracted months...")
         analysed_folders = sorted(os.listdir(analysed_drive))
-        monthly_extracted_data = fnmatch.filter(analysed_folders, 'WorldVidAverage_*')
+        monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
         extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
-        # delete daily videos
+        # delete daily mean intermediate files
+
+
+        
         for daily_folder in current_month_analysed:
             current_date = daily_folder.split(os.sep)[-1].split('_')[1]
             analysis_folder = os.path.join(daily_folder, "Analysis")
@@ -423,7 +478,6 @@ for item in zipped_data:
     world_folder = os.path.join(analysis_folder, "world")
     # Create world_folder if it doesn't exist
     if not os.path.exists(world_folder):
-        #print("Creating csv folder.")
         os.makedirs(world_folder)
     # create a temp folder in current working directory to store data (contents of unzipped folder)
     day_folder = os.path.join(current_working_directory, "world_temp")
