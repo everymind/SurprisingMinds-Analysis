@@ -233,6 +233,22 @@ def add_to_monthly_worldCam_dict(this_day_meanWorld_dict, this_day_month, monthl
                 else: 
                     monthly_world_vid_dict[stim][this_day_month][timebucket] = this_day_meanWorld_dict[stim][timebucket]
 
+def add_to_monthly_rawLiveStim_dict(this_day_meanRawLive_dict, this_day_month, monthly_rawLive_vid_dict):
+    for stim in this_day_meanRawLive_dict.keys():
+        if this_day_month in monthly_rawLive_vid_dict[stim].keys():
+            for timebucket in this_day_meanRawLive_dict[stim].keys():
+                if timebucket == 'Vid Count':
+                    monthly_rawLive_vid_dict[stim][this_day_month]['Vid Count'] = monthly_rawLive_vid_dict[stim][this_day_month]['Vid Count'] + this_day_meanRawLive_dict[stim]['Vid Count']
+                else:
+                    monthly_rawLive_vid_dict[stim][this_day_month][key] = monthly_rawLive_vid_dict[stim][this_day_month][timebucket] + this_day_meanRawLive_dict[stim][timebucket]
+        else:
+            for timebucket in this_day_meanRawLive_dict[stim].keys():
+                if timebucket == 'Vid Count':
+                    monthly_rawLive_vid_dict[stim][this_day_month] = {'Vid Count': this_day_meanRawLive_dict[stim]['Vid Count']}
+                else: 
+                    monthly_rawLive_vid_dict[stim][this_day_month][timebucket] = this_day_meanRawLive_dict[stim][timebucket]
+
+
 
 
 
@@ -587,36 +603,14 @@ for item in zipped_data:
         print('Calculating mean world camera videos for %s' % (this_day_date))
         thisDay_meanWorldCam = calculate_meanPerDay_worldCam(this_day_worldCam_tbucket)
         print('Adding daily mean world camera to monthly summed world camera video...')
-        add_to_monthly_worldCam_dict(thisDay_meanWorldCam, this_month, meanPerMonth_worldCam)
+        add_to_monthly_worldCam_dict(thisDay_meanWorldCam, this_day_date, meanPerMonth_worldCam)
         ###########################################
         # average rawLiveStim video for each day
         ###########################################
         print('Calculating mean raw live stim videos for %s' % (this_day_date))
         thisDay_meanRawLiveVid = calculate_meanPerDay_rawLiveVid(this_day_rawLiveVid_tbucket)
         print('Adding daily mean raw live stim vid to monthly summed raw live stim vids...')
-        add_to_monthly_rawLiveStim_dict(thisDay_meanRawLiveVid, this_month, meanPerMonth_rawLiveStim)
-
-def add_to_monthly_rawLiveStim_dict(this_day_meanRawLive_dict, this_day_month, monthly_rawLive_vid_dict):
-    for stim in this_day_meanRawLive_dict.keys():
-        if this_day_month in monthly_rawLive_vid_dict[stim].keys():
-            for timebucket in this_day_meanRawLive_dict[stim].keys():
-                if timebucket == 'Vid Count':
-                    # collect vid count
-                    monthly_rawLive_vid_dict[stim][this_day_month]['Vid Count'] = monthly_rawLive_vid_dict[stim][this_day_month]['Vid Count'] + this_day_meanRawLive_dict[stim]['Vid Count']
-                else:
-                    monthly_rawLive_vid_dict[stim][this_day_month][key] = monthly_rawLive_vid_dict[stim][this_day_month][timebucket] + this_day_meanRawLive_dict[stim][timebucket]
-        else:
-            for timebucket in this_day_meanRawLive_dict[stim].keys():
-                if timebucket == 'Vid Count':
-                    monthly_rawLive_vid_dict[stim][this_day_month] = {'Vid Count': this_day_meanRawLive_dict[stim]['Vid Count']}
-                else: 
-                    monthly_rawLive_vid_dict[stim][this_day_month][timebucket] = this_day_meanRawLive_dict[stim][timebucket]
-
-
-  
-
-
-
+        add_to_monthly_rawLiveStim_dict(thisDay_meanRawLiveVid, this_day_date, meanPerMonth_rawLiveStim)
         #################
         # report progress
         #################
