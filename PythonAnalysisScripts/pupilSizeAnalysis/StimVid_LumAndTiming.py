@@ -312,7 +312,7 @@ def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
         np.save(this_stim_weighted_mean_output, this_stim_weighted_mean)
 
 ###################################
-# DATA AND OUTPUT FILE LOCATIONS
+# DATA AND OUTPUT FILE LOCATIONS 
 ###################################
 # Synology drive
 # on lab computer - THE REAL THING
