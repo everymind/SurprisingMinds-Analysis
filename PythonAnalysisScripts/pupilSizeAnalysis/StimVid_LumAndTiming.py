@@ -70,19 +70,15 @@ def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp, fill_patte
     end_timestamp = end_timestamp.split('+')[0][:-3]
     buckets_start_time = datetime.datetime.strptime(start_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
     buckets_end_time = datetime.datetime.strptime(end_timestamp, "%Y-%m-%dT%H:%M:%S.%f")
-
     current_bucket = buckets_start_time
     time_buckets = []
     window = datetime.timedelta(milliseconds=bucket_size_ms)
     while current_bucket <= buckets_end_time:
         time_buckets.append(current_bucket)
         current_bucket = current_bucket + window
-
     bucket_list = dict.fromkeys(time_buckets)
-
     for key in time_buckets: 
         bucket_list[key] = fill_pattern
-
     return bucket_list
 
 def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_window):
@@ -632,6 +628,7 @@ for item in zipped_data:
         invalid_zipped.append(this_day_date)
         print("Days that cannot be unzipped: %s" % (invalid_zipped))
         logging.warning("Days that cannot be unzipped: %s" % (invalid_zipped))
+
 print("Completed world camera frame extraction and raw live stimuli creation on all data folders in this drive!")
 logging.info("Completed world camera frame extraction and raw live stimuli creation on all data folders in this drive!")
 
@@ -704,6 +701,7 @@ for item in already_extracted_daily:
         os.makedirs(daily_mean_folder)
     print("Finished averaging world video frames for %s!" % (item_year_month))
     logging.info("Finished averaging world video frames for %s!" % (item_year_month))
+
 print("Completed calculating monthly weighted mean world camera and raw live stimulus for all months on this drive!")
 logging.info("Completed calculating monthly weighted mean world camera and raw live stimulus for all months on this drive!")
 #FIN
