@@ -4,6 +4,7 @@
 ### also save world cam luminance as sanity check/ground truth 
 ### create monthly averages of both raw live stim vid and world cam sanity check
 ### output as data files 
+### NOTE: NEED TO RUN THIS SCRIPT AT LEAST TWICE
 ### ------------------------------------------------------------------------- ###
 import os
 import glob
@@ -349,9 +350,9 @@ analysed_folders = sorted(os.listdir(analysed_drive))
 daily_csv_files = fnmatch.filter(analysed_folders, 'SurprisingMinds_*')
 monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 
-###################################
+############################################################################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
-###################################
+############################################################################################
 for folder in daily_csv_files:
     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
     if 'world' in subdirs:
@@ -398,9 +399,9 @@ invalid_zipped = ['2017-12-28','2018-01-25']
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING 
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
-    this_month = this_day_date[:-3]
     ########################################################################
     # check to see if this folder has already had world vid frames extracted
+    # this condition is for when the script is interrupted
     ########################################################################
     if item[:-4] in already_extracted_daily:
         print("World vid frames from {name} has already been extracted".format(name=item))
@@ -591,10 +592,12 @@ for item in zipped_data:
         thisDay_meanRawLiveVid = calculate_meanPerDay_rawLiveVid(this_day_rawLiveVid_tbucket)
         print('Saving daily mean raw live stim videos...')
         save_daily_rawLiveStim_meanLums(thisDay_meanRawLiveVid, this_day_date, world_folder)
-        #################
-        # report progress
-        #################
+        ####################################################
+        # report progress and update already_extracted_daily
+        ####################################################
         print("Finished extracting from {day}".format(day=day_zipped[:-4]))
+        print("Updating list of days already processed for world camera data...")
+        already_extracted_daily.append(item[:-4])
         ###################################################
         # delete temporary file with unzipped data contents
         ###################################################
@@ -605,7 +608,68 @@ for item in zipped_data:
         print("Could not unzip data folder for day {name}".format(name=this_day_date))
         invalid_zipped.append(this_day_date)
         print("Days that cannot be unzipped: {list}".format(list=invalid_zipped))
-print("Completed world vid frame extraction on all data folders in this drive!")
+print("Completed world camera frame extraction and raw live stimuli creation on all data folders in this drive!")
+
+##################################################
+# build monthly mean worldCam and rawLive vid data
+##################################################
+for item in already_extracted_daily:
+    this_day_date = item.split('_')[1]
+    ########################################################################################
+    # check to see if this folder has already been averaged into a monthly world cam average
+    ########################################################################################
+    item_year_month = this_day_date[:7]
+    if item_year_month in extracted_months:
+        print("World camera frames from {name} have already been consolidated into a monthly average".format(name=item_year_month))
+        continue
+    ########################################################################################
+    # if no monthly world cam average made yet for this month
+    # check that the full month has been extracted by checking for all daily mean worldCam and rawLiveStim binary files
+    ########################################################################################
+    this_month_extracted = fnmatch.filter(already_extracted_daily, 'SurprisingMinds_' + item_year_month + '*')
+    for i, day_extracted in enumerate(this_month_extracted):
+        day_extracted_files = os.listdir(os.path.join(analysed_drive, day_extracted, 'Analysis', 'world'))
+        if len(day_extracted_files) != 12:
+            this_month_extracted.pop(i)
+    this_month_data = fnmatch.filter(zipped_data, 'SurprisingMinds_' + item_year_month + '*')
+    this_month_invalid = fnmatch.filter(invalid_zipped, item_year_month)
+    if len(this_month_extracted) != len(this_month_data) + len(this_month_invalid):
+        print("World vid frames for {month} not yet completed".format(month=item_year_month))
+        continue
+    ##################################################################
+    # full month extracted? make monthly mean worldCam and rawLiveStim
+    ##################################################################
+    print('This month extraction completed: {month_list}'.format(month_list=this_month_extracted))
+    # load daily mean files and organize by worldCam/rawLiveStim and by stim
+    thisMonth_worldCam = {key:{'Vid Count':0} for key in stim_vids}
+    thisMonth_rawLiveStim = {key:{'Vid Count':0} for key in stim_vids}
+    for day_extracted in this_month_extracted:
+        daily_mean_files = glob.glob(analysed_drive + os.sep + day_extracted + os.sep + 'Analysis' + os.sep + 'world' + os.sep + '*.npy')
+        extract_daily_means_and_add_to_worldCam_or_rawLiveStim(daily_mean_files, thisMonth_worldCam, thisMonth_rawLiveStim)
+    # create folder for this month mean files
+    monthly_mean_folder = analysed_drive + os.sep + 'MeanStimuli_' + item_year_month
+    if not os.path.exists(monthly_mean_folder):
+        os.makedirs(monthly_mean_folder)
+    # take weighted mean at each timebucket and save as monthly mean intermediate binary file
+    print('Saving monthly weighted mean of worldCam for %s...'%(item_year_month))
+    save_monthly_weighted_meanStim(thisMonth_worldCam, 'meanWorldCam')
+    print('Saving monthly weighted mean of rawLive for %s...'%(item_year_month))
+    save_monthly_weighted_meanStim(thisMonth_rawLiveStim, 'meanRawLiveStim')
+    # update list of already extracted months
+    print("Updating list of extracted months...")
+    analysed_folders = sorted(os.listdir(analysed_drive))
+    monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
+    extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
+    # delete daily mean intermediate files
+    for day_extracted in this_month_extracted:
+        daily_mean_folder = os.path.join(analysed_drive, day_extracted, 'Analysis', 'world')
+        print("Deleting daily mean worldCam and rawStim video files for %s..." % (day_extracted.split('_')[1]))
+        shutil.rmtree(daily_mean_folder)
+        print("Delete successful!")
+        print("Making empty 'world' folder for %s..." % (day_extracted.split('_')[1]))
+        os.makedirs(daily_mean_folder)
+    print("Finished averaging world video frames for %s!" % (item_year_month))
+print("Completed calculating monthly weighted mean world camera and raw live stimulus for all months on this drive!")
 # close logfile
 sys.stdout.close()
 #FIN
