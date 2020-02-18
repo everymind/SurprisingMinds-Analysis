@@ -316,13 +316,13 @@ def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
 ###################################
 # Synology drive
 # on lab computer - THE REAL THING
-#data_drive = r"\\Diskstation\SurprisingMinds"
-#analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+data_drive = r"\\Diskstation\SurprisingMinds"
+analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # on lab computer - DEBUGGING
 #data_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\debuggingData"
 # on laptop
-data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
-analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
+#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # collect input data subfolders
 rawStimLum_data = os.path.join(analysed_drive, "rawStimLums")
 analysed_folders = sorted(os.listdir(analysed_drive))
@@ -332,10 +332,10 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 ############################################################################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ############################################################################################
-for folder in daily_csv_files:
-    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-    if 'world' in subdirs:
-        shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+# for folder in daily_csv_files:
+#     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+#     if 'world' in subdirs:
+#         shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
 
 ###################################
 # STIMULUS INFO
