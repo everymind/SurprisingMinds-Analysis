@@ -396,6 +396,8 @@ for folder in daily_csv_files:
 
 # DAYS THAT CANNOT BE UNZIPPED 
 invalid_zipped = ['2017-12-28','2018-01-25']
+# DAYS WITH NO WORLD VIDS (no valid trials)
+no_valid_trials = []
 # BEGIN WORLD VID FRAME EXTRACTION/AVERAGING 
 for item in zipped_data:
     this_day_date = item[:-4].split('_')[1]
@@ -418,13 +420,20 @@ for item in zipped_data:
         ########################################################################################
         this_month_extracted = fnmatch.filter(already_extracted_daily, 'SurprisingMinds_' + item_year_month + '*')
         for i, day_extracted in enumerate(this_month_extracted):
-            day_extracted_files = os.listdir(os.path.join(analysed_drive, day_extracted, 'Analysis', 'world'))
-            if len(day_extracted_files) != 12:
-                this_month_extracted.pop(i)
+            if day_extracted in no_valid_trials:
+                print('No valid trials during %s' % (day_extracted.split('_')[1]))
+            else:
+                day_extracted_files = os.listdir(os.path.join(analysed_drive, day_extracted, 'Analysis', 'world'))
+                if len(day_extracted_files) != 12:
+                    this_month_extracted.pop(i)
         this_month_data = fnmatch.filter(zipped_data, 'SurprisingMinds_' + item_year_month + '*')
-        this_month_invalid = fnmatch.filter(invalid_zipped, item_year_month)
+        this_month_invalid = fnmatch.filter(invalid_zipped, item_year_month + '*')
         if len(this_month_extracted) != len(this_month_data) + len(this_month_invalid):
-            print("World vid frames for {month} not yet completed".format(month=item_year_month))
+            print("World camera frames for {month} not yet completed".format(month=item_year_month))
+            continue
+        this_month_no_trials = fnmatch.filter(no_valid_trials, 'SurprisingMinds_' + item_year_month + '*')
+        if len(this_month_extracted) == len(this_month_no_trials):
+            print("No valid trials collected during %s" % (item_year_month))
             continue
         ##################################################################
         # full month extracted? make monthly mean worldCam and rawLiveStim
@@ -569,6 +578,7 @@ for item in zipped_data:
         ##################################################
         if not this_day_world_vids_height:
             print("No world vids averaged for {date}".format(date=this_day_date))
+            no_valid_trials.append(item)
             # delete temporary file with unzipped data contents
             print("Deleting temp folder of unzipped data...")
             shutil.rmtree(day_folder)
