@@ -391,6 +391,8 @@ for i, folder in enumerate(zipped_data):
         last_day_each_month.append(current_year_month_day)
         current_year_month_day = this_year_month_day
 
+print('Last day of each month: %s' % (last_day_each_month))
+logging.info('Last day of each month: %s' % (last_day_each_month))
 # DAYS THAT CANNOT BE UNZIPPED 
 invalid_zipped = ['2017-12-28','2018-01-25']
 # DAYS WITH NO WORLD VIDS (no valid trials)
