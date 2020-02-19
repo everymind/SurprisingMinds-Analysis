@@ -267,7 +267,7 @@ def extract_daily_means_and_add_to_worldCam_or_rawLiveStim(dailyMean_binaryFiles
             this_file_dictionary = this_month_all_rawLiveStim
             timebucket_mean_name = 'Mean Luminance'
         this_file_dictionary[daily_mean_stim_num]['Vid Count'] = this_file_dictionary[daily_mean_stim_num]['Vid Count'] + daily_mean_vid_count
-        daily_mean = np.load(daily_mean_file)
+        daily_mean = np.load(daily_mean_file, allow_pickle=True)
         # format of daily_mean: [timebucket, thisTimebucketMean_trialCount, thisTimebucketMean]
         for row in daily_mean:
             timebucket = row[0]
@@ -316,13 +316,13 @@ def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
 ###################################
 # Synology drive
 # on lab computer - THE REAL THING
-#data_drive = r"\\Diskstation\SurprisingMinds"
-#analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+data_drive = r"\\Diskstation\SurprisingMinds"
+analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # on lab computer - DEBUGGING
 #data_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\debuggingData"
 # on laptop
-data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
-analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
+#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # collect input data subfolders
 rawStimLum_data = os.path.join(analysed_drive, "rawStimLums")
 analysed_folders = sorted(os.listdir(analysed_drive))
@@ -391,6 +391,7 @@ for i, folder in enumerate(zipped_data):
             last_day_each_month.append(this_year_month_day)
             continue
         else:
+            current_year_month_day = this_year_month_day
             continue
     else:
         last_day_each_month.append(current_year_month_day)
