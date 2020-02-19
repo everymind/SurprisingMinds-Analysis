@@ -316,13 +316,13 @@ def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
 ###################################
 # Synology drive
 # on lab computer - THE REAL THING
-data_drive = r"\\Diskstation\SurprisingMinds"
-analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#data_drive = r"\\Diskstation\SurprisingMinds"
+#analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # on lab computer - DEBUGGING
 #data_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\debuggingData"
 # on laptop
-#data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
-#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
+analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # collect input data subfolders
 rawStimLum_data = os.path.join(analysed_drive, "rawStimLums")
 analysed_folders = sorted(os.listdir(analysed_drive))
@@ -332,10 +332,10 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 ############################################################################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ############################################################################################
-# for folder in daily_csv_files:
-#     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-#     if 'world' in subdirs:
-#         shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+for folder in daily_csv_files:
+    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+    if 'world' in subdirs:
+        shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
 
 ###################################
 # STIMULUS INFO
@@ -380,16 +380,21 @@ for i, folder in enumerate(zipped_data):
     this_year_month_day = folder.split('_')[1][:-4]
     this_year_month = this_year_month_day[:-3]
     if current_year_month_day == None:
-        current_year_month_day = this_year_month_day
+        if folder == zipped_data[-1]:
+            last_day_each_month.append(this_year_month_day)
+            continue
+        else:
+            current_year_month_day = this_year_month_day
+            continue
     if current_year_month_day[:-3] == this_year_month:
-        if i == len(zipped_data)-1:
+        if folder == zipped_data[-1]:
             last_day_each_month.append(this_year_month_day)
             continue
         else:
             continue
     else:
         last_day_each_month.append(current_year_month_day)
-        current_year_month_day = this_year_month_day
+        current_year_month_day = None
 
 print('Last day of each month: %s' % (last_day_each_month))
 logging.info('Last day of each month: %s' % (last_day_each_month))
