@@ -332,10 +332,10 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 ############################################################################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ############################################################################################
-for folder in daily_csv_files:
-    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-    if 'world' in subdirs:
-        shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+# for folder in daily_csv_files:
+#     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+#     if 'world' in subdirs:
+#         shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
 
 ###################################
 # STIMULUS INFO
