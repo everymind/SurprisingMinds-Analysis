@@ -29,7 +29,7 @@ current_working_directory = os.getcwd()
 ###################################
 # grab today's date
 now = datetime.datetime.now()
-logging.basicConfig(filename="WorldVidExtraction_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename="01_StimVid_LumAndTiming_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
 ###################################
 # FUNCTIONS
 ###################################
@@ -332,10 +332,10 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 ############################################################################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ############################################################################################
-# for folder in daily_csv_files:
-#     subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-#     if 'world' in subdirs:
-#         shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+for folder in daily_csv_files:
+    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+    if 'world' in subdirs:
+        shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
 
 ###################################
 # STIMULUS INFO
