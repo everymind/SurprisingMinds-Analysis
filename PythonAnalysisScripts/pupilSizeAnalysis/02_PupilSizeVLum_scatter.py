@@ -744,6 +744,8 @@ all_weighted_raw_octo = []
 all_weights_raw_octo = []
 # world cam
 all_weighted_world_keyFrames = {key:{} for key in stim_vids}
+# collect length of each stimulus type in 4ms resolution
+supersampled_length_all_stims = {key:[] for key in stim_vids}
 # extract and split into phases
 for monthly_mean_folder in monthly_mean_lums_folders:
     raw_live_stim_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanRawLiveStim_*.npy')
@@ -753,6 +755,7 @@ for monthly_mean_folder in monthly_mean_lums_folders:
         stim_type = stim_name_to_float[os.path.basename(raw_live_stim).split('_')[1]]
         vid_count = float(os.path.basename(raw_live_stim).split('_')[-1][:-8])
         raw_live_array = np.load(raw_live_stim)
+        supersampled_length_all_stims[stim_type].append(len(raw_live_array))
         this_file_weighted_doNotMove = []
         this_file_weights_doNotMove = []
         this_file_weighted_pulsingDots = []
@@ -969,9 +972,55 @@ np.save(Lco_allPhasesConcat_linRegress_output, Lco_allPhasesConcatLinRegress_all
 np.save(Lci_allPhasesConcat_linRegress_output, Lci_allPhasesConcatLinRegress_allDelays)
 
 ###############################################################
+# SANITY CHECK: calculate mean frame luminance from world cams and compare to raw live stim
 # Save monthly mean world cam videos for each stim type 
 # THIS SECTION UNDER CONSTRUCTION!!
 ###############################################################
+# calculate weighted mean frame
+all_weighted_mean_world_keyframes = {key:{} for key in stim_vids}
+for stim in all_weighted_world_keyFrames.keys():
+    all_weighted_mean_world_keyframes[stim] = {}
+    for keyframe in sorted(all_weighted_world_keyFrames[stim].keys()):
+        this_keyframe_weighted_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'], axis=0)
+        this_keyframe_weights_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weights'], axis=0)
+        all_weighted_mean_world_keyframes[stim][keyframe] = this_keyframe_weighted_sum/this_keyframe_weights_sum
+# fill in gaps between keyframes
+weighted_mean_world_all_frames = {key:None for key in stim_vids}
+for stim in all_weighted_mean_world_keyframes.keys():
+    ordered_keyframes = sorted(all_weighted_mean_world_keyframes[stim].keys())
+    this_stim_all_weighted_mean_frames = []
+    for i, keyframe in enumerate(ordered_keyframes):
+        if i==0 and keyframe==0:
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+            continue
+        if i==0 and keyframe!=0:
+            for frame in range(keyframe-1):
+                this_stim_all_weighted_mean_frames.append(np.nan)
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+            continue
+        else:
+            prev_keyframe = ordered_keyframes[i-1]
+            if keyframe - prev_keyframe > 1:
+                for frame in range(prev_keyframe, keyframe-1):
+                    this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][prev_keyframe])
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+    full_length_this_stim = np.min(supersampled_length_all_stims[stim])
+    if ordered_keyframes[-1] < full_length_this_stim:
+        for frame in range(ordered_keyframes[-1], full_length_this_stim):
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][ordered_keyframes[-1]])
+    weighted_mean_world_all_frames[stim] = this_stim_all_weighted_mean_frames
+# convert into a single lum value per frame
+world_supersampled_mean_lum_per_frame = {key:None for key in stim_vids}
+for stim in weighted_mean_world_all_frames.keys():
+    this_stim_mean_lum_per_frame = []
+    for frame in weighted_mean_world_all_frames[stim]:
+        mean_lum_this_frame = np.sum(frame)
+        this_stim_mean_lum_per_frame.append(mean_lum_this_frame)
+    world_supersampled_mean_lum_per_frame[stim] = this_stim_mean_lum_per_frame
+# split into phases
+
+        
+
 # temporarily switch matplotlib backend in order to write video
 plt.switch_backend("Agg")
 # convert dictionary of avg world vid frames into a list of arrays
