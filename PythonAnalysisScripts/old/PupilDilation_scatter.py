@@ -16,9 +16,6 @@ import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 from scipy import stats
-# set up log file to store all printed messages
-#current_working_directory = os.getcwd()
-
 ###################################
 # FUNCTIONS
 ###################################

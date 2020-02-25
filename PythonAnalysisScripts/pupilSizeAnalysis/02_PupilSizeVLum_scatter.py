@@ -210,8 +210,10 @@ def extract_MOI_tb_downsample_corrected(all_MOI_dict, stim_num, MOI_name, start_
         MOI_timebuckets.append(key)
     if start_or_end == 'start':
         MOI_timebucket = np.min(MOI_timebuckets)
-    else:
+    if start_or_end == 'end':
         MOI_timebucket = np.max(MOI_timebuckets)
+    if start_or_end != 'start' and start_or_end != 'end':
+        logging.warning('Incorrect input for parameter start_or_end! Current input: %s' % (start_or_end))
     return MOI_timebucket*downsample_mult
 
 def trim_phase_extractions(all_weighted_raw_extractions):
@@ -242,22 +244,20 @@ def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
         downsampled_mean_RL.append(this_chunk_mean)
     return np.array(downsampled_mean_RL)
 
-
-
-def phaseMeans_withDelay(delay_tb, normedPupils_array, calibLen_tb, allUniqueLens_tb, octoLen_tb):
+def phaseMeans_withDelay(delay_tb, normedPupils_array, calib_len_tb, allunique_lens_tb, octo_len_tb):
     allCalib = []
     allOcto = []
     allUnique = []
     # Split trials into calib, octo, and unique
     for i, uniqueStim in enumerate(normedPupils_array):
         thisUnique = []
-        uniqueLen_tb = allUniqueLens_tb[i]
+        uniqueLen_tb = allunique_lens_tb[i]
         for normed_trial in uniqueStim:
-            thisTrial_calib = normed_trial[delay_tb : delay_tb+calibLen_tb]
+            thisTrial_calib = normed_trial[delay_tb : delay_tb+calib_len_tb]
             allCalib.append(thisTrial_calib)
-            thisTrial_unique = normed_trial[delay_tb+calibLen_tb+1 : delay_tb+calibLen_tb+1+uniqueLen_tb]
+            thisTrial_unique = normed_trial[delay_tb+calib_len_tb+1 : delay_tb+calib_len_tb+1+uniqueLen_tb]
             thisUnique.append(thisTrial_unique)
-            thisTrial_octo = normed_trial[delay_tb+calibLen_tb+1+uniqueLen_tb+1 : delay_tb+calibLen_tb+1+uniqueLen_tb+1+octoLen_tb]
+            thisTrial_octo = normed_trial[delay_tb+calib_len_tb+1+uniqueLen_tb+1 : delay_tb+calib_len_tb+1+uniqueLen_tb+1+octo_len_tb]
             allOcto.append(thisTrial_octo)
         allUnique.append(thisUnique)
     calib_mean = np.nanmean(allCalib, axis=0)
@@ -303,9 +303,9 @@ def LumVsPupilSize_ScatterLinRegress(lum_array, pupilSize_array, phase_name, eye
     plt.close()
     return slope, intercept, rval, pval, stderr
 
-def splitPupils_withDelay_plotScatterLinRegress(delay_tb, downsample_ms, lum_array, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb, eyeAnalysis_name, savePlotsFolder, saveDataFolder):
+def splitPupils_withDelay_plotScatterLinRegress(delay_tb, downsample_ms, lum_array, pupilSize_array, calib_len_tb, unique_lens_tb, octo_len_tb, eyeAnalysis_name, savePlotsFolder, saveDataFolder):
     # split normalized pupil size data into trial phases
-    pupil_calib_mean, pupil_octo_mean, pupil_unique_means = phaseMeans_withDelay(delay_tb, pupilSize_array, calibLen_tb, uniqueLens_tb, octoLen_tb)
+    pupil_calib_mean, pupil_octo_mean, pupil_unique_means = phaseMeans_withDelay(delay_tb, pupilSize_array, calib_len_tb, unique_lens_tb, octo_len_tb)
     # save normalized, split and averaged pupil size data as intermediate files
     ## output path
     calib_output = saveDataFolder + os.sep + 'meanNormedPupilSize_calib_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
@@ -701,7 +701,7 @@ all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','201
 'octopus inks': {1003:['2017-10'],1004:['2017-11','2018-03']},
 'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']},
 'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}}
-
+# get start and end timebuckets in 4ms resolution
 do_not_move_start = {key:None for key in stim_vids}
 do_not_move_end = {key:None for key in stim_vids}
 pulsing_dots_start = {key:None for key in stim_vids}
@@ -711,7 +711,7 @@ uniques_end = {key:None for key in stim_vids}
 octo_start = {key:None for key in stim_vids}
 octo_end = {key:None for key in stim_vids}
 for stim_type in stim_vids:
-    dnm_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'do not move your head', 'start', downsample_multiplier)
+    dnm_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'calibration start', 'start', downsample_multiplier)
     dnm_end = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'upper left dot appears', 'end', downsample_multiplier)
     pd_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'upper left dot appears', 'start', downsample_multiplier)
     pd_end = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'calibration end', 'end', downsample_multiplier)
@@ -824,6 +824,10 @@ downsampled_mean_RL_uniques = {key:None for key in stim_vids}
 for stim in mean_raw_live_uniques:
     downsampled_mean_RL_uniques[stim] = downsample_mean_raw_live_stims(mean_raw_live_uniques[stim], downsample_multiplier)
 
+downsampled_mean_RL_all_phases = [downsampled_mean_RL_calib, downsampled_mean_RL_octo, downsampled_mean_RL_uniques[24.0], downsampled_mean_RL_uniques[25.0], downsampled_mean_RL_uniques[26.0], downsampled_mean_RL_uniques[27.0], downsampled_mean_RL_uniques[28.0], downsampled_mean_RL_uniques[29.0]]
+calib_len = len(downsampled_mean_RL_calib)
+octo_len = len(downsampled_mean_RL_octo)
+unique_lens = [len(downsampled_mean_RL_uniques[24.0]), len(downsampled_mean_RL_uniques[25.0]), len(downsampled_mean_RL_uniques[26.0]), len(downsampled_mean_RL_uniques[27.0]), len(downsampled_mean_RL_uniques[28.0]), len(downsampled_mean_RL_uniques[29.0])]
 ###################################
 # Normalize pupil size data 
 ###################################
@@ -888,7 +892,7 @@ Lci_allPhasesConcatLinRegress_allDelays = []
 for delay in range(delays):
     print('Delay: %d timebucket(s)'%(delay))
     # Right Contours
-    linRegress_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rco_normed, calibLen, uniqueLens, octoLen, 'RightContours', Rco_scatter_folder, normedMeanPupilSizes_folder)
+    linRegress_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Rco_normed, calib_len, unique_lens, octo_len, 'RightContours', Rco_scatter_folder, normedMeanPupilSizes_folder)
     Rco_allPhasesConcatLinRegress_allDelays.append(linRegress_Rco[0])
     Rco_calibLinRegress_allDelays.append(linRegress_Rco[1])
     Rco_octoLinRegress_allDelays.append(linRegress_Rco[2])
@@ -899,7 +903,7 @@ for delay in range(delays):
     Rco_u5LinRegress_allDelays.append(linRegress_Rco[7])
     Rco_u6LinRegress_allDelays.append(linRegress_Rco[8])
     # Right Circles
-    linRegress_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Rci_normed, calibLen, uniqueLens, octoLen, 'RightCircles', Rci_scatter_folder, normedMeanPupilSizes_folder)
+    linRegress_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Rci_normed, calib_len, unique_lens, octo_len, 'RightCircles', Rci_scatter_folder, normedMeanPupilSizes_folder)
     Rci_allPhasesConcatLinRegress_allDelays.append(linRegress_Rci[0])
     Rci_calibLinRegress_allDelays.append(linRegress_Rci[1])
     Rci_octoLinRegress_allDelays.append(linRegress_Rci[2])
@@ -910,7 +914,7 @@ for delay in range(delays):
     Rci_u5LinRegress_allDelays.append(linRegress_Rci[7])
     Rci_u6LinRegress_allDelays.append(linRegress_Rci[8])
     # Left Contours
-    linRegress_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lco_normed, calibLen, uniqueLens, octoLen, 'LeftContours', Lco_scatter_folder, normedMeanPupilSizes_folder)
+    linRegress_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Lco_normed, calib_len, unique_lens, octo_len, 'LeftContours', Lco_scatter_folder, normedMeanPupilSizes_folder)
     Lco_allPhasesConcatLinRegress_allDelays.append(linRegress_Lco[0])
     Lco_calibLinRegress_allDelays.append(linRegress_Lco[1])
     Lco_octoLinRegress_allDelays.append(linRegress_Lco[2])
@@ -921,7 +925,7 @@ for delay in range(delays):
     Lco_u5LinRegress_allDelays.append(linRegress_Lco[7])
     Lco_u6LinRegress_allDelays.append(linRegress_Lco[8])
     # Left Circles
-    linRegress_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, avgLum_allPhases, Lci_normed, calibLen, uniqueLens, octoLen, 'LeftCircles', Lci_scatter_folder, normedMeanPupilSizes_folder)
+    linRegress_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Lci_normed, calib_len, unique_lens, octo_len, 'LeftCircles', Lci_scatter_folder, normedMeanPupilSizes_folder)
     Lci_allPhasesConcatLinRegress_allDelays.append(linRegress_Lci[0])
     Lci_calibLinRegress_allDelays.append(linRegress_Lci[1])
     Lci_octoLinRegress_allDelays.append(linRegress_Lci[2])
