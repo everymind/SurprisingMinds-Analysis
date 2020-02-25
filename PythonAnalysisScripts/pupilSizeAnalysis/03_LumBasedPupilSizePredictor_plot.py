@@ -8,7 +8,16 @@ import os
 import numpy as np 
 import matplotlib.pyplot as plt
 import glob
-
+###################################
+# SET CURRENT WORKING DIRECTORY
+###################################
+current_working_directory = os.getcwd()
+###################################
+# SCRIPT LOGGER
+###################################
+# grab today's date
+now = datetime.datetime.now()
+logging.basicConfig(filename="03_LumBasedPupilSizePredictor_plot_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
 ###################################
 # FUNCTIONS
 ###################################
