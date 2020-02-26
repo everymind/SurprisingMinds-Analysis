@@ -5,6 +5,7 @@
 ### create monthly averages of both raw live stim vid and world cam sanity check
 ### output as data files 
 ### NOTE: NEED TO RUN THIS SCRIPT AT LEAST TWICE
+### WHEN RUNNING FROM TERMINAL: add optional "restart" to delete previous runs of this script and start over
 ### ------------------------------------------------------------------------- ###
 import logging
 import os
