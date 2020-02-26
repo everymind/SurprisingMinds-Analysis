@@ -111,7 +111,6 @@ def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp, fill_patte
 def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_window):
     for key in dict_of_timestamps.keys():
         if key <= timestamp_to_check <= (key + time_window):
-            print(key)
             return key
 
 def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidData_dict, output_folder, bucket_size_ms):
