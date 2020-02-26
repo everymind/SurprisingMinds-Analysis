@@ -4,8 +4,9 @@
 ### also save world cam luminance as sanity check/ground truth 
 ### create monthly averages of both raw live stim vid and world cam sanity check
 ### output as data files 
-### NOTE: NEED TO RUN THIS SCRIPT AT LEAST TWICE
+### NOTE: NEED TO MODIFY FIRST FUNCTION BASED ON LOCATION OF SOURCE DATASET AND INTERMEDIATE PUPIL TRACKING DATA
 ### WHEN RUNNING FROM TERMINAL: add optional "restart" to delete previous runs of this script and start over
+### NOTE: make sure this script is in a directory with a "__init__.py" file, so that this script can be treated as a module
 ### ------------------------------------------------------------------------- ###
 import logging
 import os
@@ -41,6 +42,7 @@ logging.basicConfig(filename="psa01_StimVid_LumAndTiming_" + now.strftime("%Y-%m
 # 1) MAIN SURPRISING MINDS SOURCE DATASET (LEFT/RIGHT EYE CAMERA VIDEOS, WORLD CAMERA VIDEO, AND ACCOMPANYING TIMESTAMPS FOR EACH PARTICIPANT)
 # AND
 # 2) INTERMEDIATE PUPIL SIZE AND LOCATION FILES (WITH ACCOMPANYING WORLD CAM ALIGNMENT IMAGES)
+### Current default usess a debugging source dataset
 ##########################################################
 def load_data(location='laptop'):
     if location == 'laptop':
