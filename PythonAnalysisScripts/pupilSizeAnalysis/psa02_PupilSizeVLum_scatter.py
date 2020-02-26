@@ -31,7 +31,7 @@ current_working_directory = os.getcwd()
 ###################################
 # grab today's date
 now = datetime.datetime.now()
-logging.basicConfig(filename="02_PupilSizeVLum_scatter_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename="psa02_PupilSizeVLum_scatter_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
 ###################################
 # FUNCTIONS
 ###################################
@@ -711,22 +711,41 @@ uniques_end = {key:None for key in stim_vids}
 octo_start = {key:None for key in stim_vids}
 octo_end = {key:None for key in stim_vids}
 for stim_type in stim_vids:
-    dnm_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'calibration start', 'start', downsample_multiplier)
-    dnm_end = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'upper left dot appears', 'end', downsample_multiplier)
-    pd_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'upper left dot appears', 'start', downsample_multiplier)
-    pd_end = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'calibration end', 'end', downsample_multiplier)
-    u_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'unique start', 'start', downsample_multiplier)
-    u_end = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'unique end', 'end', downsample_multiplier)
-    o_start = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'octo start', 'start', downsample_multiplier)
-    o_end = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'octo end', 'end', downsample_multiplier)
-    do_not_move_start[stim_type] = dnm_start
-    do_not_move_end[stim_type] = dnm_end
-    pulsing_dots_start[stim_type] = pd_start
-    pulsing_dots_end[stim_type] = pd_end
-    uniques_start[stim_type] = u_start
-    uniques_end[stim_type] = u_end
-    octo_start[stim_type] = o_start
-    octo_end[stim_type] = o_end
+    # world cam
+    dnm_start_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'do not move your head', 'start', downsample_multiplier)
+    dnm_end_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'upper left dot appears', 'end', downsample_multiplier)
+    pd_start_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'upper left dot appears', 'start', downsample_multiplier)
+    pd_end_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'calibration end', 'end', downsample_multiplier)
+    u_start_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'unique start', 'start', downsample_multiplier)
+    u_end_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'unique end', 'end', downsample_multiplier)
+    o_start_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'octo start', 'start', downsample_multiplier)
+    o_end_world = extract_MOI_tb_downsample_corrected(all_avg_world_moments, stim_type, 'octo end', 'end', downsample_multiplier)
+    do_not_move_start[stim_type]['world'] = dnm_start_world
+    do_not_move_end[stim_type]['world'] = dnm_end_world
+    pulsing_dots_start[stim_type]['world'] = pd_start_world
+    pulsing_dots_end[stim_type]['world'] = pd_end_world
+    uniques_start[stim_type]['world'] = u_start_world
+    uniques_end[stim_type]['world'] = u_end_world
+    octo_start[stim_type]['world'] = o_start_world
+    octo_end[stim_type]['world'] = o_end_world
+    # raw live
+    dnm_start_raw = dnm_start_world - dnm_start_world
+    dnm_end_raw = dnm_end_world - dnm_start_world
+    pd_start_raw = pd_start_world - dnm_start_world
+    pd_end_raw = pd_end_world - dnm_start_world
+    u_start_raw = u_start_world - dnm_start_world
+    u_end_raw = u_start_world - dnm_start_world
+    o_start_raw = o_start_world - dnm_start_world
+    o_end_raw = o_end_world - dnm_start_world
+    do_not_move_start[stim_type]['world'] = dnm_start_world
+    do_not_move_end[stim_type]['world'] = dnm_end_world
+    pulsing_dots_start[stim_type]['world'] = pd_start_world
+    pulsing_dots_end[stim_type]['world'] = pd_end_world
+    uniques_start[stim_type]['world'] = u_start_world
+    uniques_end[stim_type]['world'] = u_end_world
+    octo_start[stim_type]['world'] = o_start_world
+    octo_end[stim_type]['world'] = o_end_world
+
 
 ###############################################################
 # Load mean monthly raw live stim and world cam luminance files
@@ -746,11 +765,11 @@ all_weights_raw_octo = []
 all_weighted_world_keyFrames = {key:{} for key in stim_vids}
 # collect length of each stimulus type in 4ms resolution
 supersampled_length_all_stims = {key:[] for key in stim_vids}
-# extract and split into phases
+# extract raw live stim and world cam data
 for monthly_mean_folder in monthly_mean_lums_folders:
     raw_live_stim_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanRawLiveStim_*.npy')
     world_cam_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanWorldCam_*.npy')
-    # raw live
+    # raw live - extract and split into phases
     for raw_live_stim in raw_live_stim_files:
         stim_type = stim_name_to_float[os.path.basename(raw_live_stim).split('_')[1]]
         vid_count = float(os.path.basename(raw_live_stim).split('_')[-1][:-8])
@@ -793,7 +812,7 @@ for monthly_mean_folder in monthly_mean_lums_folders:
         all_weights_raw_unique[stim_type].append(np.array(this_file_weights_unique))
         all_weighted_raw_octo.append(np.array(this_file_weighted_octo))
         all_weights_raw_octo.append(np.array(this_file_weights_octo))
-    # world cam - SANITY CHECK
+    # world cam - extract for SANITY CHECK
     for world_cam in world_cam_files:
         stim_type = stim_name_to_float[os.path.basename(world_cam).split('_')[1]]
         vid_count = float(os.path.basename(world_cam).split('_')[-1][:-8])
@@ -818,6 +837,118 @@ for stim in all_weighted_raw_unique:
     mean_raw_live_uniques[stim] = calculate_weighted_mean_lum(all_weighted_raw_unique[stim], all_weights_raw_unique[stim])
 mean_raw_live_octo = calculate_weighted_mean_lum(all_weighted_raw_octo, all_weights_raw_octo)
 
+#####################################################################################################
+# WORLD CAM SANITY CHECK: calculate mean frame luminance from world cams and compare to raw live stim
+# Save monthly mean world cam videos for each stim type 
+# THIS SECTION UNDER CONSTRUCTION!!
+######################################################################################################
+# calculate weighted mean frame
+all_weighted_mean_world_keyframes = {key:{} for key in stim_vids}
+for stim in all_weighted_world_keyFrames.keys():
+    all_weighted_mean_world_keyframes[stim] = {}
+    for keyframe in sorted(all_weighted_world_keyFrames[stim].keys()):
+        this_keyframe_weighted_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'], axis=0)
+        this_keyframe_weights_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weights'], axis=0)
+        all_weighted_mean_world_keyframes[stim][keyframe] = this_keyframe_weighted_sum/this_keyframe_weights_sum
+# fill in gaps between keyframes
+weighted_mean_world_all_frames = {key:None for key in stim_vids}
+for stim in all_weighted_mean_world_keyframes.keys():
+    ordered_keyframes = sorted(all_weighted_mean_world_keyframes[stim].keys())
+    this_stim_all_weighted_mean_frames = []
+    for i, keyframe in enumerate(ordered_keyframes):
+        if i==0 and keyframe==0:
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+            continue
+        if i==0 and keyframe!=0:
+            for frame in range(keyframe-1):
+                this_stim_all_weighted_mean_frames.append(np.nan)
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+            continue
+        else:
+            prev_keyframe = ordered_keyframes[i-1]
+            if keyframe - prev_keyframe > 1:
+                for frame in range(prev_keyframe, keyframe-1):
+                    this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][prev_keyframe])
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+    full_length_this_stim = np.min(supersampled_length_all_stims[stim])
+    if ordered_keyframes[-1] < full_length_this_stim:
+        for frame in range(ordered_keyframes[-1], full_length_this_stim):
+            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][ordered_keyframes[-1]])
+    weighted_mean_world_all_frames[stim] = this_stim_all_weighted_mean_frames
+# convert into a single lum value per frame
+world_supersampled_mean_lum_per_frame = {key:None for key in stim_vids}
+for stim in weighted_mean_world_all_frames.keys():
+    this_stim_mean_lum_per_frame = []
+    for frame in weighted_mean_world_all_frames[stim]:
+        mean_lum_this_frame = np.sum(frame)
+        this_stim_mean_lum_per_frame.append(mean_lum_this_frame)
+    world_supersampled_mean_lum_per_frame[stim] = this_stim_mean_lum_per_frame
+# split into phases
+
+        
+
+# temporarily switch matplotlib backend in order to write video
+plt.switch_backend("Agg")
+# convert dictionary of avg world vid frames into a list of arrays
+tbucket_frames = []
+sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
+for tbucket in sorted_tbuckets:
+    tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
+# Set up formatting for the movie files
+Writer = animation.writers['ffmpeg']
+FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
+fig = plt.figure()
+i = start_tbucket
+im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
+def updatefig(*args):
+    global i
+    if (i<end_tbucket):
+        i += 1
+    else:
+        i=0
+    im.set_array(tbucket_frames[i])
+    return im,
+ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
+print("Writing average world video frames to {path}...".format(path=write_path))
+ani.save(write_path, writer=FF_writer)
+plt.close(fig)
+print("Finished writing!")
+# restore default matplotlib backend
+plt.switch_backend('TkAgg')
+
+
+
+def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket, write_path):
+    # temporarily switch matplotlib backend in order to write video
+    plt.switch_backend("Agg")
+    # convert dictionary of avg world vid frames into a list of arrays
+    tbucket_frames = []
+    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
+    for tbucket in sorted_tbuckets:
+        tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
+    # Set up formatting for the movie files
+    Writer = animation.writers['ffmpeg']
+    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
+    fig = plt.figure()
+    i = start_tbucket
+    im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
+    def updatefig(*args):
+        global i
+        if (i<end_tbucket):
+            i += 1
+        else:
+            i=0
+        im.set_array(tbucket_frames[i])
+        return im,
+    ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
+    print("Writing average world video frames to {path}...".format(path=write_path))
+    ani.save(write_path, writer=FF_writer)
+    plt.close(fig)
+    print("Finished writing!")
+    # restore default matplotlib backend
+    plt.switch_backend('TkAgg')
+
+
 ############################################################################
 # Downsample raw live stim data to match pupil data (4ms to 40ms resolution)
 ############################################################################
@@ -831,6 +962,7 @@ downsampled_mean_RL_all_phases = [downsampled_mean_RL_calib, downsampled_mean_RL
 calib_len = len(downsampled_mean_RL_calib)
 octo_len = len(downsampled_mean_RL_octo)
 unique_lens = [len(downsampled_mean_RL_uniques[24.0]), len(downsampled_mean_RL_uniques[25.0]), len(downsampled_mean_RL_uniques[26.0]), len(downsampled_mean_RL_uniques[27.0]), len(downsampled_mean_RL_uniques[28.0]), len(downsampled_mean_RL_uniques[29.0])]
+
 ###################################
 # Normalize pupil size data 
 ###################################
@@ -970,116 +1102,5 @@ np.save(Rco_allPhasesConcat_linRegress_output, Rco_allPhasesConcatLinRegress_all
 np.save(Rci_allPhasesConcat_linRegress_output, Rci_allPhasesConcatLinRegress_allDelays)
 np.save(Lco_allPhasesConcat_linRegress_output, Lco_allPhasesConcatLinRegress_allDelays)
 np.save(Lci_allPhasesConcat_linRegress_output, Lci_allPhasesConcatLinRegress_allDelays)
-
-###############################################################
-# SANITY CHECK: calculate mean frame luminance from world cams and compare to raw live stim
-# Save monthly mean world cam videos for each stim type 
-# THIS SECTION UNDER CONSTRUCTION!!
-###############################################################
-# calculate weighted mean frame
-all_weighted_mean_world_keyframes = {key:{} for key in stim_vids}
-for stim in all_weighted_world_keyFrames.keys():
-    all_weighted_mean_world_keyframes[stim] = {}
-    for keyframe in sorted(all_weighted_world_keyFrames[stim].keys()):
-        this_keyframe_weighted_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'], axis=0)
-        this_keyframe_weights_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weights'], axis=0)
-        all_weighted_mean_world_keyframes[stim][keyframe] = this_keyframe_weighted_sum/this_keyframe_weights_sum
-# fill in gaps between keyframes
-weighted_mean_world_all_frames = {key:None for key in stim_vids}
-for stim in all_weighted_mean_world_keyframes.keys():
-    ordered_keyframes = sorted(all_weighted_mean_world_keyframes[stim].keys())
-    this_stim_all_weighted_mean_frames = []
-    for i, keyframe in enumerate(ordered_keyframes):
-        if i==0 and keyframe==0:
-            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
-            continue
-        if i==0 and keyframe!=0:
-            for frame in range(keyframe-1):
-                this_stim_all_weighted_mean_frames.append(np.nan)
-            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
-            continue
-        else:
-            prev_keyframe = ordered_keyframes[i-1]
-            if keyframe - prev_keyframe > 1:
-                for frame in range(prev_keyframe, keyframe-1):
-                    this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][prev_keyframe])
-            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
-    full_length_this_stim = np.min(supersampled_length_all_stims[stim])
-    if ordered_keyframes[-1] < full_length_this_stim:
-        for frame in range(ordered_keyframes[-1], full_length_this_stim):
-            this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][ordered_keyframes[-1]])
-    weighted_mean_world_all_frames[stim] = this_stim_all_weighted_mean_frames
-# convert into a single lum value per frame
-world_supersampled_mean_lum_per_frame = {key:None for key in stim_vids}
-for stim in weighted_mean_world_all_frames.keys():
-    this_stim_mean_lum_per_frame = []
-    for frame in weighted_mean_world_all_frames[stim]:
-        mean_lum_this_frame = np.sum(frame)
-        this_stim_mean_lum_per_frame.append(mean_lum_this_frame)
-    world_supersampled_mean_lum_per_frame[stim] = this_stim_mean_lum_per_frame
-# split into phases
-
-        
-
-# temporarily switch matplotlib backend in order to write video
-plt.switch_backend("Agg")
-# convert dictionary of avg world vid frames into a list of arrays
-tbucket_frames = []
-sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
-for tbucket in sorted_tbuckets:
-    tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
-# Set up formatting for the movie files
-Writer = animation.writers['ffmpeg']
-FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
-fig = plt.figure()
-i = start_tbucket
-im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
-def updatefig(*args):
-    global i
-    if (i<end_tbucket):
-        i += 1
-    else:
-        i=0
-    im.set_array(tbucket_frames[i])
-    return im,
-ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
-print("Writing average world video frames to {path}...".format(path=write_path))
-ani.save(write_path, writer=FF_writer)
-plt.close(fig)
-print("Finished writing!")
-# restore default matplotlib backend
-plt.switch_backend('TkAgg')
-
-
-
-def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket, write_path):
-    # temporarily switch matplotlib backend in order to write video
-    plt.switch_backend("Agg")
-    # convert dictionary of avg world vid frames into a list of arrays
-    tbucket_frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
-    for tbucket in sorted_tbuckets:
-        tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
-    # Set up formatting for the movie files
-    Writer = animation.writers['ffmpeg']
-    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
-    fig = plt.figure()
-    i = start_tbucket
-    im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
-    def updatefig(*args):
-        global i
-        if (i<end_tbucket):
-            i += 1
-        else:
-            i=0
-        im.set_array(tbucket_frames[i])
-        return im,
-    ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
-    print("Writing average world video frames to {path}...".format(path=write_path))
-    ani.save(write_path, writer=FF_writer)
-    plt.close(fig)
-    print("Finished writing!")
-    # restore default matplotlib backend
-    plt.switch_backend('TkAgg')
 
 # FIN

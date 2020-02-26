@@ -17,7 +17,7 @@ current_working_directory = os.getcwd()
 ###################################
 # grab today's date
 now = datetime.datetime.now()
-logging.basicConfig(filename="03_LumBasedPupilSizePredictor_plot_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename="psa03_LumBasedPupilSizePredictor_plot_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
 ###################################
 # FUNCTIONS
 ###################################
