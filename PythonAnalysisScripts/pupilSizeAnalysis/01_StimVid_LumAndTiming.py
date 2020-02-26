@@ -97,7 +97,7 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
     vid_width = int(world_vid.get(3))
     vid_height = int(world_vid.get(4))
     # create rawLiveVid output array
-    first_timestamp = video_timestamps[0]
+    first_timestamp = video_timestamps[2] # world cam catches a bit of the "center your eyes" phase before the "do not move" phase
     last_timestamp = video_timestamps[-1]
     rawLiveVid_initializePattern = np.nan
     rawLiveVid_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, rawLiveVid_initializePattern)
