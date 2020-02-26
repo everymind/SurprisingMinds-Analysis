@@ -86,8 +86,15 @@ def make_time_buckets(start_timestamp, bucket_size_ms, end_timestamp, fill_patte
 def find_nearest_timestamp_key(timestamp_to_check, dict_of_timestamps, time_window):
     for key in dict_of_timestamps.keys():
         if key <= timestamp_to_check <= (key + time_window):
+            print(key)
             return key
 
+
+#video_path = world_video_path
+#video_timestamps = world_timestamps
+#rawStimVidData_dict = rawStimLum_dict
+#output_folder = world_folder
+#bucket_size_ms = bucket_size
 def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidData_dict, output_folder, bucket_size_ms):
     # Get video file details
     video_name = video_path.split(os.sep)[-1]
@@ -99,13 +106,17 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
     vid_width = int(world_vid.get(3))
     vid_height = int(world_vid.get(4))
     # create rawLiveVid output array
-    first_timestamp = video_timestamps[2] # world cam catches a bit of the "center your eyes" phase before the "do not move" phase
+    first_timestamp = video_timestamps[2] # world cam catches a bit of the "center your eyes" phase (2 frames) before the "do not move" phase, need to adjust
     last_timestamp = video_timestamps[-1]
     rawLiveVid_initializePattern = np.nan
     rawLiveVid_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, rawLiveVid_initializePattern)
     sanityCheck_initializePattern = np.empty((vid_height*vid_width,))
     sanityCheck_initializePattern[:] = np.nan
     worldCam_sanityCheck_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, sanityCheck_initializePattern)
+    worldCam_sanityCheck_buckets[None] = "somevalue"
+    for key, item in worldCam_sanityCheck_buckets.items():
+        if key is None:
+            print("\n\n\n\n\n\n\I FOUND NONE")
     # Loop through 4ms time buckets of world video to find nearest frame and save 2-d matrix of pixel values in that frame
     # stimStructure = ['DoNotMove-English', 'Calibration', 'stimuli024', 'stimuli025', 'stimuli026', 'stimuli027', 'stimuli028', 'stimuli029', ]
     doNotMove_frameCount = rawStimVidData_dict['DoNotMove-English']['Number of Frames']
@@ -318,13 +329,13 @@ def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
 ###################################
 # Synology drive
 # on lab computer - THE REAL THING
-data_drive = r"\\Diskstation\SurprisingMinds"
-analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+#data_drive = r"\\Diskstation\SurprisingMinds"
+#analysed_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # on lab computer - DEBUGGING
 #data_drive = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\debuggingData"
 # on laptop
-#data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
-#analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
+data_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\debuggingData"
+analysed_drive = r"C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows"
 # collect input data subfolders
 rawStimLum_data = os.path.join(analysed_drive, "rawStimLums")
 analysed_folders = sorted(os.listdir(analysed_drive))
