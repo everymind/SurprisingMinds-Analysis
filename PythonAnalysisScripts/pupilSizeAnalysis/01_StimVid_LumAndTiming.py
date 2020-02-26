@@ -20,6 +20,7 @@ import fnmatch
 import sys
 import math
 import csv
+import argparse
 ###################################
 # SET CURRENT WORKING DIRECTORY
 ###################################
@@ -332,10 +333,19 @@ monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
 ############################################################################################
 ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
 ############################################################################################
-for folder in daily_csv_files:
-    subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
-    if 'world' in subdirs:
-        shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+parser = argparse.ArgumentParser()
+parser.add_argument("a", nargs='?', default="check_string_for_empty")
+args = parser.parse_args()
+if args.a == 'check_string_for_empty':
+    logging.info('Continuing world cam extraction and raw live stim creation from last session...')
+elif args.a == 'restart':
+    logging.warning('Restarting world cam extraction and raw live stim creation, DELETING ALL FILES FROM PREVIOUS SESSIONS!')
+    for folder in daily_csv_files:
+        subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
+        if 'world' in subdirs:
+            shutil.rmtree(os.path.join(analysed_drive, folder, 'Analysis', 'world'))
+else:
+    logging.warning('%s is not a valid optional input to this script' % (args.a))
 
 ###################################
 # STIMULUS INFO
