@@ -126,20 +126,21 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
     vid_width = int(world_vid.get(3))
     vid_height = int(world_vid.get(4))
     # create rawLiveVid output array
-    first_timestamp = video_timestamps[2] # world cam catches a bit of the "center your eyes" phase (2 frames) before the "do not move" phase, need to adjust
+    first_timestamp_world = video_timestamps[0]
+    first_timestamp_raw = video_timestamps[2] # world cam catches a bit of the "center your eyes" phase (2 frames) before the "do not move" phase, need to adjust
     last_timestamp = video_timestamps[-1]
     rawLiveVid_initializePattern = np.nan
-    rawLiveVid_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, rawLiveVid_initializePattern)
+    rawLiveVid_buckets = make_time_buckets(first_timestamp_raw, bucket_size_ms, last_timestamp, rawLiveVid_initializePattern)
     sanityCheck_initializePattern = np.empty((vid_height*vid_width,))
     sanityCheck_initializePattern[:] = np.nan
-    worldCam_sanityCheck_buckets = make_time_buckets(first_timestamp, bucket_size_ms, last_timestamp, sanityCheck_initializePattern)
+    worldCam_sanityCheck_buckets = make_time_buckets(first_timestamp_world, bucket_size_ms, last_timestamp, sanityCheck_initializePattern)
     # Loop through 4ms time buckets of world video to find nearest frame and save 2-d matrix of pixel values in that frame
     # stimStructure = ['DoNotMove-English', 'Calibration', 'stimuli024', 'stimuli025', 'stimuli026', 'stimuli027', 'stimuli028', 'stimuli029', ]
     doNotMove_frameCount = rawStimVidData_dict['DoNotMove-English']['Number of Frames']
     calib_frameCount = rawStimVidData_dict['Calibration']['Number of Frames']
     # keep track of how many frames have been processed
     frame_count = 0
-    for timestamp in video_timestamps[2:]: # world cam catches a bit of the "center your eyes" phase (2 frames) before the "do not move" phase, need to adjust
+    for i, timestamp in enumerate(video_timestamps): 
         # find the time bucket into which this frame falls
         timestamp = timestamp.split('+')[0][:-3]
         timestamp_dt = datetime.datetime.strptime(timestamp, "%Y-%m-%dT%H:%M:%S.%f")
@@ -159,20 +160,22 @@ def supersampled_worldCam_rawLiveVid(video_path, video_timestamps, rawStimVidDat
             # append to dictionary stim_buckets
             worldCam_sanityCheck_buckets[currentKey_sanityCheck] = flattened_gray
         # fill in luminance values from raw videos based on timing of framerate in world camera timestamps
-        currentKey_rLV = find_nearest_timestamp_key(timestamp_dt, rawLiveVid_buckets, bucket_window)
-        if frame_count < doNotMove_frameCount:
-            rawVidPhase = 'DoNotMove-English'
-            frame_index = frame_count
-        if doNotMove_frameCount <= frame_count < doNotMove_frameCount + calib_frameCount:
-            rawVidPhase = 'Calibration'
-            frame_index = frame_count - doNotMove_frameCount
-        if doNotMove_frameCount + calib_frameCount <= frame_count:
-            rawVidPhase = video_stim_number
-            if frame_count < doNotMove_frameCount + calib_frameCount + rawStimVidData_dict[rawVidPhase]['Number of Frames']:
-                frame_index = frame_count - doNotMove_frameCount - calib_frameCount
-            else:
-                break
-        rawLiveVid_buckets[currentKey_rLV] = rawStimVidData_dict[rawVidPhase]['Luminance per Frame'][frame_index]
+        # adjusting for: world cam catches a bit of the "center your eyes" phase (2 frames) before the "do not move" phase
+        if i >= 2:
+            currentKey_rLV = find_nearest_timestamp_key(timestamp_dt, rawLiveVid_buckets, bucket_window)
+            if frame_count < doNotMove_frameCount:
+                rawVidPhase = 'DoNotMove-English'
+                frame_index = frame_count
+            if doNotMove_frameCount <= frame_count < doNotMove_frameCount + calib_frameCount:
+                rawVidPhase = 'Calibration'
+                frame_index = frame_count - doNotMove_frameCount
+            if doNotMove_frameCount + calib_frameCount <= frame_count:
+                rawVidPhase = video_stim_number
+                if frame_count < doNotMove_frameCount + calib_frameCount + rawStimVidData_dict[rawVidPhase]['Number of Frames']:
+                    frame_index = frame_count - doNotMove_frameCount - calib_frameCount
+                else:
+                    break
+            rawLiveVid_buckets[currentKey_rLV] = rawStimVidData_dict[rawVidPhase]['Luminance per Frame'][frame_index]
         #print('Processing frame %d from %s phase (total frame count: %d)' % (frame_index, rawVidPhase, frame_count))
         frame_count = frame_count + 1
     # release video capture
