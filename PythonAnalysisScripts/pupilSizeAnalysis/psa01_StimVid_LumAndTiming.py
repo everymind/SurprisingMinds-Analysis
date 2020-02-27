@@ -359,7 +359,7 @@ if __name__=='__main__':
         print('Deleting old world_temp folder...')
         shutil.rmtree(os.path.join(current_working_directory, 'world_temp'))
         print('Deleted!')
-        #time.sleep(10) # for use when debugging, to have time to see that world_temp was in fact deleted
+        time.sleep(5) # to have time to see that world_temp was in fact deleted
     zip_folders = fnmatch.filter(os.listdir(current_working_directory), '*.zip')
     if len(zip_folders) > 0:
         logging.info('Deleting old zip folders...')
