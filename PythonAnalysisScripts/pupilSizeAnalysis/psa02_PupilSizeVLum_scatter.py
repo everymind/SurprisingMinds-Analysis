@@ -4,8 +4,10 @@
 # outputs normalized pupil sizes and lin regression params for all phases as binary files
 # creates a scatter plot comparing luminance to pupil size
 # saves sanity check mean world cam video
-# this script uses ImageMagick to easily install ffmpeg onto Windows 10:
-# https://www.imagemagick.org/script/download.php
+# NOTE: this script uses ImageMagick to easily install ffmpeg onto Windows 10 (https://www.imagemagick.org/script/download.php)
+# NOTE: in command line run with optional tags 
+#       1) '--a debug' to use only a subset of pupil location/size data
+#       2) '--loc *' to run with various root data locations (see first function below)
 ### --------------------------------------------------------------------------- ###
 import logging
 import pdb
@@ -575,10 +577,11 @@ def worldCam_MOIs_all_stim():
 ##########################################################
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("--a", nargs='?', default="check_string_for_empty")
     parser.add_argument("--loc", nargs='?', default='laptop')
     args = parser.parse_args()
     ###################################
-    # DATA AND OUTPUT FILE LOCATIONS 
+    # SOURCE DATA AND OUTPUT FILE LOCATIONS 
     ###################################
     root_folder, plots_folder, monthly_mean_lums_folders, output_folders = load_data(args.loc)
     pupilSize_folder = output_folders[0]
@@ -640,10 +643,18 @@ if __name__=='__main__':
     # first day was a debugging session, so skip it
     pupil_folders = pupil_folders[1:]
     ########################################################
-    ### WHILE DEBUGGING ###
-    pupil_folders = pupil_folders[5:10]
-    # if currently still running pupil finding analysis...
-    pupil_folders = pupil_folders[:-1]
+    if args.a == 'check_string_for_empty':
+        logging.info('Extracting all pupil data...')
+        print('Extracting all pupil data...')
+    elif args.a == 'debug':
+        logging.warning('Extracting debugging subset of pupil data...')
+        print('Extracting debugging subset of pupil data...')
+        pupil_folders = pupil_folders[5:10]
+        # if currently still running pupil finding analysis...
+        pupil_folders = pupil_folders[:-1]
+    else:
+        logging.warning('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
+        print('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
     ########################################################
     # collect dates for which pupil extraction fails
     failed_days = []
@@ -724,7 +735,7 @@ if __name__=='__main__':
         except Exception:
             failed_days.append(day_name)
             print("Day {day} failed!".format(day=day_name))
-    
+
     ########################################################
     ########################################################
     ########################################################
@@ -764,7 +775,7 @@ if __name__=='__main__':
         pd_start_raw = pd_start_world - dnm_start_world
         pd_end_raw = pd_end_world - dnm_start_world
         u_start_raw = u_start_world - dnm_start_world
-        u_end_raw = u_start_world - dnm_start_world
+        u_end_raw = u_end_world - dnm_start_world
         o_start_raw = o_start_world - dnm_start_world
         o_end_raw = o_end_world - dnm_start_world
         do_not_move_start[stim_type]['raw'] = dnm_start_raw
@@ -868,76 +879,145 @@ if __name__=='__main__':
     # Save monthly mean world cam videos for each stim type 
     # THIS SECTION UNDER CONSTRUCTION!!
     ######################################################################################################
-    # calculate weighted mean frame
-    all_weighted_mean_world_keyframes = {key:{} for key in stim_vids}
+    # fill in gaps between keyframes
+    allStim_weighted_mean_world_allFrames = {key:{} for key in stim_vids}
     for stim in all_weighted_world_keyFrames.keys():
-        all_weighted_mean_world_keyframes[stim] = {}
-        for keyframe in sorted(all_weighted_world_keyFrames[stim].keys()):
-            this_keyframe_weighted_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'], axis=0)
-            this_keyframe_weights_sum = np.sum(all_weighted_world_keyFrames[stim][keyframe]['weights'], axis=0)
-            all_weighted_mean_world_keyframes[stim][keyframe] = this_keyframe_weighted_sum/this_keyframe_weights_sum
-    
-    
-    
-    
-    
-    # fill in gaps between keyframes (for making sanity check movies)
-    # NEED TO INCLUDE WEIGHTS
-    weighted_mean_world_all_frames = {key:{} for key in stim_vids}
-    for stim in all_weighted_mean_world_keyframes.keys():
-        ordered_keyframes = sorted(all_weighted_mean_world_keyframes[stim].keys())
-        this_stim_all_weighted_mean_frames = []
+        ordered_keyframes = sorted(all_weighted_world_keyFrames[stim].keys())
+        this_stim_all_weighted_frames = []
+        this_stim_all_weights = []
         for i, keyframe in enumerate(ordered_keyframes):
             if i==0 and keyframe==0:
-                this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
-                continue
-            if i==0 and keyframe!=0:
+                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
+                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
+            elif i==0 and keyframe!=0:
                 for frame in range(keyframe-1):
-                    this_stim_all_weighted_mean_frames.append(np.nan)
-                this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
-                continue
+                    this_stim_all_weighted_frames.append(np.nan)
+                    this_stim_all_weights.append(np.nan)
+                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
+                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
             else:
                 prev_keyframe = ordered_keyframes[i-1]
                 if keyframe - prev_keyframe > 1:
                     for frame in range(prev_keyframe, keyframe-1):
-                        this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][prev_keyframe])
-                this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][keyframe])
+                        this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][prev_keyframe]['weighted frames'])
+                        this_stim_all_weights.append(all_weighted_world_keyFrames[stim][prev_keyframe]['weights'])
+                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
+                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
         full_length_this_stim = np.min(supersampled_length_all_stims[stim])
         if ordered_keyframes[-1] < full_length_this_stim:
             for frame in range(ordered_keyframes[-1], full_length_this_stim):
-                this_stim_all_weighted_mean_frames.append(all_weighted_mean_world_keyframes[stim][ordered_keyframes[-1]])
-        weighted_mean_world_all_frames[stim] = this_stim_all_weighted_mean_frames
-    # convert into a single lum value per frame
-    world_supersampled_mean_lum_per_frame = {key:None for key in stim_vids}
-    for stim in weighted_mean_world_all_frames.keys():
-        this_stim_mean_lum_per_frame = []
-        for frame in weighted_mean_world_all_frames[stim]:
-            mean_lum_this_frame = np.sum(frame)
-            this_stim_mean_lum_per_frame.append(mean_lum_this_frame)
-        world_supersampled_mean_lum_per_frame[stim] = this_stim_mean_lum_per_frame
+                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][ordered_keyframes[-1]]['weighted frames'])
+                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][ordered_keyframes[-1]]['weights'])
+        this_stim_weighted_timebuckets = []
+        this_stim_weights = []
+        for timebucket in this_stim_all_weighted_frames:
+            this_tb_weighted_frame = np.sum(np.array(timebucket), axis=0)
+            this_stim_weighted_timebuckets.append(this_tb_weighted_frame)
+        for timebucket in this_stim_all_weights:
+            this_tb_weights = np.sum(np.array(timebucket), axis=0)
+            this_stim_weights.append(this_tb_weights)
+        allStim_weighted_mean_world_allFrames[stim]['weighted timebuckets'] = this_stim_weighted_timebuckets
+        allStim_weighted_mean_world_allFrames[stim]['weights'] = this_stim_weights
     # split into phases
-    mean_world_calib = {key:None for key in stim_vids}
-    mean_world_uniques = {key:None for key in stim_vids}
-    mean_world_octo = {key:None for key in stim_vids}
-    for stim in world_supersampled_mean_lum_per_frame.keys():
+    all_weighted_world_frames_calib = {'weighted timebuckets':[], 'weights':[]}
+    all_weighted_world_frames_uniques = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
+    all_weighted_world_frames_octo = {'weighted timebuckets':[], 'weights':[]}
+    for stim in allStim_weighted_mean_world_allFrames.keys():
         this_stim_weighted_doNotMove = []
+        this_stim_weights_doNotMove = []
         this_stim_weighted_pulsingDots = []
+        this_stim_weights_pulsingDots = []
         this_stim_weighted_unique = []
+        this_stim_weights_unique = []
         this_stim_weighted_octo = []
-        for timebucket, weighted_mean_lum in enumerate(world_supersampled_mean_lum_per_frame[stim]):
-            if do_not_move_start[stim_type]['world'] < timebucket < do_not_move_end[stim_type]['world']:
-                this_stim_weighted_doNotMove.append(weighted_mean_lum)
-                continue
-            elif pulsing_dots_start[stim_type]['world'] < timebucket < pulsing_dots_end[stim_type]['world']:
-                this_stim_weighted_pulsingDots.append(weighted_mean_lum)
+        this_stim_weights_octo = []
+        for tb, weighted_frame in enumerate(allStim_weighted_mean_world_allFrames[stim]['weighted timebuckets']):
+            this_tb_weight = allStim_weighted_mean_world_allFrames[stim]['weights'][tb]
+            if do_not_move_start[stim_type]['world'] < tb < do_not_move_end[stim_type]['world']:
+                this_stim_weighted_doNotMove.append(weighted_frame)
+                this_stim_weights_doNotMove.append(this_tb_weight)
+            elif pulsing_dots_start[stim_type]['world'] < tb < pulsing_dots_end[stim_type]['world']:
+                this_stim_weighted_pulsingDots.append(weighted_frame)
+                this_stim_weights_pulsingDots.append(this_tb_weight)
             elif uniques_start[stim_type]['world'] < timebucket < uniques_end[stim_type]['world']:
-                this_stim_weighted_unique.append(weighted_mean_lum)
-            elif octo_start[stim_type]['world'] < timebucket < octo_end[stim_type]['world']:
-                this_stim_weighted_octo.append(weighted_mean_lum)
+                this_stim_weighted_unique.append(weighted_frame)
+                this_stim_weights_unique.append(this_tb_weight)
+            elif octo_start[stim_type]['world'] < tb < octo_end[stim_type]['world']:
+                this_stim_weighted_octo.append(weighted_frame)
+                this_stim_weights_octo.append(this_tb_weight)
         this_stim_weighted_calib = np.concatenate((this_stim_weighted_doNotMove, this_stim_weighted_pulsingDots))
-        mean_world_calib[stim] = this_stim_weighted_calib
-        mean_world_uniques[stim]
+        this_stim_weights_calib = np.concatenate((this_stim_weights_doNotMove, this_stim_weights_pulsingDots))
+        all_weighted_world_frames_calib['weighted timebuckets'].append(this_stim_weighted_calib)
+        all_weighted_world_frames_calib['weights'].append(this_stim_weights_calib)
+        all_weighted_world_frames_uniques[stim]['weighted timebuckets'].append(this_stim_weighted_unique)
+        all_weighted_world_frames_uniques[stim]['weights'].append(this_stim_weights_unique)
+        all_weighted_world_frames_octo['weighted timebuckets'].append(this_stim_weighted_octo)
+        all_weighted_world_frames_octo['weights'].append(this_stim_weights_octo)
+    # calculate weighted mean frame 
+    all_stims_summed_weighted_frames_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weighted timebuckets']), axis=0)
+    all_stims_summed_weights_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weights']), axis=0)
+    weighted_mean_world_frames_calib = []
+    for tb, weight in enumerate(all_stims_summed_weights_world_calib):
+        this_tb_weighted_mean_frame = all_stims_summed_weighted_frames_world_calib[tb]/weight
+        weighted_mean_world_frames_calib.append(this_tb_weighted_mean_frame)
+    
+    
+    # downsample framerate to 30fps
+    downsampled_mean_world = []
+    for i in range(0,len(mean_RL_array), downsample_mult):
+        if (i+downsample_mult-1) > len(mean_RL_array):
+            this_chunk_mean = np.nanmean(mean_RL_array[i:len(mean_RL_array)])
+        else:
+            this_chunk_mean = np.nanmean(mean_RL_array[i:i+downsample_mult-1])
+        downsampled_mean_RL.append(this_chunk_mean)
 
+
+
+
+
+
+    # reshape into original world cam dimensions
+    weighted_mean_world_frames_calib_reshaped = []
+    for frame in weighted_mean_world_frames_calib:
+        reshaped_frame = np.reshape(frame,(120,160))
+        weighted_mean_world_frames_calib_reshaped.append(reshaped_frame)
+    
+    # make mean world cam movie for this phase and save as .mp4 file
+    write_path = 'test.mp4'
+    end_tbucket = len(weighted_mean_world_frames_calib_reshaped)
+    # temporarily switch matplotlib backend in order to write video
+    plt.switch_backend("Agg")
+    # Set up formatting for the movie files
+    Writer = animation.writers['ffmpeg']
+    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
+    fig = plt.figure()
+    i = 0
+    im = plt.imshow(weighted_mean_world_frames_calib_reshaped[i], cmap='gray', animated=True)
+    def updatefig(*args):
+        global i
+        if (i<end_tbucket):
+            i += 1
+        else:
+            i=0
+        im.set_array(weighted_mean_world_frames_calib_reshaped[i])
+        return im,
+    ani = animation.FuncAnimation(fig, updatefig, frames=len(weighted_mean_world_frames_calib_reshaped), interval=50, blit=True)
+    print("Writing average world video frames to {path}...".format(path=write_path))
+    ani.save(write_path, writer=FF_writer)
+    plt.close(fig)
+    print("Finished writing!")
+    # restore default matplotlib backend
+    plt.switch_backend('TkAgg')
+
+
+
+
+    weighted_mean_world_frames_uniques
+    weighted_mean_world_frames_octo
+    
+    # convert into a single lum value per frame
+
+    
         
 
 # temporarily switch matplotlib backend in order to write video
