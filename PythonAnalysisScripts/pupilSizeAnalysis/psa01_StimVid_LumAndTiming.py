@@ -23,6 +23,7 @@ import sys
 import math
 import csv
 import argparse
+import time
 ###################################
 # SET CURRENT WORKING DIRECTORY
 ###################################
@@ -347,10 +348,24 @@ def save_monthly_weighted_meanStim(this_month_allStim_dict, stim_type):
 # BEGIN SCRIPT
 ##########################################################
 if __name__=='__main__':
+    # parse command line input
     parser = argparse.ArgumentParser()
     parser.add_argument("--a", nargs='?', default="check_string_for_empty")
     parser.add_argument("--loc", nargs='?', default='laptop')
     args = parser.parse_args()
+    # clean up current working directory
+    if 'world_temp' in os.listdir(current_working_directory):
+        logging.info('Deleting old world_temp folder...')
+        print('Deleting old world_temp folder...')
+        shutil.rmtree(os.path.join(current_working_directory, 'world_temp'))
+        print('Deleted!')
+        #time.sleep(10) # for use when debugging, to have time to see that world_temp was in fact deleted
+    zip_folders = fnmatch.filter(os.listdir(current_working_directory), '*.zip')
+    if len(zip_folders) > 0:
+        logging.info('Deleting old zip folders...')
+        print('Deleting old zip folders...')
+        for zfolder in zip_folders:
+            shutil.rmtree(os.path.join(current_working_directory, zfolder))
     ###################################
     # DATA AND OUTPUT FILE LOCATIONS 
     ###################################
