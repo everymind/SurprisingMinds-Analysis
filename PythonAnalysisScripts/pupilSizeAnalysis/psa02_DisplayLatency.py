@@ -85,13 +85,28 @@ def extract_stim_data(stim_data_array, world_or_raw, stim_data_dict):
         else:
             stim_data_dict[timebucket] = {data_type:[this_tb_weighted_data], 'weights':[weight]}
 
-def calculate_weighted_mean_lum(all_weighted_raw_lums, all_weights):
-    trimmed_all_weighted_raw_lums = trim_phase_extractions(all_weighted_raw_lums)
-    trimmed_all_weights = trim_phase_extractions(all_weights)
-    summed_lums = np.sum(trimmed_all_weighted_raw_lums, axis=0)
-    summed_weights = np.sum(trimmed_all_weights, axis=0)
-    weighted_mean = summed_lums / summed_weights
-    return weighted_mean
+def calculate_weighted_sums_and_mean(all_weighted_stim_data_dict, world_or_raw):
+    weighted_sums_stim_dict = {}
+    for stim in all_weighted_stim_data_dict.keys():
+        weighted_sums_stim_dict[stim] = {}
+        for timebucket in sorted(all_weighted_stim_data_dict[stim].keys()):
+            if world_or_raw=='world':
+                this_tb_weighted_sum = np.sum(np.array(all_weighted_stim_data_dict[stim][timebucket]['weighted keyframes']), axis=0)
+                weighted_sum_key = 'keyframe, weighted sum'
+                weighted_mean_key = 'weighted mean keyframe'
+            elif world_or_raw=='raw':
+                this_tb_weighted_sum = np.sum(all_weighted_stim_data_dict[stim][timebucket]['weighted luminance'])
+                weighted_sum_key = 'luminance, weighted sum'
+                weighted_mean_key = 'weighted mean luminance'
+            else:
+                print('Invalid stimulus data type! Must be world or raw.')
+                logging.warning('Invalid stimulus data type! Must be world or raw.')
+            this_tb_weights_sum = np.sum(all_weighted_stim_data_dict[stim][timebucket]['weights'])
+            this_tb_weighted_mean = this_tb_weighted_sum/this_tb_weights_sum
+            weighted_sums_stim_dict[stim][timebucket] = {weighted_sum_key:this_tb_weighted_sum, 'summed weight':this_tb_weights_sum, weighted_mean_key:this_tb_weighted_mean}
+
+
+
 
 def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
     downsampled_mean_RL = []
@@ -165,12 +180,19 @@ if __name__=='__main__':
             extract_stim_data(raw_live_array, 'raw', all_weighted_rawLive_timebuckets[stim_type])
     ########################################################
     # Calculate full dataset mean world cam for each stimulus
-    # calculate display latency by:
-    # calculate full dataset mean world cam for each stimulus
-    # calculate full dataset raw live for each stimulus
+    # Calculate full dataset raw live for each stimulus
+    ########################################################
+    weighted_sums_world_keyFrames = calculate_weighted_sums_and_mean(all_weighted_world_keyFrames, 'world')
+    weighted_sums_raw_timebuckets = calculate_weighted_sums_and_mean(all_weighted_rawLive_timebuckets, 'raw')
+    ########################################################
+    # fill in gaps between keyframes in world cam
+    # calculate mean luminance per timebucket for world cam
     # plot full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
     # save plots and full dataset mean world cam video
     ########################################################
+    
+
+
 
 
 
