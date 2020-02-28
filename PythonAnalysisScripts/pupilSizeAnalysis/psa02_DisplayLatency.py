@@ -85,7 +85,7 @@ def extract_stim_data(stim_data_array, world_or_raw, stim_data_dict):
         else:
             stim_data_dict[timebucket] = {data_type:[this_tb_weighted_data], 'weights':[weight]}
 
-def calculate_weighted_sums_and_mean(all_weighted_stim_data_dict, world_or_raw):
+def calculate_weighted_sums(all_weighted_stim_data_dict, world_or_raw):
     weighted_sums_stim_dict = {}
     for stim in all_weighted_stim_data_dict.keys():
         weighted_sums_stim_dict[stim] = {}
@@ -93,18 +93,15 @@ def calculate_weighted_sums_and_mean(all_weighted_stim_data_dict, world_or_raw):
             if world_or_raw=='world':
                 this_tb_weighted_sum = np.sum(np.array(all_weighted_stim_data_dict[stim][timebucket]['weighted keyframes']), axis=0)
                 weighted_sum_key = 'keyframe, weighted sum'
-                weighted_mean_key = 'weighted mean keyframe'
             elif world_or_raw=='raw':
                 this_tb_weighted_sum = np.sum(all_weighted_stim_data_dict[stim][timebucket]['weighted luminance'])
                 weighted_sum_key = 'luminance, weighted sum'
-                weighted_mean_key = 'weighted mean luminance'
             else:
                 print('Invalid stimulus data type! Must be world or raw.')
                 logging.warning('Invalid stimulus data type! Must be world or raw.')
             this_tb_weights_sum = np.sum(all_weighted_stim_data_dict[stim][timebucket]['weights'])
-            this_tb_weighted_mean = this_tb_weighted_sum/this_tb_weights_sum
-            weighted_sums_stim_dict[stim][timebucket] = {weighted_sum_key:this_tb_weighted_sum, 'summed weight':this_tb_weights_sum, weighted_mean_key:this_tb_weighted_mean}
-
+            weighted_sums_stim_dict[stim][timebucket] = {weighted_sum_key:this_tb_weighted_sum, 'summed weight':this_tb_weights_sum}
+    return weighted_sums_stim_dict
 
 
 
@@ -182,20 +179,73 @@ if __name__=='__main__':
     # Calculate full dataset mean world cam for each stimulus
     # Calculate full dataset raw live for each stimulus
     ########################################################
-    weighted_sums_world_keyFrames = calculate_weighted_sums_and_mean(all_weighted_world_keyFrames, 'world')
-    weighted_sums_raw_timebuckets = calculate_weighted_sums_and_mean(all_weighted_rawLive_timebuckets, 'raw')
+    weighted_sums_world_keyFrames = calculate_weighted_sums(all_weighted_world_keyFrames, 'world')
+    weighted_sums_raw_timebuckets = calculate_weighted_sums(all_weighted_rawLive_timebuckets, 'raw')
     ########################################################
-    # fill in gaps between keyframes in world cam
-    # calculate mean luminance per timebucket for world cam
+    # Fill in gaps between keyframes in world cam
+    ########################################################
+    weighted_sums_world_all_frames = {key:{} for key in stim_vids}
+    for stim in weighted_sums_world_keyFrames.keys():
+        ordered_keyframes = sorted(weighted_sums_world_keyFrames[stim].keys())
+        this_stim_all_weighted_frames = []
+        this_stim_all_weights = []
+        for i, keyframe in enumerate(ordered_keyframes):
+            if i==0 and keyframe==0:
+                this_stim_all_weighted_frames.append(weighted_sums_world_keyFrames[stim][keyframe]['keyframe, weighted sum'])
+                this_stim_all_weights.append(weighted_sums_world_keyFrames[stim][keyframe]['summed weight'])
+            elif i==0 and keyframe!=0:
+                for frame in range(keyframe-1):
+                    this_stim_all_weighted_frames.append(np.nan)
+                    this_stim_all_weights.append(np.nan)
+                this_stim_all_weighted_frames.append(weighted_sums_world_keyFrames[stim][keyframe]['keyframe, weighted sum'])
+                this_stim_all_weights.append(weighted_sums_world_keyFrames[stim][keyframe]['summed weight'])
+            else:
+                prev_keyframe = ordered_keyframes[i-1]
+                if keyframe - prev_keyframe > 1:
+                    for frame in range(prev_keyframe, keyframe-1):
+                        this_stim_all_weighted_frames.append(weighted_sums_world_keyFrames[stim][prev_keyframe]['keyframe, weighted sum'])
+                        this_stim_all_weights.append(weighted_sums_world_keyFrames[stim][prev_keyframe]['summed weight'])
+                this_stim_all_weighted_frames.append(weighted_sums_world_keyFrames[stim][keyframe]['keyframe, weighted sum'])
+                this_stim_all_weights.append(weighted_sums_world_keyFrames[stim][keyframe]['summed weight'])
+        full_length_this_stim = np.min(supersampled_length_all_stims[stim])
+        if ordered_keyframes[-1] < full_length_this_stim:
+            for frame in range(ordered_keyframes[-1], full_length_this_stim):
+                this_stim_all_weighted_frames.append(weighted_sums_world_keyFrames[stim][ordered_keyframes[-1]]['keyframe, weighted sum'])
+                this_stim_all_weights.append(weighted_sums_world_keyFrames[stim][ordered_keyframes[-1]]['summed weight'])
+        weighted_sums_world_all_frames[stim] = {'all frames, weighted sum':this_stim_all_weighted_frames, 'weights':this_stim_all_weights}
+    ########################################################
+    # Calculate weighted mean frame and weighted mean luminance for each world cam timebucket
+    ########################################################
+    world_all_weighted_mean_frames = {key:None for key in stim_vids}
+    world_all_weighted_mean_luminance = {key:None for key in stim_vids}
+    for stim in weighted_sums_world_all_frames.keys():
+        this_stim_weighted_mean_frames = []
+        this_stim_weighted_mean_lum = []
+        for tb, summed_frame in enumerate(weighted_sums_world_all_frames[stim]['all frames, weighted sum']):
+            this_tb_weighted_mean_frame = summed_frame/weighted_sums_world_all_frames[stim]['weights'][tb]
+            this_stim_weighted_mean_frames.append(this_tb_weighted_mean_frame)
+            this_tb_weighted_mean_luminance = np.sum(this_tb_weighted_mean_frame)
+            this_stim_weighted_mean_lum.append(this_tb_weighted_mean_luminance)
+        world_all_weighted_mean_frames[stim] = np.array(this_stim_weighted_mean_frames)
+        world_all_weighted_mean_luminance[stim] = np.array(this_stim_weighted_mean_lum)
+    ########################################################
+    # Calculate weighted mean luminance for each raw live stim timebucket
+    ########################################################
+    raw_all_weighted_mean_luminance = {key:None for key in stim_vids}
+    for stim in weighted_sums_raw_timebuckets.keys():
+        this_stim_weighted_mean_lum = []
+        for tb in sorted(weighted_sums_raw_timebuckets[stim].keys()):
+            this_tb_weighted_mean_lum = weighted_sums_raw_timebuckets[stim][tb]['luminance, weighted sum']/weighted_sums_raw_timebuckets[stim][tb]['summed weight']
+            this_stim_weighted_mean_lum.append(this_tb_weighted_mean_lum)
+        raw_all_weighted_mean_luminance[stim] = np.array(this_stim_weighted_mean_lum)
+    ########################################################
+    # plot and save full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
+    ########################################################
+    
+    ########################################################
     # plot full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
     # save plots and full dataset mean world cam video
     ########################################################
-    
-
-
-
-
-
 
     
     # mean raw live luminance arrays
