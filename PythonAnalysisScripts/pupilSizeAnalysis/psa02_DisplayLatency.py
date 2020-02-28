@@ -242,13 +242,13 @@ if __name__=='__main__':
     # plot and save full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
     ########################################################
     for stim in world_all_weighted_mean_luminance.keys():
-        world_lum_multiplier = raw_all_weighted_mean_luminance[stim][0]/world_all_weighted_mean_luminance[stim][0]
+        world_lum_multiplier = raw_all_weighted_mean_luminance[stim][50]/world_all_weighted_mean_luminance[stim][50]
         plt.plot(world_all_weighted_mean_luminance[stim]*world_lum_multiplier, label='world')
         plt.plot(raw_all_weighted_mean_luminance[stim], label='raw')
         plt.legend()
         plt.show()
 
-        
+
     ########################################################
     # plot full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
     # save plots and full dataset mean world cam video
