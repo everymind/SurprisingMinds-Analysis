@@ -239,12 +239,23 @@ if __name__=='__main__':
             this_stim_weighted_mean_lum.append(this_tb_weighted_mean_lum)
         raw_all_weighted_mean_luminance[stim] = np.array(this_stim_weighted_mean_lum)
     ########################################################
-    # plot and save full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
+    # calculate display latency
+    # this should be when the mean luminance in world cam drops more than 400,000
     ########################################################
+    all_true_start_tb = {key:None for key in stim_vids}
     for stim in world_all_weighted_mean_luminance.keys():
-        world_lum_multiplier = raw_all_weighted_mean_luminance[stim][50]/world_all_weighted_mean_luminance[stim][50]
-        plt.plot(world_all_weighted_mean_luminance[stim]*world_lum_multiplier, label='world')
-        plt.plot(raw_all_weighted_mean_luminance[stim], label='raw')
+        true_calib_start = None
+        for tb, mean_lum in enumerate(world_all_weighted_mean_luminance[stim]):
+            if true_calib_start==None:
+                true_calib_start = [tb, mean_lum]
+            elif true_calib_start[1]-mean_lum>400000:
+                true_calib_start = [tb, mean_lum]
+                break
+        all_true_start_tb[stim] = true_calib_start[0]
+        
+
+    for stim in world_all_weighted_mean_luminance.keys():
+        plt.plot(world_all_weighted_mean_luminance[stim], label='world')
         plt.legend()
         plt.show()
 
