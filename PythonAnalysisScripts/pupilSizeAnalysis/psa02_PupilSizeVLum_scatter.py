@@ -953,6 +953,61 @@ if __name__=='__main__':
         all_weighted_world_frames_uniques[stim]['weights'].append(this_stim_weights_unique)
         all_weighted_world_frames_octo['weighted timebuckets'].append(this_stim_weighted_octo)
         all_weighted_world_frames_octo['weights'].append(this_stim_weights_octo)
+
+
+
+all_weighted_raw_calib = {'weighted timebuckets':[], 'weights':[]}
+all_weighted_raw_unique = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
+all_weighted_raw_octo = {'weighted timebuckets':[], 'weights':[]}
+
+# raw live - extract and split into phases
+for raw_live_stim in raw_live_stim_files:
+    stim_type = stim_name_to_float[os.path.basename(raw_live_stim).split('_')[1]]
+    vid_count = float(os.path.basename(raw_live_stim).split('_')[-1][:-8])
+    raw_live_array = np.load(raw_live_stim)
+    supersampled_length_all_stims[stim_type].append(len(raw_live_array))
+    this_file_weighted_doNotMove = []
+    this_file_weights_doNotMove = []
+    this_file_weighted_pulsingDots = []
+    this_file_weights_pulsingDots = []
+    this_file_weighted_unique = []
+    this_file_weights_unique = []
+    this_file_weighted_octo = []
+    this_file_weights_octo = []
+    for row in raw_live_array:
+        timebucket = row[0]
+        weight = row[1]
+        mean_lum = row[2]
+        this_tb_weighted_lum = weight*mean_lum
+        if do_not_move_start[stim_type]['raw'] < timebucket < do_not_move_end[stim_type]['raw']:
+            this_file_weighted_doNotMove.append(this_tb_weighted_lum)
+            this_file_weights_doNotMove.append(weight)
+            continue
+        elif pulsing_dots_start[stim_type]['raw'] < timebucket < pulsing_dots_end[stim_type]['raw']:
+            this_file_weighted_pulsingDots.append(this_tb_weighted_lum)
+            this_file_weights_pulsingDots.append(weight)
+        elif uniques_start[stim_type]['raw'] < timebucket < uniques_end[stim_type]['raw']:
+            this_file_weighted_unique.append(this_tb_weighted_lum)
+            this_file_weights_unique.append(weight)
+        elif octo_start[stim_type]['raw'] < timebucket < octo_end[stim_type]['raw']:
+            this_file_weighted_octo.append(this_tb_weighted_lum)
+            this_file_weights_octo.append(weight)
+    all_weighted_raw_doNotMove.append(np.array(this_file_weighted_doNotMove))
+    all_weights_raw_doNotMove.append(np.array(this_file_weights_doNotMove))
+    all_weighted_raw_pulsingDots.append(np.array(this_file_weighted_pulsingDots))
+    all_weights_raw_pulsingDots.append(np.array(this_file_weights_pulsingDots))
+    all_weighted_raw_unique[stim_type].append(np.array(this_file_weighted_unique))
+    all_weights_raw_unique[stim_type].append(np.array(this_file_weights_unique))
+    all_weighted_raw_octo.append(np.array(this_file_weighted_octo))
+    all_weights_raw_octo.append(np.array(this_file_weights_octo))
+
+
+
+
+
+
+
+        
     # calculate weighted mean frame 
     all_stims_summed_weighted_frames_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weighted timebuckets']), axis=0)
     all_stims_summed_weights_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weights']), axis=0)
@@ -964,12 +1019,12 @@ if __name__=='__main__':
     
     # downsample framerate to 30fps
     downsampled_mean_world = []
-    for i in range(0,len(mean_RL_array), downsample_mult):
-        if (i+downsample_mult-1) > len(mean_RL_array):
-            this_chunk_mean = np.nanmean(mean_RL_array[i:len(mean_RL_array)])
+    for i in range(0,len(weighted_mean_world_frames_calib), downsample_multiplier):
+        if (i+downsample_multiplier-1) > len(weighted_mean_world_frames_calib):
+            this_chunk_mean = np.nanmean(weighted_mean_world_frames_calib[i:len(weighted_mean_world_frames_calib)], axis=0)
         else:
-            this_chunk_mean = np.nanmean(mean_RL_array[i:i+downsample_mult-1])
-        downsampled_mean_RL.append(this_chunk_mean)
+            this_chunk_mean = np.nanmean(weighted_mean_world_frames_calib[i:i+downsample_multiplier-1], axis=0)
+        downsampled_mean_world.append(this_chunk_mean)
 
 
 
@@ -978,7 +1033,7 @@ if __name__=='__main__':
 
     # reshape into original world cam dimensions
     weighted_mean_world_frames_calib_reshaped = []
-    for frame in weighted_mean_world_frames_calib:
+    for frame in downsampled_mean_world:
         reshaped_frame = np.reshape(frame,(120,160))
         weighted_mean_world_frames_calib_reshaped.append(reshaped_frame)
     
@@ -989,7 +1044,7 @@ if __name__=='__main__':
     plt.switch_backend("Agg")
     # Set up formatting for the movie files
     Writer = animation.writers['ffmpeg']
-    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
+    FF_writer = animation.FFMpegWriter(fps=25, codec='h264', metadata=dict(artist='Danbee Kim'))
     fig = plt.figure()
     i = 0
     im = plt.imshow(weighted_mean_world_frames_calib_reshaped[i], cmap='gray', animated=True)
@@ -1016,38 +1071,6 @@ if __name__=='__main__':
     weighted_mean_world_frames_octo
     
     # convert into a single lum value per frame
-
-    
-        
-
-# temporarily switch matplotlib backend in order to write video
-plt.switch_backend("Agg")
-# convert dictionary of avg world vid frames into a list of arrays
-tbucket_frames = []
-sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
-for tbucket in sorted_tbuckets:
-    tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
-# Set up formatting for the movie files
-Writer = animation.writers['ffmpeg']
-FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
-fig = plt.figure()
-i = start_tbucket
-im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
-def updatefig(*args):
-    global i
-    if (i<end_tbucket):
-        i += 1
-    else:
-        i=0
-    im.set_array(tbucket_frames[i])
-    return im,
-ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
-print("Writing average world video frames to {path}...".format(path=write_path))
-ani.save(write_path, writer=FF_writer)
-plt.close(fig)
-print("Finished writing!")
-# restore default matplotlib backend
-plt.switch_backend('TkAgg')
 
 
 
