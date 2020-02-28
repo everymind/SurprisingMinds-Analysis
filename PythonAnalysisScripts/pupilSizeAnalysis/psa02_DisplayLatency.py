@@ -54,21 +54,12 @@ def load_data(location='laptop'):
         plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
     # monthly mean raw live and world cam luminances
     monthly_mean_lums_folders = fnmatch.filter(sorted(os.listdir(root_folder)), 'MeanStimuli_*')
-    # plots output folder
-    pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
-    Rco_scatter_folder = os.path.join(pupilSize_folder, 'rightContours', 'scatter')
-    Rci_scatter_folder = os.path.join(pupilSize_folder, 'rightCircles', 'scatter')
-    Lco_scatter_folder = os.path.join(pupilSize_folder, 'leftContours', 'scatter')
-    Lci_scatter_folder = os.path.join(pupilSize_folder, 'leftCircles', 'scatter')
-    Rco_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'rightContours', 'rvalVsDelay')
-    Rci_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'rightCircles', 'rvalVsDelay')
-    Lco_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'leftContours', 'rvalVsDelay')
-    Lci_rvalVsDelay_folder = os.path.join(pupilSize_folder, 'leftCircles', 'rvalVsDelay')
-    # normed mean pupil sizes output folder
-    normedMeanPupilSizes_folder = os.path.join(root_folder, 'normedMeanPupilSizes')
-    pupilSizeVsDelayLinRegress_folder = os.path.join(root_folder, 'pupilSizeVsDelayLinRegress')
+    # full dataset mean world cam output folder
+    mean_world_cam_vids_folder = os.path.join(plots_folder, 'meanWorldCam')
+    # full dataset mean raw live stim with display latency
+    mean_raw_live_with_display_latency_folder = os.path.join(root_folder, 'meanRawLiveWithDisplayLatency')
     # Create output folders if they do not exist
-    output_folders = [pupilSize_folder, Rco_scatter_folder, Rci_scatter_folder, Lco_scatter_folder, Lci_scatter_folder, Rco_rvalVsDelay_folder, Rci_rvalVsDelay_folder, Lco_rvalVsDelay_folder, Lci_rvalVsDelay_folder, normedMeanPupilSizes_folder, pupilSizeVsDelayLinRegress_folder]
+    output_folders = [mean_world_cam_vids_folder, mean_raw_live_with_display_latency_folder]
     for output_folder in output_folders:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -268,17 +259,8 @@ if __name__=='__main__':
     # SOURCE DATA AND OUTPUT FILE LOCATIONS 
     ###################################
     root_folder, plots_folder, monthly_mean_lums_folders, output_folders = load_data(args.loc)
-    pupilSize_folder = output_folders[0]
-    Rco_scatter_folder = output_folders[1]
-    Rci_scatter_folder = output_folders[2]
-    Lco_scatter_folder = output_folders[3]
-    Lci_scatter_folder = output_folders[4]
-    Rco_rvalVsDelay_folder = output_folders[5]
-    Rci_rvalVsDelay_folder = output_folders[6]
-    Lco_rvalVsDelay_folder = output_folders[7]
-    Lci_rvalVsDelay_folder = output_folders[8]
-    normedMeanPupilSizes_folder = output_folders[9]
-    pupilSizeVsDelayLinRegress_folder = output_folders[10]
+    mean_world_cam_vids_folder = output_folders[0]
+    mean_raw_live_with_display_latency_folder = output_folders[1]
     logging.info('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
     print('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
     ###################################
@@ -298,6 +280,42 @@ if __name__=='__main__':
     stim_name_to_float = {"Stim24": 24.0, "Stim25": 25.0, "Stim26": 26.0, "Stim27": 27.0, "Stim28": 28.0, "Stim29": 29.0}
     stim_float_to_name = {24.0: "Stim24", 25.0: "Stim25", 26.0: "Stim26", 27.0: "Stim27", 28.0: "Stim28", 29.0: "Stim29"}
     phase_names = ['calib', 'octo', 'unique1', 'unique2', 'unique3', 'unique4', 'unique5', 'unique6']
+    ###############################################################
+    # Load mean monthly raw live stim and world cam luminance files
+    # calculate display latency by:
+    # extracting monthly mean world cam and raw live stim data (4ms resolution)
+    # calculate full dataset mean world cam for each stimulus
+    # calculate full dataset raw live for each stimulus
+    # plot full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
+    # save plots and full dataset mean world cam video
+    ###############################################################
+    # extract raw live stim and world cam data
+    for monthly_mean_folder in monthly_mean_lums_folders:
+        raw_live_stim_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanRawLiveStim_*.npy')
+        world_cam_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanWorldCam_*.npy')
+        # extract world cam data
+        for world_cam in world_cam_files:
+            stim_type = stim_name_to_float[os.path.basename(world_cam).split('_')[1]]
+            vid_count = float(os.path.basename(world_cam).split('_')[-1][:-8])
+            world_cam_frames = np.load(world_cam)
+            for key_frame in world_cam_frames:
+                timebucket = key_frame[0]
+                weight = key_frame[1]
+                mean_frame = key_frame[2]
+                this_tb_weighted_frame = weight*mean_frame
+                if timebucket in all_weighted_world_keyFrames[stim_type].keys():
+                    all_weighted_world_keyFrames[stim_type][timebucket]['weighted frames'].append(this_tb_weighted_frame)
+                    all_weighted_world_keyFrames[stim_type][timebucket]['weights'].append(weight)
+                else:
+                    all_weighted_world_keyFrames[stim_type][timebucket] = {'weighted frames':[this_tb_weighted_frame], 'weights':[weight]}
+
+
+
+
+
+
+
+
     ########################################################
     # COLLECT TIMING INFO FOR CALIB, OCTO, AND UNIQUE PHASES
     ########################################################
@@ -348,7 +366,6 @@ if __name__=='__main__':
         octo_end[stim_type]['raw'] = o_end_raw
 
     ###############################################################
-    # Load mean monthly raw live stim and world cam luminance files
     # split into Do Not Move, Pulsing Dots, Unique, and Octo phases
     # calculate weighted mean of each phase
     ###############################################################
@@ -409,21 +426,7 @@ if __name__=='__main__':
             all_weights_raw_unique[stim_type].append(np.array(this_file_weights_unique))
             all_weighted_raw_octo.append(np.array(this_file_weighted_octo))
             all_weights_raw_octo.append(np.array(this_file_weights_octo))
-        # world cam - extract for SANITY CHECK
-        for world_cam in world_cam_files:
-            stim_type = stim_name_to_float[os.path.basename(world_cam).split('_')[1]]
-            vid_count = float(os.path.basename(world_cam).split('_')[-1][:-8])
-            world_cam_frames = np.load(world_cam)
-            for key_frame in world_cam_frames:
-                timebucket = key_frame[0]
-                weight = key_frame[1]
-                mean_frame = key_frame[2]
-                this_tb_weighted_frame = weight*mean_frame
-                if timebucket in all_weighted_world_keyFrames[stim_type].keys():
-                    all_weighted_world_keyFrames[stim_type][timebucket]['weighted frames'].append(this_tb_weighted_frame)
-                    all_weighted_world_keyFrames[stim_type][timebucket]['weights'].append(weight)
-                else:
-                    all_weighted_world_keyFrames[stim_type][timebucket] = {'weighted frames':[this_tb_weighted_frame], 'weights':[weight]}
+        
 
     # mean raw live luminance arrays
     mean_raw_live_doNotMove = calculate_weighted_mean_lum(all_weighted_raw_doNotMove, all_weights_raw_doNotMove)
@@ -685,266 +688,5 @@ calib_len = len(downsampled_mean_RL_calib)
 octo_len = len(downsampled_mean_RL_octo)
 unique_lens = [len(downsampled_mean_RL_uniques[24.0]), len(downsampled_mean_RL_uniques[25.0]), len(downsampled_mean_RL_uniques[26.0]), len(downsampled_mean_RL_uniques[27.0]), len(downsampled_mean_RL_uniques[28.0]), len(downsampled_mean_RL_uniques[29.0])]
 
-###################################
-# BEGIN PUPIL DATA EXTRACTION 
-###################################
-# prepare to sort pupil data by stimulus
-all_right_trials_contours_X = {key:[] for key in stim_vids}
-all_right_trials_contours_Y = {key:[] for key in stim_vids}
-all_right_trials_contours = {key:[] for key in stim_vids}
-all_right_trials_circles_X = {key:[] for key in stim_vids}
-all_right_trials_circles_Y = {key:[] for key in stim_vids}
-all_right_trials_circles = {key:[] for key in stim_vids}
-all_left_trials_contours_X = {key:[] for key in stim_vids}
-all_left_trials_contours_Y = {key:[] for key in stim_vids}
-all_left_trials_contours = {key:[] for key in stim_vids}
-all_left_trials_circles_X = {key:[] for key in stim_vids}
-all_left_trials_circles_Y = {key:[] for key in stim_vids}
-all_left_trials_circles = {key:[] for key in stim_vids}
-all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
-all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circles_Y, all_left_trials_contours_Y, all_left_trials_circles_Y]
-all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
-activation_count = {}
-analysed_count = {}
-stimuli_tbucketed = {key:[] for key in stim_vids}
-# consolidate csv files from multiple days into one data structure
-day_folders = sorted(os.listdir(root_folder))
-# find pupil data on dropbox
-pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
-# first day was a debugging session, so skip it
-pupil_folders = pupil_folders[1:]
-########################################################
-if args.a == 'check_string_for_empty':
-    logging.info('Extracting all pupil data...')
-    print('Extracting all pupil data...')
-elif args.a == 'debug':
-    logging.warning('Extracting debugging subset of pupil data...')
-    print('Extracting debugging subset of pupil data...')
-    pupil_folders = pupil_folders[5:10]
-    # if currently still running pupil finding analysis...
-    pupil_folders = pupil_folders[:-1]
-else:
-    logging.warning('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
-    print('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
-########################################################
-# collect dates for which pupil extraction fails
-failed_days = []
-for day_folder in pupil_folders:
-    # for each day...
-    day_folder_path = os.path.join(root_folder, day_folder)
-    analysis_folder = os.path.join(day_folder_path, "Analysis")
-    csv_folder = os.path.join(analysis_folder, "csv")
-    world_folder = os.path.join(analysis_folder, "world")
-    #
-    # Print/save number of users per day
-    day_name = day_folder.split("_")[-1]
-    try:
-        ## EXTRACT PUPIL SIZE AND POSITION
-        right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupils("right", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-        left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupils("left", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-        #
-        analysed_count[day_name] = [num_good_right_trials, num_good_left_trials]
-        activation_count[day_name] = [num_right_activations, num_left_activations]
-        print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
-        # separate by stimulus number
-        R_contours_X = {key:[] for key in stim_vids}
-        R_contours_Y = {key:[] for key in stim_vids}
-        R_contours = {key:[] for key in stim_vids}
-        R_circles_X = {key:[] for key in stim_vids}
-        R_circles_Y = {key:[] for key in stim_vids}
-        R_circles = {key:[] for key in stim_vids}
-        L_contours_X = {key:[] for key in stim_vids}
-        L_contours_Y = {key:[] for key in stim_vids}
-        L_contours = {key:[] for key in stim_vids}
-        L_circles_X = {key:[] for key in stim_vids}
-        L_circles_Y = {key:[] for key in stim_vids}
-        L_circles = {key:[] for key in stim_vids}
-        #
-        stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
-        stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
-        stim_sorted_data_all = [stim_sorted_data_right, stim_sorted_data_left]
-        #
-        extracted_data_right = [right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles]
-        extracted_data_left = [left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles]
-        extracted_data_all = [extracted_data_right, extracted_data_left]
-        #
-        for side in range(len(extracted_data_all)):
-            for dataset in range(len(extracted_data_all[side])):
-                for trial in extracted_data_all[side][dataset]:
-                    stim_num = trial[-1]
-                    if stim_num in stim_sorted_data_all[side][dataset].keys():
-                        stim_sorted_data_all[side][dataset][stim_num].append(trial[:-1])
-        #
-        # filter data for outlier points
-        all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
-        all_position_Y_data = [R_contours_Y, R_circles_Y, L_contours_Y, L_circles_Y]
-        all_size_data = [R_contours, R_circles, L_contours, L_circles]
-        # remove:
-        # eye positions that are not realistic
-        # time buckets with no corresponding frames
-        # video pixel limits are (798,599)
-        all_position_X_data = filter_to_nan(all_position_X_data, 798, 0)
-        all_position_Y_data = filter_to_nan(all_position_Y_data, 599, 0)
-        # contours/circles that are too big
-        all_size_data = filter_to_nan(all_size_data, 15000, 0)
-        #
-        # append position data to global data structure
-        for i in range(len(all_position_X_data)):
-            for stimulus in all_position_X_data[i]:
-                for index in range(len(all_position_X_data[i][stimulus])):
-                    all_trials_position_X_data[i][stimulus].append(all_position_X_data[i][stimulus][index])
-        for i in range(len(all_position_Y_data)):
-            for stimulus in all_position_Y_data[i]:
-                for index in range(len(all_position_Y_data[i][stimulus])):
-                    all_trials_position_Y_data[i][stimulus].append(all_position_Y_data[i][stimulus][index])
-        # append size data to global data structure
-        for i in range(len(all_size_data)):
-            for stimulus in all_size_data[i]:
-                for index in range(len(all_size_data[i][stimulus])):
-                    all_trials_size_data[i][stimulus].append(all_size_data[i][stimulus][index])
-        print("Day {day} succeeded!".format(day=day_name))
-    except Exception:
-        failed_days.append(day_name)
-        print("Day {day} failed!".format(day=day_name))
-
-###################################
-# Normalize pupil size data 
-###################################
-# Right Contours
-R_contours_allStim = [all_trials_size_data[0][24.0], all_trials_size_data[0][25.0], all_trials_size_data[0][26.0], all_trials_size_data[0][27.0], all_trials_size_data[0][28.0], all_trials_size_data[0][29.0]]
-Rco_normed = normPupilSizeData(R_contours_allStim, 'right contours')
-# Right Circles
-R_circles_allStim = [all_trials_size_data[1][24.0], all_trials_size_data[1][25.0], all_trials_size_data[1][26.0], all_trials_size_data[1][27.0], all_trials_size_data[1][28.0], all_trials_size_data[1][29.0]]
-Rci_normed = normPupilSizeData(R_circles_allStim, 'right circles')
-# Left Contours
-L_contours_allStim = [all_trials_size_data[2][24.0], all_trials_size_data[2][25.0], all_trials_size_data[2][26.0], all_trials_size_data[2][27.0], all_trials_size_data[2][28.0], all_trials_size_data[2][29.0]]
-Lco_normed = normPupilSizeData(L_contours_allStim, 'left contours')
-# Left Circles
-L_circles_allStim = [all_trials_size_data[3][24.0], all_trials_size_data[3][25.0], all_trials_size_data[3][26.0], all_trials_size_data[3][27.0], all_trials_size_data[3][28.0], all_trials_size_data[3][29.0]]
-Lci_normed = normPupilSizeData(L_circles_allStim, 'left circles')
-
-###################################
-# split normed pupil size arrays based on different delays of pupil reaction
-# save split normed pupil size arrays as binary files
-# create scatter plot of pupil size against world cam luminance values
-# include least squares regression line in scatter plot
-###################################
-delays = 25
-# by phase
-Rco_calibLinRegress_allDelays = []
-Rci_calibLinRegress_allDelays = []
-Lco_calibLinRegress_allDelays = []
-Lci_calibLinRegress_allDelays = []
-Rco_octoLinRegress_allDelays = []
-Rci_octoLinRegress_allDelays = []
-Lco_octoLinRegress_allDelays = []
-Lci_octoLinRegress_allDelays = []
-Rco_u1LinRegress_allDelays = []
-Rci_u1LinRegress_allDelays = []
-Lco_u1LinRegress_allDelays = []
-Lci_u1LinRegress_allDelays = []
-Rco_u2LinRegress_allDelays = []
-Rci_u2LinRegress_allDelays = []
-Lco_u2LinRegress_allDelays = []
-Lci_u2LinRegress_allDelays = []
-Rco_u3LinRegress_allDelays = []
-Rci_u3LinRegress_allDelays = []
-Lco_u3LinRegress_allDelays = []
-Lci_u3LinRegress_allDelays = []
-Rco_u4LinRegress_allDelays = []
-Rci_u4LinRegress_allDelays = []
-Lco_u4LinRegress_allDelays = []
-Lci_u4LinRegress_allDelays = []
-Rco_u5LinRegress_allDelays = []
-Rci_u5LinRegress_allDelays = []
-Lco_u5LinRegress_allDelays = []
-Lci_u5LinRegress_allDelays = []
-Rco_u6LinRegress_allDelays = []
-Rci_u6LinRegress_allDelays = []
-Lco_u6LinRegress_allDelays = []
-Lci_u6LinRegress_allDelays = []
-# all phases
-Rco_allPhasesConcatLinRegress_allDelays = []
-Rci_allPhasesConcatLinRegress_allDelays = []
-Lco_allPhasesConcatLinRegress_allDelays = []
-Lci_allPhasesConcatLinRegress_allDelays = []
-for delay in range(delays):
-    print('Delay: %d timebucket(s)'%(delay))
-    # Right Contours
-    linRegress_Rco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Rco_normed, calib_len, unique_lens, octo_len, 'RightContours', Rco_scatter_folder, normedMeanPupilSizes_folder)
-    Rco_allPhasesConcatLinRegress_allDelays.append(linRegress_Rco[0])
-    Rco_calibLinRegress_allDelays.append(linRegress_Rco[1])
-    Rco_octoLinRegress_allDelays.append(linRegress_Rco[2])
-    Rco_u1LinRegress_allDelays.append(linRegress_Rco[3])
-    Rco_u2LinRegress_allDelays.append(linRegress_Rco[4])
-    Rco_u3LinRegress_allDelays.append(linRegress_Rco[5])
-    Rco_u4LinRegress_allDelays.append(linRegress_Rco[6])
-    Rco_u5LinRegress_allDelays.append(linRegress_Rco[7])
-    Rco_u6LinRegress_allDelays.append(linRegress_Rco[8])
-    # Right Circles
-    linRegress_Rci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Rci_normed, calib_len, unique_lens, octo_len, 'RightCircles', Rci_scatter_folder, normedMeanPupilSizes_folder)
-    Rci_allPhasesConcatLinRegress_allDelays.append(linRegress_Rci[0])
-    Rci_calibLinRegress_allDelays.append(linRegress_Rci[1])
-    Rci_octoLinRegress_allDelays.append(linRegress_Rci[2])
-    Rci_u1LinRegress_allDelays.append(linRegress_Rci[3])
-    Rci_u2LinRegress_allDelays.append(linRegress_Rci[4])
-    Rci_u3LinRegress_allDelays.append(linRegress_Rci[5])
-    Rci_u4LinRegress_allDelays.append(linRegress_Rci[6])
-    Rci_u5LinRegress_allDelays.append(linRegress_Rci[7])
-    Rci_u6LinRegress_allDelays.append(linRegress_Rci[8])
-    # Left Contours
-    linRegress_Lco = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Lco_normed, calib_len, unique_lens, octo_len, 'LeftContours', Lco_scatter_folder, normedMeanPupilSizes_folder)
-    Lco_allPhasesConcatLinRegress_allDelays.append(linRegress_Lco[0])
-    Lco_calibLinRegress_allDelays.append(linRegress_Lco[1])
-    Lco_octoLinRegress_allDelays.append(linRegress_Lco[2])
-    Lco_u1LinRegress_allDelays.append(linRegress_Lco[3])
-    Lco_u2LinRegress_allDelays.append(linRegress_Lco[4])
-    Lco_u3LinRegress_allDelays.append(linRegress_Lco[5])
-    Lco_u4LinRegress_allDelays.append(linRegress_Lco[6])
-    Lco_u5LinRegress_allDelays.append(linRegress_Lco[7])
-    Lco_u6LinRegress_allDelays.append(linRegress_Lco[8])
-    # Left Circles
-    linRegress_Lci = splitPupils_withDelay_plotScatterLinRegress(delay, downsampled_bucket_size_ms, downsampled_mean_RL_all_phases, Lci_normed, calib_len, unique_lens, octo_len, 'LeftCircles', Lci_scatter_folder, normedMeanPupilSizes_folder)
-    Lci_allPhasesConcatLinRegress_allDelays.append(linRegress_Lci[0])
-    Lci_calibLinRegress_allDelays.append(linRegress_Lci[1])
-    Lci_octoLinRegress_allDelays.append(linRegress_Lci[2])
-    Lci_u1LinRegress_allDelays.append(linRegress_Lci[3])
-    Lci_u2LinRegress_allDelays.append(linRegress_Lci[4])
-    Lci_u3LinRegress_allDelays.append(linRegress_Lci[5])
-    Lci_u4LinRegress_allDelays.append(linRegress_Lci[6])
-    Lci_u5LinRegress_allDelays.append(linRegress_Lci[7])
-    Lci_u6LinRegress_allDelays.append(linRegress_Lci[8])
-
-###################################
-# plot fit scores (rvals) vs delay
-###################################
-# all phases combined
-drawFitScoresVsDelay_full(Rco_allPhasesConcatLinRegress_allDelays, delays, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder) 
-drawFitScoresVsDelay_full(Rci_allPhasesConcatLinRegress_allDelays, delays, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder) 
-drawFitScoresVsDelay_full(Lco_allPhasesConcatLinRegress_allDelays, delays, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder) 
-drawFitScoresVsDelay_full(Lci_allPhasesConcatLinRegress_allDelays, delays, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder) 
-# by phase
-allRcoPhases = [Rco_calibLinRegress_allDelays, Rco_octoLinRegress_allDelays, Rco_u1LinRegress_allDelays, Rco_u2LinRegress_allDelays, Rco_u3LinRegress_allDelays, Rco_u4LinRegress_allDelays, Rco_u5LinRegress_allDelays, Rco_u6LinRegress_allDelays]
-drawFitScoresVsDelay_byPhase(allRcoPhases, delays, phase_names, 'RightContours', downsampled_bucket_size_ms, Rco_rvalVsDelay_folder)
-allRciPhases = [Rci_calibLinRegress_allDelays, Rci_octoLinRegress_allDelays, Rci_u1LinRegress_allDelays, Rci_u2LinRegress_allDelays, Rci_u3LinRegress_allDelays, Rci_u4LinRegress_allDelays, Rci_u5LinRegress_allDelays, Rci_u6LinRegress_allDelays]
-drawFitScoresVsDelay_byPhase(allRciPhases, delays, phase_names, 'RightCircles', downsampled_bucket_size_ms, Rci_rvalVsDelay_folder)
-allLcoPhases = [Lco_calibLinRegress_allDelays, Lco_octoLinRegress_allDelays, Lco_u1LinRegress_allDelays, Lco_u2LinRegress_allDelays, Lco_u3LinRegress_allDelays, Lco_u4LinRegress_allDelays, Lco_u5LinRegress_allDelays, Lco_u6LinRegress_allDelays]
-drawFitScoresVsDelay_byPhase(allLcoPhases, delays, phase_names, 'LeftContours', downsampled_bucket_size_ms, Lco_rvalVsDelay_folder)
-allLciPhases = [Lci_calibLinRegress_allDelays, Lci_octoLinRegress_allDelays, Lci_u1LinRegress_allDelays, Lci_u2LinRegress_allDelays, Lci_u3LinRegress_allDelays, Lci_u4LinRegress_allDelays, Lci_u5LinRegress_allDelays, Lci_u6LinRegress_allDelays]
-drawFitScoresVsDelay_byPhase(allLciPhases, delays, phase_names, 'LeftCircles', downsampled_bucket_size_ms, Lci_rvalVsDelay_folder)
-
-###################################
-# save linear regression parameters as binary files
-###################################
-# output path
-Rco_allPhasesConcat_linRegress_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'pupilSizeVsDelayLinRegressParams_RightContours_allPhasesConcat_%dTBDelays.npy'%(delays)
-Rci_allPhasesConcat_linRegress_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'pupilSizeVsDelayLinRegressParams_RightCircles_allPhasesConcat_%dTBDelays.npy'%(delays)
-Lco_allPhasesConcat_linRegress_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'pupilSizeVsDelayLinRegressParams_LeftContours_allPhasesConcat_%dTBDelays.npy'%(delays)
-Lci_allPhasesConcat_linRegress_output = pupilSizeVsDelayLinRegress_folder + os.sep + 'pupilSizeVsDelayLinRegressParams_LeftCircles_allPhasesConcat_%dTBDelays.npy'%(delays)
-# save file
-np.save(Rco_allPhasesConcat_linRegress_output, Rco_allPhasesConcatLinRegress_allDelays)
-np.save(Rci_allPhasesConcat_linRegress_output, Rci_allPhasesConcatLinRegress_allDelays)
-np.save(Lco_allPhasesConcat_linRegress_output, Lco_allPhasesConcatLinRegress_allDelays)
-np.save(Lci_allPhasesConcat_linRegress_output, Lci_allPhasesConcatLinRegress_allDelays)
 
 # FIN
