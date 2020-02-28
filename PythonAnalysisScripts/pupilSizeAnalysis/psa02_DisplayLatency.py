@@ -75,363 +75,8 @@ def load_data(location='laptop'):
     return root_folder, plots_folder, monthly_mean_lums_folders, output_folders
 
 ##########################################################
-def load_daily_pupils(which_eye, day_csv_folder_path, max_no_of_buckets, original_bucket_size, new_bucket_size):
-    if (new_bucket_size % original_bucket_size == 0):
-        new_sample_rate = int(new_bucket_size/original_bucket_size)
-        max_no_of_buckets = int(max_no_of_buckets)
-        #print("New bucket window = {size}, need to average every {sample_rate} buckets".format(size=new_bucket_size, sample_rate=new_sample_rate))
-        # List all csv trial files
-        trial_files = glob.glob(day_csv_folder_path + os.sep + which_eye + "*.csv")
-        num_trials = len(trial_files)
-        good_trials = num_trials
-        # contours
-        data_contours_X = np.empty((num_trials, max_no_of_buckets+1))
-        data_contours_X[:] = -6
-        data_contours_Y = np.empty((num_trials, max_no_of_buckets+1))
-        data_contours_Y[:] = -6
-        data_contours = np.empty((num_trials, max_no_of_buckets+1))
-        data_contours[:] = -6
-        # circles
-        data_circles_X = np.empty((num_trials, max_no_of_buckets+1))
-        data_circles_X[:] = -6
-        data_circles_Y = np.empty((num_trials, max_no_of_buckets+1))
-        data_circles_Y[:] = -6
-        data_circles = np.empty((num_trials, max_no_of_buckets+1))
-        data_circles[:] = -6
-        # iterate through trials
-        index = 0
-        for trial_file in trial_files:
-            trial_name = trial_file.split(os.sep)[-1]
-            trial_stimulus = trial_name.split("_")[1]
-            trial_stim_number = np.float(trial_stimulus[-2:])
-            trial = np.genfromtxt(trial_file, dtype=np.float, delimiter=",")
-            # if there are too many -5 rows (frames) in a row, don't analyse this trial
-            bad_frame_count = []
-            for frame in trial:
-                if frame[0]==-5:
-                    bad_frame_count.append(1)
-                else:
-                    bad_frame_count.append(0)
-            clusters =  [(x[0], len(list(x[1]))) for x in itertools.groupby(bad_frame_count)]
-            longest_cluster = 0
-            for cluster in clusters:
-                if cluster[0] == 1 and cluster[1]>longest_cluster:
-                    longest_cluster = cluster[1]
-            #print("For trial {name}, the longest cluster is {length}".format(name=trial_name, length=longest_cluster))
-            if longest_cluster<100:
-                no_of_samples = math.ceil(len(trial)/new_sample_rate)
-                this_trial_contours_X = []
-                this_trial_contours_Y = []
-                this_trial_contours = []
-                this_trial_circles_X = []
-                this_trial_circles_Y = []
-                this_trial_circles = []
-                # loop through the trial at given sample rate
-                for sample in range(no_of_samples):
-                    start = sample * new_sample_rate
-                    end = (sample * new_sample_rate) + (new_sample_rate - 1)
-                    this_slice = trial[start:end]
-                    for line in this_slice:
-                        if (line<0).any():
-                            line[:] = np.nan
-                        if (line>15000).any():
-                            line[:] = np.nan
-                    # extract pupil sizes and locations from valid time buckets
-                    this_slice_contours_X = []
-                    this_slice_contours_Y = []
-                    this_slice_contours = []
-                    this_slice_circles_X = []
-                    this_slice_circles_Y = []
-                    this_slice_circles = []
-                    for frame in this_slice:
-                        # contour x,y
-                        ## DON'T PAIR X-Y YET
-                        this_slice_contours_X.append(frame[0])
-                        this_slice_contours_Y.append(frame[1])
-                        # contour area
-                        this_slice_contours.append(frame[2])
-                        # circles x,y
-                        ## DON'T PAIR X-Y YET
-                        this_slice_circles_X.append(frame[3])
-                        this_slice_circles_Y.append(frame[4])
-                        # circles area
-                        this_slice_circles.append(frame[5])
-                    # average the pupil size and movement in this sample slice
-                    this_slice_avg_contour_X = np.nanmean(this_slice_contours_X)
-                    this_slice_avg_contour_Y = np.nanmean(this_slice_contours_Y)
-                    this_slice_avg_contour = np.nanmean(this_slice_contours)
-                    this_slice_avg_circle_X = np.nanmean(this_slice_circles_X)
-                    this_slice_avg_circle_Y = np.nanmean(this_slice_circles_Y)
-                    this_slice_avg_circle = np.nanmean(this_slice_circles)
-                    # append to list of downsampled pupil sizes and movements
-                    this_trial_contours_X.append(this_slice_avg_contour_X)
-                    this_trial_contours_Y.append(this_slice_avg_contour_Y)
-                    this_trial_contours.append(this_slice_avg_contour)
-                    this_trial_circles_X.append(this_slice_avg_circle_X)
-                    this_trial_circles_Y.append(this_slice_avg_circle_Y)
-                    this_trial_circles.append(this_slice_avg_circle)
-                # Find count of bad measurements
-                bad_count_contours_X = sum(np.isnan(this_trial_contours_X))
-                bad_count_contours_Y = sum(np.isnan(this_trial_contours_Y))
-                bad_count_contours = sum(np.isnan(this_trial_contours))
-                bad_count_circles_X = sum(np.isnan(this_trial_circles_X))
-                bad_count_circles_Y = sum(np.isnan(this_trial_circles_Y))
-                bad_count_circles = sum(np.isnan(this_trial_circles))
-                # if more than half of the trial is NaN, then throw away this trial
-                # otherwise, if it's a good enough trial...
-                bad_threshold = no_of_samples/2
-                if (bad_count_contours_X<bad_threshold):
-                    this_chunk_length = len(this_trial_contours_X)
-                    data_contours_X[index][0:this_chunk_length] = this_trial_contours_X
-                    data_contours_X[index][-1] = trial_stim_number
-                if (bad_count_contours_Y<bad_threshold):
-                    this_chunk_length = len(this_trial_contours_Y)
-                    data_contours_Y[index][0:this_chunk_length] = this_trial_contours_Y
-                    data_contours_Y[index][-1] = trial_stim_number
-                if (bad_count_contours<bad_threshold) or (bad_count_circles<bad_threshold):
-                    this_chunk_length = len(this_trial_contours)
-                    data_contours[index][0:this_chunk_length] = this_trial_contours
-                    data_contours[index][-1] = trial_stim_number
-                if (bad_count_circles_X<bad_threshold):
-                    this_chunk_length = len(this_trial_circles_X)
-                    data_circles_X[index][0:this_chunk_length] = this_trial_circles_X
-                    data_circles_X[index][-1] = trial_stim_number
-                if (bad_count_circles_Y<bad_threshold):
-                    this_chunk_length = len(this_trial_circles_Y)
-                    data_circles_Y[index][0:this_chunk_length] = this_trial_circles_Y
-                    data_circles_Y[index][-1] = trial_stim_number
-                if (bad_count_circles<bad_threshold):
-                    this_chunk_length = len(this_trial_circles)
-                    data_circles[index][0:this_chunk_length] = this_trial_circles
-                    data_circles[index][-1] = trial_stim_number
-                index = index + 1
-            else:
-                #print("Discarding trial {name}".format(name=trial_name))
-                index = index + 1
-                good_trials = good_trials - 1
-        return data_contours_X, data_contours_Y, data_contours, data_circles_X, data_circles_Y, data_circles, num_trials, good_trials
-    else:
-        print("Sample rate must be a multiple of {bucket}".format(bucket=original_bucket_size))
-
-def threshold_to_nan(input_array, threshold, upper_or_lower):
-    for index in range(len(input_array)):
-        if upper_or_lower=='upper':
-            if np.isnan(input_array[index])==False and input_array[index]>threshold:
-                input_array[index] = np.nan
-        if upper_or_lower=='lower':
-            if np.isnan(input_array[index])==False and input_array[index]<threshold:
-                input_array[index] = np.nan
-    return input_array
-
-def filter_to_nan(list_of_dicts, upper_threshold, lower_threshold):
-    for dictionary in list_of_dicts:
-        for key in dictionary:
-            for trial in dictionary[key]:
-                trial = threshold_to_nan(trial, upper_threshold, 'upper')
-                trial = threshold_to_nan(trial, lower_threshold, 'lower')
-    return list_of_dicts
-
-def normPupilSizeData(pupilSizeArrays_allStim, eyeAnalysis_name):
-    normed_pupils = []
-    for i, stim_trials in enumerate(pupilSizeArrays_allStim):
-        print('Normalizing trials for %s, unique stim %s'%(eyeAnalysis_name, i+1))
-        thisUnique_normed = []
-        for trial in stim_trials:
-            trial_median = np.nanmedian(trial)
-            normed_trial = trial/trial_median
-            thisUnique_normed.append(normed_trial)
-        thisUniqueNormed_array = np.array(thisUnique_normed)
-        normed_pupils.append(thisUniqueNormed_array)
-    return normed_pupils
-
-def extract_MOI_tb_downsample_corrected(all_MOI_dict, stim_num, MOI_name, start_or_end, downsample_mult):
-    MOI_timebuckets = []
-    for key in all_MOI_dict[stim_num][MOI_name]:
-        MOI_timebuckets.append(key)
-    if start_or_end == 'start':
-        MOI_timebucket = np.min(MOI_timebuckets)
-    if start_or_end == 'end':
-        MOI_timebucket = np.max(MOI_timebuckets)
-    if start_or_end != 'start' and start_or_end != 'end':
-        logging.warning('Incorrect input for parameter start_or_end! Current input: %s' % (start_or_end))
-    return MOI_timebucket*downsample_mult
-
-def trim_phase_extractions(all_weighted_raw_extractions):
-    min_len_extraction = np.inf
-    for extraction in all_weighted_raw_extractions:
-        if len(extraction) < min_len_extraction:
-            min_len_extraction = len(extraction)
-    trimmed_all_weighted_raw_extractions = []
-    for extraction in all_weighted_raw_extractions:
-        trimmed_all_weighted_raw_extractions.append(extraction[:min_len_extraction])
-    return trimmed_all_weighted_raw_extractions
-
-def calculate_weighted_mean_lum(all_weighted_raw_lums, all_weights):
-    trimmed_all_weighted_raw_lums = trim_phase_extractions(all_weighted_raw_lums)
-    trimmed_all_weights = trim_phase_extractions(all_weights)
-    summed_lums = np.sum(trimmed_all_weighted_raw_lums, axis=0)
-    summed_weights = np.sum(trimmed_all_weights, axis=0)
-    weighted_mean = summed_lums / summed_weights
-    return weighted_mean
-
-def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
-    downsampled_mean_RL = []
-    for i in range(0,len(mean_RL_array), downsample_mult):
-        if (i+downsample_mult-1) > len(mean_RL_array):
-            this_chunk_mean = np.nanmean(mean_RL_array[i:len(mean_RL_array)])
-        else:
-            this_chunk_mean = np.nanmean(mean_RL_array[i:i+downsample_mult-1])
-        downsampled_mean_RL.append(this_chunk_mean)
-    return np.array(downsampled_mean_RL)
-
-def phaseMeans_withDelay(delay_tb, normedPupils_array, calib_len_tb, allunique_lens_tb, octo_len_tb):
-    allCalib = []
-    allOcto = []
-    allUnique = []
-    # Split trials into calib, octo, and unique
-    for i, uniqueStim in enumerate(normedPupils_array):
-        thisUnique = []
-        uniqueLen_tb = allunique_lens_tb[i]
-        for normed_trial in uniqueStim:
-            thisTrial_calib = normed_trial[delay_tb : delay_tb+calib_len_tb]
-            allCalib.append(thisTrial_calib)
-            thisTrial_unique = normed_trial[delay_tb+calib_len_tb+1 : delay_tb+calib_len_tb+1+uniqueLen_tb]
-            thisUnique.append(thisTrial_unique)
-            thisTrial_octo = normed_trial[delay_tb+calib_len_tb+1+uniqueLen_tb+1 : delay_tb+calib_len_tb+1+uniqueLen_tb+1+octo_len_tb]
-            allOcto.append(thisTrial_octo)
-        allUnique.append(thisUnique)
-    calib_mean = np.nanmean(allCalib, axis=0)
-    octo_mean = np.nanmean(allOcto, axis=0)
-    unique_means = []
-    for unique in allUnique:
-        thisUnique_mean = np.nanmean(unique, axis=0)
-        unique_means.append(thisUnique_mean)
-    return calib_mean, octo_mean, unique_means
-
-def leastSquares_pupilSize_lum(pupilSize_array, lum_array):
-    # remove tb where pupil sizes are nans
-    meanPupil_nonan = pupilSize_array[np.logical_not(np.isnan(pupilSize_array))]
-    meanLum_nonan = lum_array[np.logical_not(np.isnan(pupilSize_array))]
-    # remove tb where luminances are nans
-    meanPupil_nonan = meanPupil_nonan[np.logical_not(np.isnan(meanLum_nonan))]
-    meanLum_nonan = meanLum_nonan[np.logical_not(np.isnan(meanLum_nonan))]
-    # calculate least squares regression line
-    slope, intercept, rval, pval, stderr = stats.linregress(meanLum_nonan, meanPupil_nonan)
-    return slope, intercept, rval, pval, stderr
-
-def LumVsPupilSize_ScatterLinRegress(lum_array, pupilSize_array, phase_name, eyeAnalysis_name, pupilDelay_ms, save_folder):
-    # make sure pupil size and world cam lum arrays are same size
-    plotting_numTB = min(len(lum_array), len(pupilSize_array))
-    lum_plot = lum_array[:plotting_numTB]
-    pupil_plot = pupilSize_array[:plotting_numTB]
-    # calculate least squares regression line
-    slope, intercept, rval, pval, stderr = leastSquares_pupilSize_lum(pupilSize_array, lum_array)
-    # figure path and title
-    figPath = os.path.join(save_folder, '%s_meanLum-mean%s_delay%dms.png'%(phase_name, eyeAnalysis_name, pupilDelay_ms))
-    figTitle = 'Mean luminance of world cam vs mean pupil size (%s) during %s, pupil delay = %dms'%(eyeAnalysis_name, phase_name, pupilDelay_ms)
-    print('Plotting %s'%(figTitle))
-    # draw scatter plot
-    plt.figure(figsize=(9, 9), dpi=200)
-    plt.suptitle(figTitle, fontsize=12, y=0.98)
-    plt.ylabel('Mean pupil size (percent change from median of full trial)')
-    plt.xlabel('Mean luminance of world cam')
-    plt.plot(lum_plot, pupil_plot, '.', label='original data')
-    # draw regression line
-    plt.plot(lum_plot, intercept+slope*lum_plot, 'r', label='fitted line, r-squared: %f'%(rval**2))
-    plt.legend()
-    plt.savefig(figPath)
-    plt.close()
-    return slope, intercept, rval, pval, stderr
-
-def splitPupils_withDelay_plotScatterLinRegress(delay_tb, downsample_ms, lum_array, pupilSize_array, calib_len_tb, unique_lens_tb, octo_len_tb, eyeAnalysis_name, savePlotsFolder, saveDataFolder):
-    # split normalized pupil size data into trial phases
-    pupil_calib_mean, pupil_octo_mean, pupil_unique_means = phaseMeans_withDelay(delay_tb, pupilSize_array, calib_len_tb, unique_lens_tb, octo_len_tb)
-    # save normalized, split and averaged pupil size data as intermediate files
-    ## output path
-    calib_output = saveDataFolder + os.sep + 'meanNormedPupilSize_calib_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    octo_output = saveDataFolder + os.sep + 'meanNormedPupilSize_octo_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    unique1_output = saveDataFolder + os.sep + 'meanNormedPupilSize_u1_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    unique2_output = saveDataFolder + os.sep + 'meanNormedPupilSize_u2_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    unique3_output = saveDataFolder + os.sep + 'meanNormedPupilSize_u3_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    unique4_output = saveDataFolder + os.sep + 'meanNormedPupilSize_u4_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    unique5_output = saveDataFolder + os.sep + 'meanNormedPupilSize_u5_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    unique6_output = saveDataFolder + os.sep + 'meanNormedPupilSize_u6_%dmsDelay_%s.npy'%(delay_tb*downsample_ms,eyeAnalysis_name)
-    ## save file
-    np.save(calib_output, pupil_calib_mean)
-    np.save(octo_output, pupil_octo_mean)
-    np.save(unique1_output, pupil_unique_means[0])
-    np.save(unique2_output, pupil_unique_means[1])
-    np.save(unique3_output, pupil_unique_means[2])
-    np.save(unique4_output, pupil_unique_means[3])
-    np.save(unique5_output, pupil_unique_means[4])
-    np.save(unique6_output, pupil_unique_means[5])
-    # recombine to create a "master" scatter plot with regression
-    all_phases_pupil_sizes = np.concatenate((pupil_calib_mean, pupil_octo_mean, pupil_unique_means[0], pupil_unique_means[1], pupil_unique_means[2], pupil_unique_means[3], pupil_unique_means[4], pupil_unique_means[5]), axis=0)
-    all_phases_mean_lum = np.concatenate((lum_array[0], lum_array[1], lum_array[2], lum_array[3], lum_array[4], lum_array[5], lum_array[6], lum_array[7]), axis=0)
-    # plot scatter plots with regression line
-    slope_allPhases, intercept_allPhases, rval_allPhases, pval_allPhases, stderr_allPhases = LumVsPupilSize_ScatterLinRegress(all_phases_mean_lum, all_phases_pupil_sizes, 'AllPhases', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_calib, intercept_calib, rval_calib, pval_calib, stderr_calib = LumVsPupilSize_ScatterLinRegress(lum_array[0], pupil_calib_mean, 'calib', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_octo, intercept_octo, rval_octo, pval_octo, stderr_octo = LumVsPupilSize_ScatterLinRegress(lum_array[1], pupil_octo_mean, 'octo', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_u1, intercept_u1, rval_u1, pval_u1, stderr_u1 = LumVsPupilSize_ScatterLinRegress(lum_array[2], pupil_unique_means[0], 'unique01', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_u2, intercept_u2, rval_u2, pval_u2, stderr_u2 = LumVsPupilSize_ScatterLinRegress(lum_array[3], pupil_unique_means[1], 'unique02', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_u3, intercept_u3, rval_u3, pval_u3, stderr_u3 = LumVsPupilSize_ScatterLinRegress(lum_array[4], pupil_unique_means[2], 'unique03', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_u4, intercept_u4, rval_u4, pval_u4, stderr_u4 = LumVsPupilSize_ScatterLinRegress(lum_array[5], pupil_unique_means[3], 'unique04', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_u5, intercept_u5, rval_u5, pval_u5, stderr_u5 = LumVsPupilSize_ScatterLinRegress(lum_array[6], pupil_unique_means[4], 'unique05', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    slope_u6, intercept_u6, rval_u6, pval_u6, stderr_u6 = LumVsPupilSize_ScatterLinRegress(lum_array[7], pupil_unique_means[5], 'unique06', eyeAnalysis_name, delay_tb*downsample_ms, savePlotsFolder)
-    # return correlation coefficients
-    return [[slope_allPhases, intercept_allPhases, rval_allPhases, pval_allPhases, stderr_allPhases], [slope_calib, intercept_calib, rval_calib, pval_calib, stderr_calib], [slope_octo, intercept_octo, rval_octo, pval_octo, stderr_octo], [slope_u1, intercept_u1, rval_u1, pval_u1, stderr_u1], [slope_u2, intercept_u2, rval_u2, pval_u2, stderr_u2], [slope_u3, intercept_u3, rval_u3, pval_u3, stderr_u3], [slope_u4, intercept_u4, rval_u4, pval_u4, stderr_u4], [slope_u5, intercept_u5, rval_u5, pval_u5, stderr_u5], [slope_u6, intercept_u6, rval_u6, pval_u6, stderr_u6]]
-
-def drawFitScoresVsDelay_full(allPhases_fullLinRegress, num_delays, eyeAnalysis_name, downsample_ms, save_folder):
-    rvals = []
-    for delay in allPhases_fullLinRegress: 
-        rvals.append(delay[2])
-    rvals_plot = np.array(rvals)
-    # optimal delay
-    best_rval = min(rvals_plot)
-    best_delay = rvals.index(best_rval)
-    # figure path and title
-    figPath = os.path.join(save_folder, 'AllPhases_rValsVsDelays_%s.png'%(eyeAnalysis_name))
-    figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n All Phases, %s; Best delay = %dms (rval = %f)'%(eyeAnalysis_name, best_delay*downsample_ms, best_rval)
-    print('Plotting %s'%(figTitle))
-    # draw fit scores vs delay
-    plt.figure(dpi=150)
-    plt.suptitle(figTitle, fontsize=12, y=0.98)
-    plt.xlabel('Delay of pupil size data (ms)')
-    plt.ylabel('Correlation coefficient')
-    plt.xticks(np.arange(num_delays), np.arange(num_delays)*downsample_ms, rotation=50)
-    plt.plot(rvals_plot, 'g')
-    plt.tight_layout(rect=[0,0.03,1,0.93])
-    # save figure and close
-    plt.savefig(figPath)
-    plt.close()
-
-def drawFitScoresVsDelay_byPhase(linRegress_allPhases_list, num_delays, phases_strList, eyeAnalysis_name, downsample_ms, save_folder):
-    for i, phase in enumerate(linRegress_allPhases_list):
-        rvals = []
-        for delay in phase: 
-            rvals.append(delay[2])
-        rvals_plot = np.array(rvals)
-        # optimal delay
-        best_rval = min(rvals_plot)
-        best_delay = rvals.index(best_rval)
-        # figure path and title
-        figPath = os.path.join(save_folder, '%s_rValsVsDelays_%s.png'%(phases_strList[i], eyeAnalysis_name))
-        figTitle = 'Correlation coefficients (r val) vs delays in pupil response time \n Phase: %s; %s; Best delay = %dms (rval = %f)'%(phases_strList[i], eyeAnalysis_name, best_delay*downsample_ms, best_rval)
-        print('Plotting %s'%(figTitle))
-        # draw fit scores vs delay
-        plt.figure(dpi=150)
-        plt.suptitle(figTitle, fontsize=12, y=0.98)
-        plt.xlabel('Delay of pupil size data (ms)')
-        plt.ylabel('Correlation coefficient')
-        plt.xticks(np.arange(num_delays), np.arange(num_delays)*downsample_ms, rotation=50)
-        plt.plot(rvals_plot, 'g')
-        plt.tight_layout(rect=[0,0.03,1,0.93])
-        # save figure and close
-        plt.savefig(figPath)
-        plt.close()
-
 def worldCam_MOIs_all_stim():
-    # Moments of interest for each stimulus type
+    # Moments of interest for each stimulus type (in 40ms resolution)
     all_avg_world_moments = {}
     # Stimulus 24.0
     all_avg_world_moments[24.0] = {'calibration start': {0:['2017-10','2018-05']},
@@ -570,6 +215,46 @@ def worldCam_MOIs_all_stim():
     'camera clears ink cloud': {1037:['2017-10'],1041:['2018-05']},
     'octo end': {1108:['2017-10'],1110:['2017-11'],1112:['2018-03']}}
     return all_avg_world_moments
+
+def extract_MOI_tb_downsample_corrected(all_MOI_dict, stim_num, MOI_name, start_or_end, downsample_mult):
+    MOI_timebuckets = []
+    for key in all_MOI_dict[stim_num][MOI_name]:
+        MOI_timebuckets.append(key)
+    if start_or_end == 'start':
+        MOI_timebucket = np.min(MOI_timebuckets)
+    if start_or_end == 'end':
+        MOI_timebucket = np.max(MOI_timebuckets)
+    if start_or_end != 'start' and start_or_end != 'end':
+        logging.warning('Incorrect input for parameter start_or_end! Current input: %s' % (start_or_end))
+    return MOI_timebucket*downsample_mult
+
+def trim_phase_extractions(all_weighted_raw_extractions):
+    min_len_extraction = np.inf
+    for extraction in all_weighted_raw_extractions:
+        if len(extraction) < min_len_extraction:
+            min_len_extraction = len(extraction)
+    trimmed_all_weighted_raw_extractions = []
+    for extraction in all_weighted_raw_extractions:
+        trimmed_all_weighted_raw_extractions.append(extraction[:min_len_extraction])
+    return trimmed_all_weighted_raw_extractions
+
+def calculate_weighted_mean_lum(all_weighted_raw_lums, all_weights):
+    trimmed_all_weighted_raw_lums = trim_phase_extractions(all_weighted_raw_lums)
+    trimmed_all_weights = trim_phase_extractions(all_weights)
+    summed_lums = np.sum(trimmed_all_weighted_raw_lums, axis=0)
+    summed_weights = np.sum(trimmed_all_weights, axis=0)
+    weighted_mean = summed_lums / summed_weights
+    return weighted_mean
+
+def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
+    downsampled_mean_RL = []
+    for i in range(0,len(mean_RL_array), downsample_mult):
+        if (i+downsample_mult-1) > len(mean_RL_array):
+            this_chunk_mean = np.nanmean(mean_RL_array[i:len(mean_RL_array)])
+        else:
+            this_chunk_mean = np.nanmean(mean_RL_array[i:i+downsample_mult-1])
+        downsampled_mean_RL.append(this_chunk_mean)
+    return np.array(downsampled_mean_RL)
 
 ##########################################################
 # BEGIN SCRIPT
