@@ -362,7 +362,7 @@ if __name__=='__main__':
         logging.info('Deleting old zip folders...')
         print('Deleting old zip folders...')
         for zfolder in zip_folders:
-            shutil.rmtree(os.path.join(current_working_directory, zfolder))
+            os.remove(os.path.join(current_working_directory, zfolder))
     ###################################
     # DATA AND OUTPUT FILE LOCATIONS 
     ###################################
