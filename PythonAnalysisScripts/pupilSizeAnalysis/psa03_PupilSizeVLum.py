@@ -1,10 +1,8 @@
 ### --------------------------------------------------------------------------- ###
-# loads monthly mean raw live stim and world cam luminance data files (saved at 4ms resolution)
+# loads binary files of monthly mean raw live stim data with display latency
 # split into calib, octo, unique 1-6
 # outputs normalized pupil sizes and lin regression params for all phases as binary files
 # creates a scatter plot comparing luminance to pupil size
-# saves sanity check mean world cam video
-# NOTE: this script uses ImageMagick to easily install ffmpeg onto Windows 10 (https://www.imagemagick.org/script/download.php)
 # NOTE: in command line run with optional tags 
 #       1) '--a debug' to use only a subset of pupil location/size data
 #       2) '--loc *' to run with various root data locations (see first function below)
@@ -614,130 +612,6 @@ if __name__=='__main__':
     stim_name_to_float = {"Stim24": 24.0, "Stim25": 25.0, "Stim26": 26.0, "Stim27": 27.0, "Stim28": 28.0, "Stim29": 29.0}
     stim_float_to_name = {24.0: "Stim24", 25.0: "Stim25", 26.0: "Stim26", 27.0: "Stim27", 28.0: "Stim28", 29.0: "Stim29"}
     phase_names = ['calib', 'octo', 'unique1', 'unique2', 'unique3', 'unique4', 'unique5', 'unique6']
-    ###################################
-    # BEGIN PUPIL DATA EXTRACTION 
-    ###################################
-    # prepare to sort pupil data by stimulus
-    all_right_trials_contours_X = {key:[] for key in stim_vids}
-    all_right_trials_contours_Y = {key:[] for key in stim_vids}
-    all_right_trials_contours = {key:[] for key in stim_vids}
-    all_right_trials_circles_X = {key:[] for key in stim_vids}
-    all_right_trials_circles_Y = {key:[] for key in stim_vids}
-    all_right_trials_circles = {key:[] for key in stim_vids}
-    all_left_trials_contours_X = {key:[] for key in stim_vids}
-    all_left_trials_contours_Y = {key:[] for key in stim_vids}
-    all_left_trials_contours = {key:[] for key in stim_vids}
-    all_left_trials_circles_X = {key:[] for key in stim_vids}
-    all_left_trials_circles_Y = {key:[] for key in stim_vids}
-    all_left_trials_circles = {key:[] for key in stim_vids}
-    all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
-    all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circles_Y, all_left_trials_contours_Y, all_left_trials_circles_Y]
-    all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
-    activation_count = {}
-    analysed_count = {}
-    stimuli_tbucketed = {key:[] for key in stim_vids}
-    # consolidate csv files from multiple days into one data structure
-    day_folders = sorted(os.listdir(root_folder))
-    # find pupil data on dropbox
-    pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
-    # first day was a debugging session, so skip it
-    pupil_folders = pupil_folders[1:]
-    ########################################################
-    if args.a == 'check_string_for_empty':
-        logging.info('Extracting all pupil data...')
-        print('Extracting all pupil data...')
-    elif args.a == 'debug':
-        logging.warning('Extracting debugging subset of pupil data...')
-        print('Extracting debugging subset of pupil data...')
-        pupil_folders = pupil_folders[5:10]
-        # if currently still running pupil finding analysis...
-        pupil_folders = pupil_folders[:-1]
-    else:
-        logging.warning('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
-        print('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
-    ########################################################
-    # collect dates for which pupil extraction fails
-    failed_days = []
-    for day_folder in pupil_folders:
-        # for each day...
-        day_folder_path = os.path.join(root_folder, day_folder)
-        analysis_folder = os.path.join(day_folder_path, "Analysis")
-        csv_folder = os.path.join(analysis_folder, "csv")
-        world_folder = os.path.join(analysis_folder, "world")
-        #
-        # Print/save number of users per day
-        day_name = day_folder.split("_")[-1]
-        try:
-            ## EXTRACT PUPIL SIZE AND POSITION
-            right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupils("right", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-            left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupils("left", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
-            #
-            analysed_count[day_name] = [num_good_right_trials, num_good_left_trials]
-            activation_count[day_name] = [num_right_activations, num_left_activations]
-            print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
-            # separate by stimulus number
-            R_contours_X = {key:[] for key in stim_vids}
-            R_contours_Y = {key:[] for key in stim_vids}
-            R_contours = {key:[] for key in stim_vids}
-            R_circles_X = {key:[] for key in stim_vids}
-            R_circles_Y = {key:[] for key in stim_vids}
-            R_circles = {key:[] for key in stim_vids}
-            L_contours_X = {key:[] for key in stim_vids}
-            L_contours_Y = {key:[] for key in stim_vids}
-            L_contours = {key:[] for key in stim_vids}
-            L_circles_X = {key:[] for key in stim_vids}
-            L_circles_Y = {key:[] for key in stim_vids}
-            L_circles = {key:[] for key in stim_vids}
-            #
-            stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
-            stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
-            stim_sorted_data_all = [stim_sorted_data_right, stim_sorted_data_left]
-            #
-            extracted_data_right = [right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles]
-            extracted_data_left = [left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles]
-            extracted_data_all = [extracted_data_right, extracted_data_left]
-            #
-            for side in range(len(extracted_data_all)):
-                for dataset in range(len(extracted_data_all[side])):
-                    for trial in extracted_data_all[side][dataset]:
-                        stim_num = trial[-1]
-                        if stim_num in stim_sorted_data_all[side][dataset].keys():
-                            stim_sorted_data_all[side][dataset][stim_num].append(trial[:-1])
-            #
-            # filter data for outlier points
-            all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
-            all_position_Y_data = [R_contours_Y, R_circles_Y, L_contours_Y, L_circles_Y]
-            all_size_data = [R_contours, R_circles, L_contours, L_circles]
-            # remove:
-            # eye positions that are not realistic
-            # time buckets with no corresponding frames
-            # video pixel limits are (798,599)
-            all_position_X_data = filter_to_nan(all_position_X_data, 798, 0)
-            all_position_Y_data = filter_to_nan(all_position_Y_data, 599, 0)
-            # contours/circles that are too big
-            all_size_data = filter_to_nan(all_size_data, 15000, 0)
-            #
-            # append position data to global data structure
-            for i in range(len(all_position_X_data)):
-                for stimulus in all_position_X_data[i]:
-                    for index in range(len(all_position_X_data[i][stimulus])):
-                        all_trials_position_X_data[i][stimulus].append(all_position_X_data[i][stimulus][index])
-            for i in range(len(all_position_Y_data)):
-                for stimulus in all_position_Y_data[i]:
-                    for index in range(len(all_position_Y_data[i][stimulus])):
-                        all_trials_position_Y_data[i][stimulus].append(all_position_Y_data[i][stimulus][index])
-            # append size data to global data structure
-            for i in range(len(all_size_data)):
-                for stimulus in all_size_data[i]:
-                    for index in range(len(all_size_data[i][stimulus])):
-                        all_trials_size_data[i][stimulus].append(all_size_data[i][stimulus][index])
-            print("Day {day} succeeded!".format(day=day_name))
-        except Exception:
-            failed_days.append(day_name)
-            print("Day {day} failed!".format(day=day_name))
-
-    ########################################################
-    ########################################################
     ########################################################
     # COLLECT TIMING INFO FOR CALIB, OCTO, AND UNIQUE PHASES
     ########################################################
@@ -966,14 +840,18 @@ for raw_live_stim in raw_live_stim_files:
     vid_count = float(os.path.basename(raw_live_stim).split('_')[-1][:-8])
     raw_live_array = np.load(raw_live_stim)
     supersampled_length_all_stims[stim_type].append(len(raw_live_array))
-    this_file_weighted_doNotMove = []
-    this_file_weights_doNotMove = []
-    this_file_weighted_pulsingDots = []
-    this_file_weights_pulsingDots = []
-    this_file_weighted_unique = []
-    this_file_weights_unique = []
-    this_file_weighted_octo = []
-    this_file_weights_octo = []
+
+
+def split_into_stim_phases(full_stim_array):
+
+    this_weighted_doNotMove = []
+    this_weights_doNotMove = []
+    this_weighted_pulsingDots = []
+    this_weights_pulsingDots = []
+    this_weighted_unique = []
+    this_weights_unique = []
+    this_weighted_octo = []
+    this_weights_octo = []
     for row in raw_live_array:
         timebucket = row[0]
         weight = row[1]
@@ -1107,6 +985,8 @@ def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket
 
 ############################################################################
 # Downsample raw live stim data to match pupil data (4ms to 40ms resolution)
+# BEFORE DOWNSAMPLING, NEED TO ADJUST FOR WORLD CAM CAPTURING 2-3 FRAMES OF "PLEASE CENTER EYE" PHASE
+# MEASURING THE DISPLAY LATENCY WILL BE A SEPARATE SCRIPT
 ############################################################################
 downsampled_mean_RL_calib = downsample_mean_raw_live_stims(mean_raw_live_calib, downsample_multiplier)
 downsampled_mean_RL_octo = downsample_mean_raw_live_stims(mean_raw_live_octo, downsample_multiplier)
@@ -1118,6 +998,128 @@ downsampled_mean_RL_all_phases = [downsampled_mean_RL_calib, downsampled_mean_RL
 calib_len = len(downsampled_mean_RL_calib)
 octo_len = len(downsampled_mean_RL_octo)
 unique_lens = [len(downsampled_mean_RL_uniques[24.0]), len(downsampled_mean_RL_uniques[25.0]), len(downsampled_mean_RL_uniques[26.0]), len(downsampled_mean_RL_uniques[27.0]), len(downsampled_mean_RL_uniques[28.0]), len(downsampled_mean_RL_uniques[29.0])]
+
+###################################
+# BEGIN PUPIL DATA EXTRACTION 
+###################################
+# prepare to sort pupil data by stimulus
+all_right_trials_contours_X = {key:[] for key in stim_vids}
+all_right_trials_contours_Y = {key:[] for key in stim_vids}
+all_right_trials_contours = {key:[] for key in stim_vids}
+all_right_trials_circles_X = {key:[] for key in stim_vids}
+all_right_trials_circles_Y = {key:[] for key in stim_vids}
+all_right_trials_circles = {key:[] for key in stim_vids}
+all_left_trials_contours_X = {key:[] for key in stim_vids}
+all_left_trials_contours_Y = {key:[] for key in stim_vids}
+all_left_trials_contours = {key:[] for key in stim_vids}
+all_left_trials_circles_X = {key:[] for key in stim_vids}
+all_left_trials_circles_Y = {key:[] for key in stim_vids}
+all_left_trials_circles = {key:[] for key in stim_vids}
+all_trials_position_X_data = [all_right_trials_contours_X, all_right_trials_circles_X, all_left_trials_contours_X, all_left_trials_circles_X]
+all_trials_position_Y_data = [all_right_trials_contours_Y, all_right_trials_circles_Y, all_left_trials_contours_Y, all_left_trials_circles_Y]
+all_trials_size_data = [all_right_trials_contours, all_right_trials_circles, all_left_trials_contours, all_left_trials_circles]
+activation_count = {}
+analysed_count = {}
+stimuli_tbucketed = {key:[] for key in stim_vids}
+# consolidate csv files from multiple days into one data structure
+day_folders = sorted(os.listdir(root_folder))
+# find pupil data on dropbox
+pupil_folders = fnmatch.filter(day_folders, 'SurprisingMinds_*')
+# first day was a debugging session, so skip it
+pupil_folders = pupil_folders[1:]
+########################################################
+if args.a == 'check_string_for_empty':
+    logging.info('Extracting all pupil data...')
+    print('Extracting all pupil data...')
+elif args.a == 'debug':
+    logging.warning('Extracting debugging subset of pupil data...')
+    print('Extracting debugging subset of pupil data...')
+    pupil_folders = pupil_folders[5:10]
+    # if currently still running pupil finding analysis...
+    pupil_folders = pupil_folders[:-1]
+else:
+    logging.warning('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
+    print('%s is not a valid optional input to this script! \nExtracting all pupil data...' % (args.a))
+########################################################
+# collect dates for which pupil extraction fails
+failed_days = []
+for day_folder in pupil_folders:
+    # for each day...
+    day_folder_path = os.path.join(root_folder, day_folder)
+    analysis_folder = os.path.join(day_folder_path, "Analysis")
+    csv_folder = os.path.join(analysis_folder, "csv")
+    world_folder = os.path.join(analysis_folder, "world")
+    #
+    # Print/save number of users per day
+    day_name = day_folder.split("_")[-1]
+    try:
+        ## EXTRACT PUPIL SIZE AND POSITION
+        right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles, num_right_activations, num_good_right_trials = load_daily_pupils("right", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+        left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles, num_left_activations, num_good_left_trials = load_daily_pupils("left", csv_folder, downsampled_no_of_time_buckets, original_bucket_size_in_ms, downsampled_bucket_size_ms)
+        #
+        analysed_count[day_name] = [num_good_right_trials, num_good_left_trials]
+        activation_count[day_name] = [num_right_activations, num_left_activations]
+        print("On {day}, exhibit was activated {right_count} times (right) and {left_count} times (left), with {right_good_count} good right trials and {left_good_count} good left trials".format(day=day_name, right_count=num_right_activations, left_count=num_left_activations, right_good_count=num_good_right_trials, left_good_count=num_good_left_trials))
+        # separate by stimulus number
+        R_contours_X = {key:[] for key in stim_vids}
+        R_contours_Y = {key:[] for key in stim_vids}
+        R_contours = {key:[] for key in stim_vids}
+        R_circles_X = {key:[] for key in stim_vids}
+        R_circles_Y = {key:[] for key in stim_vids}
+        R_circles = {key:[] for key in stim_vids}
+        L_contours_X = {key:[] for key in stim_vids}
+        L_contours_Y = {key:[] for key in stim_vids}
+        L_contours = {key:[] for key in stim_vids}
+        L_circles_X = {key:[] for key in stim_vids}
+        L_circles_Y = {key:[] for key in stim_vids}
+        L_circles = {key:[] for key in stim_vids}
+        #
+        stim_sorted_data_right = [R_contours_X, R_contours_Y, R_contours, R_circles_X, R_circles_Y, R_circles]
+        stim_sorted_data_left = [L_contours_X, L_contours_Y, L_contours, L_circles_X, L_circles_Y, L_circles]
+        stim_sorted_data_all = [stim_sorted_data_right, stim_sorted_data_left]
+        #
+        extracted_data_right = [right_area_contours_X, right_area_contours_Y, right_area_contours, right_area_circles_X, right_area_circles_Y, right_area_circles]
+        extracted_data_left = [left_area_contours_X, left_area_contours_Y, left_area_contours, left_area_circles_X, left_area_circles_Y, left_area_circles]
+        extracted_data_all = [extracted_data_right, extracted_data_left]
+        #
+        for side in range(len(extracted_data_all)):
+            for dataset in range(len(extracted_data_all[side])):
+                for trial in extracted_data_all[side][dataset]:
+                    stim_num = trial[-1]
+                    if stim_num in stim_sorted_data_all[side][dataset].keys():
+                        stim_sorted_data_all[side][dataset][stim_num].append(trial[:-1])
+        #
+        # filter data for outlier points
+        all_position_X_data = [R_contours_X, R_circles_X, L_contours_X, L_circles_X]
+        all_position_Y_data = [R_contours_Y, R_circles_Y, L_contours_Y, L_circles_Y]
+        all_size_data = [R_contours, R_circles, L_contours, L_circles]
+        # remove:
+        # eye positions that are not realistic
+        # time buckets with no corresponding frames
+        # video pixel limits are (798,599)
+        all_position_X_data = filter_to_nan(all_position_X_data, 798, 0)
+        all_position_Y_data = filter_to_nan(all_position_Y_data, 599, 0)
+        # contours/circles that are too big
+        all_size_data = filter_to_nan(all_size_data, 15000, 0)
+        #
+        # append position data to global data structure
+        for i in range(len(all_position_X_data)):
+            for stimulus in all_position_X_data[i]:
+                for index in range(len(all_position_X_data[i][stimulus])):
+                    all_trials_position_X_data[i][stimulus].append(all_position_X_data[i][stimulus][index])
+        for i in range(len(all_position_Y_data)):
+            for stimulus in all_position_Y_data[i]:
+                for index in range(len(all_position_Y_data[i][stimulus])):
+                    all_trials_position_Y_data[i][stimulus].append(all_position_Y_data[i][stimulus][index])
+        # append size data to global data structure
+        for i in range(len(all_size_data)):
+            for stimulus in all_size_data[i]:
+                for index in range(len(all_size_data[i][stimulus])):
+                    all_trials_size_data[i][stimulus].append(all_size_data[i][stimulus][index])
+        print("Day {day} succeeded!".format(day=day_name))
+    except Exception:
+        failed_days.append(day_name)
+        print("Day {day} failed!".format(day=day_name))
 
 ###################################
 # Normalize pupil size data 
