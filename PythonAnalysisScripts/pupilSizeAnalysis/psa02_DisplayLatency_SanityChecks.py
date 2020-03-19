@@ -2,9 +2,7 @@
 # loads monthly mean raw live stim and world cam luminance data files (saved at 4ms resolution)
 # saves sanity check mean world cam video for each stimulus type
 # measures display latency (lag between when bonsai tells a frame to display and when it actually displays)
-# split into calib, octo, unique 1-6
-# outputs normalized pupil sizes and lin regression params for all phases as binary files
-# creates a scatter plot comparing luminance to pupil size
+# output display latency and sanity check plots/videos
 # NOTE: this script uses ImageMagick to easily install ffmpeg onto Windows 10 (https://www.imagemagick.org/script/download.php)
 # NOTE: in command line run with optional tags 
 #       1) '--a debug' to use only a subset of pupil location/size data
@@ -56,14 +54,14 @@ def load_data(location='laptop'):
         plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
     # monthly mean raw live and world cam luminances
     monthly_mean_lums_folders = fnmatch.filter(sorted(os.listdir(root_folder)), 'MeanStimuli_*')
+    # display latency
+    display_latency_folder = os.path.join(root_folder, 'displayLatency')
     # full dataset mean world cam output folder
     mean_world_cam_vids_folder = os.path.join(plots_folder, 'meanWorldCam')
-    # full dataset mean raw live stim with display latency
-    mean_raw_live_with_display_latency_folder = os.path.join(root_folder, 'meanRawLiveWithDisplayLatency')
     # sanity check
     raw_v_world_sanity_check_folder = os.path.join(plots_folder, 'rawVWorldSanityCheck')
     # Create output folders if they do not exist
-    output_folders = [mean_world_cam_vids_folder, mean_raw_live_with_display_latency_folder, raw_v_world_sanity_check_folder]
+    output_folders = [display_latency_folder, mean_world_cam_vids_folder, raw_v_world_sanity_check_folder]
     for output_folder in output_folders:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -173,18 +171,6 @@ def sanity_check_mean_world_vid(full_world_cam_dict, world_downsample_ms, origin
         # restore default matplotlib backend
         plt.switch_backend('TkAgg')
 
-
-
-def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
-    downsampled_mean_RL = []
-    for i in range(0,len(mean_RL_array), downsample_mult):
-        if (i+downsample_mult-1) > len(mean_RL_array):
-            this_chunk_mean = np.nanmean(mean_RL_array[i:len(mean_RL_array)])
-        else:
-            this_chunk_mean = np.nanmean(mean_RL_array[i:i+downsample_mult-1])
-        downsampled_mean_RL.append(this_chunk_mean)
-    return np.array(downsampled_mean_RL)
-
 ##########################################################
 # BEGIN SCRIPT
 ##########################################################
@@ -197,8 +183,8 @@ if __name__=='__main__':
     # SOURCE DATA AND OUTPUT FILE LOCATIONS 
     ###################################
     root_folder, plots_folder, monthly_mean_lums_folders, output_folders = load_data(args.loc)
-    mean_world_cam_vids_folder = output_folders[0]
-    mean_raw_live_with_display_latency_folder = output_folders[1]
+    display_latency_folder = output_folders[0]
+    mean_world_cam_vids_folder = output_folders[1]
     raw_v_world_sanity_check_folder = output_folders[2]
     logging.info('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
     print('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
@@ -315,7 +301,7 @@ if __name__=='__main__':
     # this should be when the mean luminance in world cam drops more than 400,000
     # save as binary file output
     ########################################################
-    all_true_start_tb = {key:None for key in stim_vids}
+    all_true_start_tb = []
     for stim in world_all_weighted_mean_luminance.keys():
         true_calib_start = None
         for tb, mean_lum in enumerate(world_all_weighted_mean_luminance[stim]):
@@ -324,8 +310,10 @@ if __name__=='__main__':
             elif abs(true_calib_start[1]-mean_lum)>400000:
                 true_calib_start = [tb, mean_lum]
                 break
-        all_true_start_tb[stim] = true_calib_start[0]
-    
+        all_true_start_tb.append([stim, true_calib_start[0]])
+    all_true_start_tb_array = np.array(all_true_start_tb)
+    display_latency_output = display_latency_folder + os.sep + 'displayLatencies.npy'
+    np.save(display_latency_output, all_true_start_tb_array)
     ########################################################
     # sanity check: plot mean world cam (cropped to "real start") + full raw live for each stimulus to visually check display latency
     # save plots
@@ -342,143 +330,6 @@ if __name__=='__main__':
     # save full dataset mean world cam video
     ########################################################
     # downsample mean world cam video for 50 fps (one frame every 20 ms)
-    sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
-    ########################################################
-    # Calculate weighted mean luminance for each raw live stim timebucket, split/consolidated into phases
-    # save as binary files weighted summed frames/luminances and weights, with display latency for raw stim
-    ########################################################
-    # split into phases
-    weighted_sums_raw_calib = {'weighted timebuckets':[], 'weights':[]}
-    weighted_sums_raw_uniques = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
-    weighted_sums_raw_octo = {'weighted timebuckets':[], 'weights':[]}
-    for stim in weighted_sums_raw_timebuckets.keys()
-    
-
-
-
-
-
-
-
-    
-    # mean raw live luminance arrays
-    mean_raw_live_doNotMove = calculate_weighted_mean_lum(all_weighted_raw_doNotMove, all_weights_raw_doNotMove)
-    mean_raw_live_pulsingDots = calculate_weighted_mean_lum(all_weighted_raw_pulsingDots, all_weights_raw_pulsingDots)
-    mean_raw_live_calib = np.concatenate([mean_raw_live_doNotMove, mean_raw_live_pulsingDots])
-    mean_raw_live_uniques = {key:None for key in stim_vids}
-    for stim in all_weighted_raw_unique:
-        mean_raw_live_uniques[stim] = calculate_weighted_mean_lum(all_weighted_raw_unique[stim], all_weights_raw_unique[stim])
-    mean_raw_live_octo = calculate_weighted_mean_lum(all_weighted_raw_octo, all_weights_raw_octo)
-
-    #####################################################################################################
-    # THIS SECTION UNDER CONSTRUCTION!!
-    ######################################################################################################
-    # split into phases
-    all_weighted_world_frames_calib = {'weighted timebuckets':[], 'weights':[]}
-    all_weighted_world_frames_uniques = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
-    all_weighted_world_frames_octo = {'weighted timebuckets':[], 'weights':[]}
-    for stim in allStim_weighted_mean_world_allFrames.keys():
-        this_stim_weighted_doNotMove = []
-        this_stim_weights_doNotMove = []
-        this_stim_weighted_pulsingDots = []
-        this_stim_weights_pulsingDots = []
-        this_stim_weighted_unique = []
-        this_stim_weights_unique = []
-        this_stim_weighted_octo = []
-        this_stim_weights_octo = []
-        for tb, weighted_frame in enumerate(allStim_weighted_mean_world_allFrames[stim]['weighted timebuckets']):
-            this_tb_weight = allStim_weighted_mean_world_allFrames[stim]['weights'][tb]
-            if do_not_move_start[stim_type]['world'] < tb < do_not_move_end[stim_type]['world']:
-                this_stim_weighted_doNotMove.append(weighted_frame)
-                this_stim_weights_doNotMove.append(this_tb_weight)
-            elif pulsing_dots_start[stim_type]['world'] < tb < pulsing_dots_end[stim_type]['world']:
-                this_stim_weighted_pulsingDots.append(weighted_frame)
-                this_stim_weights_pulsingDots.append(this_tb_weight)
-            elif uniques_start[stim_type]['world'] < timebucket < uniques_end[stim_type]['world']:
-                this_stim_weighted_unique.append(weighted_frame)
-                this_stim_weights_unique.append(this_tb_weight)
-            elif octo_start[stim_type]['world'] < tb < octo_end[stim_type]['world']:
-                this_stim_weighted_octo.append(weighted_frame)
-                this_stim_weights_octo.append(this_tb_weight)
-        this_stim_weighted_calib = np.concatenate((this_stim_weighted_doNotMove, this_stim_weighted_pulsingDots))
-        this_stim_weights_calib = np.concatenate((this_stim_weights_doNotMove, this_stim_weights_pulsingDots))
-        all_weighted_world_frames_calib['weighted timebuckets'].append(this_stim_weighted_calib)
-        all_weighted_world_frames_calib['weights'].append(this_stim_weights_calib)
-        all_weighted_world_frames_uniques[stim]['weighted timebuckets'].append(this_stim_weighted_unique)
-        all_weighted_world_frames_uniques[stim]['weights'].append(this_stim_weights_unique)
-        all_weighted_world_frames_octo['weighted timebuckets'].append(this_stim_weighted_octo)
-        all_weighted_world_frames_octo['weights'].append(this_stim_weights_octo)
-
-
-
-all_weighted_raw_calib = {'weighted timebuckets':[], 'weights':[]}
-all_weighted_raw_unique = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
-all_weighted_raw_octo = {'weighted timebuckets':[], 'weights':[]}
-
-# raw live - extract and split into phases
-for raw_live_stim in raw_live_stim_files:
-    stim_type = stim_name_to_float[os.path.basename(raw_live_stim).split('_')[1]]
-    vid_count = float(os.path.basename(raw_live_stim).split('_')[-1][:-8])
-    raw_live_array = np.load(raw_live_stim)
-    supersampled_length_all_stims[stim_type].append(len(raw_live_array))
-
-
-def split_into_stim_phases(full_stim_array):
-
-    this_weighted_doNotMove = []
-    this_weights_doNotMove = []
-    this_weighted_pulsingDots = []
-    this_weights_pulsingDots = []
-    this_weighted_unique = []
-    this_weights_unique = []
-    this_weighted_octo = []
-    this_weights_octo = []
-    for row in raw_live_array:
-        timebucket = row[0]
-        weight = row[1]
-        mean_lum = row[2]
-        this_tb_weighted_lum = weight*mean_lum
-        if do_not_move_start[stim_type]['raw'] < timebucket < do_not_move_end[stim_type]['raw']:
-            this_file_weighted_doNotMove.append(this_tb_weighted_lum)
-            this_file_weights_doNotMove.append(weight)
-            continue
-        elif pulsing_dots_start[stim_type]['raw'] < timebucket < pulsing_dots_end[stim_type]['raw']:
-            this_file_weighted_pulsingDots.append(this_tb_weighted_lum)
-            this_file_weights_pulsingDots.append(weight)
-        elif uniques_start[stim_type]['raw'] < timebucket < uniques_end[stim_type]['raw']:
-            this_file_weighted_unique.append(this_tb_weighted_lum)
-            this_file_weights_unique.append(weight)
-        elif octo_start[stim_type]['raw'] < timebucket < octo_end[stim_type]['raw']:
-            this_file_weighted_octo.append(this_tb_weighted_lum)
-            this_file_weights_octo.append(weight)
-    all_weighted_raw_doNotMove.append(np.array(this_file_weighted_doNotMove))
-    all_weights_raw_doNotMove.append(np.array(this_file_weights_doNotMove))
-    all_weighted_raw_pulsingDots.append(np.array(this_file_weighted_pulsingDots))
-    all_weights_raw_pulsingDots.append(np.array(this_file_weights_pulsingDots))
-    all_weighted_raw_unique[stim_type].append(np.array(this_file_weighted_unique))
-    all_weights_raw_unique[stim_type].append(np.array(this_file_weights_unique))
-    all_weighted_raw_octo.append(np.array(this_file_weighted_octo))
-    all_weights_raw_octo.append(np.array(this_file_weights_octo))
-
-
-    # convert into a single lum value per frame
-
-
-############################################################################
-# Downsample raw live stim data to match pupil data (4ms to 40ms resolution)
-# BEFORE DOWNSAMPLING, NEED TO ADJUST FOR WORLD CAM CAPTURING 2-3 FRAMES OF "PLEASE CENTER EYE" PHASE
-# MEASURING THE DISPLAY LATENCY WILL BE A SEPARATE SCRIPT
-############################################################################
-downsampled_mean_RL_calib = downsample_mean_raw_live_stims(mean_raw_live_calib, downsample_multiplier)
-downsampled_mean_RL_octo = downsample_mean_raw_live_stims(mean_raw_live_octo, downsample_multiplier)
-downsampled_mean_RL_uniques = {key:None for key in stim_vids}
-for stim in mean_raw_live_uniques:
-    downsampled_mean_RL_uniques[stim] = downsample_mean_raw_live_stims(mean_raw_live_uniques[stim], downsample_multiplier)
-
-downsampled_mean_RL_all_phases = [downsampled_mean_RL_calib, downsampled_mean_RL_octo, downsampled_mean_RL_uniques[24.0], downsampled_mean_RL_uniques[25.0], downsampled_mean_RL_uniques[26.0], downsampled_mean_RL_uniques[27.0], downsampled_mean_RL_uniques[28.0], downsampled_mean_RL_uniques[29.0]]
-calib_len = len(downsampled_mean_RL_calib)
-octo_len = len(downsampled_mean_RL_octo)
-unique_lens = [len(downsampled_mean_RL_uniques[24.0]), len(downsampled_mean_RL_uniques[25.0]), len(downsampled_mean_RL_uniques[26.0]), len(downsampled_mean_RL_uniques[27.0]), len(downsampled_mean_RL_uniques[28.0]), len(downsampled_mean_RL_uniques[29.0])]
-
+    sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, mean_world_cam_vids_folder)
 
 # FIN
