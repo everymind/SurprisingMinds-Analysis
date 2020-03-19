@@ -116,7 +116,7 @@ def sanity_check_world_v_rawLive(world_dict, worldFull_or_worldCropped, raw_dict
             world_label = 'world (cropped)'
             # figure path and title
             figPath = os.path.join(save_folder, 'Stim%d_worldCropped_versus_raw_sanityCheck.png'%(stim))
-            figTitle = 'Mean luminance of world cam (cropped) vs mean luminance of raw live stim during Stimulus %d'%(stim)
+            figTitle = 'Mean luminance of world cam (cropped to remove display latency) \n vs mean luminance of raw live stim during Stimulus %d'%(stim)
         plt.figure(figsize=(9, 9), dpi=200)
         plt.suptitle(figTitle, fontsize=12, y=0.98)
         plt.ylabel('Mean Luminance')
@@ -176,7 +176,7 @@ def sanity_check_mean_world_vid(full_world_cam_dict, world_downsample_ms, origin
 ##########################################################
 if __name__=='__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--a", nargs='?', default="check_string_for_empty")
+    parser.add_argument("--a", nargs='?', default="no_vid_output")
     parser.add_argument("--loc", nargs='?', default='laptop')
     args = parser.parse_args()
     ###################################
@@ -338,8 +338,14 @@ if __name__=='__main__':
     # save full dataset mean world cam video
     # downsample mean world cam video for 50 fps (one frame every 20 ms)
     ########################################################
-    logging.info('Saving sanity check videos of mean luminance for world cam...')
-    print('Saving sanity check videos of mean luminance for world cam...')
-    sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, mean_world_cam_vids_folder)
-
+    if args.a == 'no_vid_output':
+        logging.info('No mean world cam video output saved.')
+        print('No mean world cam video output saved.')
+    elif args.a == 'with_vid':
+        logging.info('Saving sanity check videos of mean luminance for world cam...')
+        print('Saving sanity check videos of mean luminance for world cam...')
+        sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, mean_world_cam_vids_folder)
+    else:
+        logging.warning('%s is not a valid optional input to this script! \nRunning script without generating mean world cam video output...' % (args.a))
+        print('%s is not a valid optional input to this script! \nRunning script without generating mean world cam video output...' % (args.a))
 # FIN
