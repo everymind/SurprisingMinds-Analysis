@@ -58,8 +58,10 @@ def load_data(location='laptop'):
     mean_world_cam_vids_folder = os.path.join(plots_folder, 'meanWorldCam')
     # full dataset mean raw live stim with display latency
     mean_raw_live_with_display_latency_folder = os.path.join(root_folder, 'meanRawLiveWithDisplayLatency')
+    # sanity check
+    raw_v_world_sanity_check_folder = os.path.join(plots_folder, 'rawVWorldSanityCheck')
     # Create output folders if they do not exist
-    output_folders = [mean_world_cam_vids_folder, mean_raw_live_with_display_latency_folder]
+    output_folders = [mean_world_cam_vids_folder, mean_raw_live_with_display_latency_folder, raw_v_world_sanity_check_folder]
     for output_folder in output_folders:
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
@@ -103,6 +105,28 @@ def calculate_weighted_sums(all_weighted_stim_data_dict, world_or_raw):
             weighted_sums_stim_dict[stim][timebucket] = {weighted_sum_key:this_tb_weighted_sum, 'summed weight':this_tb_weights_sum}
     return weighted_sums_stim_dict
 
+def sanity_check_world_v_rawLive(world_dict, worldFull_or_worldCropped, raw_dict, timebucket_size, save_folder):
+    for stim in world_dict.keys():
+        if worldFull_or_worldCropped == 'full':
+            world_label = 'world (full)'
+            # figure path and title
+            figPath = os.path.join(save_folder, 'Stim%d_worldFull_versus_raw_sanityCheck.png'%(stim))
+            figTitle = 'Mean luminance of world cam (full) vs mean luminance of raw live stim during Stimulus %d'%(stim)
+        elif worldFull_or_worldCropped == 'cropped':
+            world_label = 'world (cropped)'
+            # figure path and title
+            figPath = os.path.join(save_folder, 'Stim%d_worldCropped_versus_raw_sanityCheck.png'%(stim))
+            figTitle = 'Mean luminance of world cam (cropped) vs mean luminance of raw live stim during Stimulus %d'%(stim)
+        plt.figure(figsize=(9, 9), dpi=200)
+        plt.suptitle(figTitle, fontsize=12, y=0.98)
+        plt.ylabel('Mean Luminance')
+        plt.xlabel('Time (sec)')
+        plt.xticks(np.arange(0,len(raw_dict[stim]),1000), np.arange(0,len(raw_dict[stim]),1000)/1000, rotation=50)
+        plt.plot(world_dict[stim], label=world_label)
+        plt.plot(raw_dict[stim], label='raw')
+        plt.legend()
+        plt.savefig(figPath)
+        plt.close()
 
 
 def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
@@ -129,6 +153,7 @@ if __name__=='__main__':
     root_folder, plots_folder, monthly_mean_lums_folders, output_folders = load_data(args.loc)
     mean_world_cam_vids_folder = output_folders[0]
     mean_raw_live_with_display_latency_folder = output_folders[1]
+    raw_v_world_sanity_check_folder = output_folders[2]
     logging.info('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
     print('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
     ###################################
@@ -136,6 +161,7 @@ if __name__=='__main__':
     ###################################
     # downsample = collect data from every 40ms or other multiples of 20
     downsampled_bucket_size_ms = 40
+    world_cam_mean_vid_downsample_ms = 20
     original_bucket_size_in_ms = 4
     max_length_of_stim_vid = 60000 # milliseconds
     no_of_time_buckets = max_length_of_stim_vid/original_bucket_size_in_ms
@@ -248,23 +274,72 @@ if __name__=='__main__':
         for tb, mean_lum in enumerate(world_all_weighted_mean_luminance[stim]):
             if true_calib_start==None:
                 true_calib_start = [tb, mean_lum]
-            elif true_calib_start[1]-mean_lum>400000:
+            elif abs(true_calib_start[1]-mean_lum)>400000:
                 true_calib_start = [tb, mean_lum]
                 break
         all_true_start_tb[stim] = true_calib_start[0]
-        
-
-    for stim in world_all_weighted_mean_luminance.keys():
-        plt.plot(world_all_weighted_mean_luminance[stim], label='world')
-        plt.legend()
-        plt.show()
-
-
     ########################################################
-    # plot full dataset mean world cam + full dataset raw live for each stimulus to visually check display latency
-    # save plots and full dataset mean world cam video
+    # sanity check: plot mean world cam (cropped to "real start") + full raw live for each stimulus to visually check display latency
+    # save plots
+    ########################################################
+    # CROP LUMINANCE ARRAYS BASED ON all_true_start_tb
+    world_all_weighted_mean_luminance_cropped = {key:None for key in stim_vids}
+    for stim in all_true_start_tb.keys():
+        true_start = all_true_start_tb[stim]
+        cropped_lum_array = world_all_weighted_mean_luminance[stim][true_start:]
+        world_all_weighted_mean_luminance_cropped[stim] = cropped_lum_array
+    # plot sanity check
+    sanity_check_world_v_rawLive(world_all_weighted_mean_luminance_cropped, 'cropped', raw_all_weighted_mean_luminance, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
+    ########################################################
+    # save full dataset mean world cam video
     # save as binary files weighted summed frames/luminances and weights, with display latency for raw stim
     ########################################################
+    # downsample mean world cam video for 50 fps (one frame every 20 ms)
+    fps_rate = int(1000/world_cam_mean_vid_downsample_ms)
+    for stim in weighted_sums_world_all_frames.keys():
+        tbs_to_sample = np.arange(0, len(weighted_sums_world_all_frames[stim]['all frames, weighted sum']), world_cam_mean_vid_downsample_ms)
+        downsampled_mean_frames = []
+        for current_tb in tbs_to_sample:
+            this_mean_frame = weighted_sums_world_all_frames[stim]['all frames, weighted sum'][current_tb]/weighted_sums_world_all_frames[stim]['weights'][current_tb]
+            downsampled_mean_frames.append(this_mean_frame)
+        # reshape into original world cam dimensions
+        downsampled_mean_frames_reshaped = []
+        for frame in downsampled_mean_frames:
+            reshaped_frame = np.reshape(frame,(120,160))
+            downsampled_mean_frames_reshaped.append(reshaped_frame)
+        downsampled_mean_frames_reshaped = np.array(downsampled_mean_frames_reshaped)
+        # save as mp4 video file
+        write_path = os.path.join(raw_v_world_sanity_check_folder, 'Stim%d_MeanWorldCam.mp4'%(stim))
+        end_tbucket = len(downsampled_mean_frames_reshaped)
+        # temporarily switch matplotlib backend in order to write video
+        plt.switch_backend("Agg")
+        # Set up formatting for the movie files
+        Writer = animation.writers['ffmpeg']
+        FF_writer = animation.FFMpegWriter(fps=fps_rate, codec='h264', metadata=dict(artist='Danbee Kim', album='Surprising Minds'))
+        fig = plt.figure()
+        i = 0
+        im = plt.imshow(downsampled_mean_frames_reshaped[i], cmap='gray', animated=True)
+        def updatefig(*args):
+            global i
+            if (i<end_tbucket-1):
+                i += 1
+            else:
+                i = 0
+            im.set_array(downsampled_mean_frames_reshaped[i])
+            return im,
+        ani = animation.FuncAnimation(fig, updatefig, frames=len(downsampled_mean_frames_reshaped), interval=world_cam_mean_vid_downsample_ms, blit=True)
+        print("Writing average world video frames to {path}...".format(path=write_path))
+        ani.save(write_path, writer=FF_writer)
+        plt.close(fig)
+        print("Finished writing!")
+        # restore default matplotlib backend
+        plt.switch_backend('TkAgg')
+
+
+
+
+
+
 
     
     # mean raw live luminance arrays
@@ -437,38 +512,9 @@ def split_into_stim_phases(full_stim_array):
 
 
 
-    # reshape into original world cam dimensions
-    weighted_mean_world_frames_calib_reshaped = []
-    for frame in downsampled_mean_world:
-        reshaped_frame = np.reshape(frame,(120,160))
-        weighted_mean_world_frames_calib_reshaped.append(reshaped_frame)
     
-    # make mean world cam movie for this phase and save as .mp4 file
-    write_path = 'test.mp4'
-    end_tbucket = len(weighted_mean_world_frames_calib_reshaped)
-    # temporarily switch matplotlib backend in order to write video
-    plt.switch_backend("Agg")
-    # Set up formatting for the movie files
-    Writer = animation.writers['ffmpeg']
-    FF_writer = animation.FFMpegWriter(fps=25, codec='h264', metadata=dict(artist='Danbee Kim'))
-    fig = plt.figure()
-    i = 0
-    im = plt.imshow(weighted_mean_world_frames_calib_reshaped[i], cmap='gray', animated=True)
-    def updatefig(*args):
-        global i
-        if (i<end_tbucket):
-            i += 1
-        else:
-            i=0
-        im.set_array(weighted_mean_world_frames_calib_reshaped[i])
-        return im,
-    ani = animation.FuncAnimation(fig, updatefig, frames=len(weighted_mean_world_frames_calib_reshaped), interval=50, blit=True)
-    print("Writing average world video frames to {path}...".format(path=write_path))
-    ani.save(write_path, writer=FF_writer)
-    plt.close(fig)
-    print("Finished writing!")
-    # restore default matplotlib backend
-    plt.switch_backend('TkAgg')
+    
+    
 
 
 
