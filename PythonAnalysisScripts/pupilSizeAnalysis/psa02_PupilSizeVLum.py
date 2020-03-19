@@ -2,7 +2,9 @@
 # loads monthly mean raw live stim and world cam luminance data files (saved at 4ms resolution)
 # saves sanity check mean world cam video for each stimulus type
 # measures display latency (lag between when bonsai tells a frame to display and when it actually displays)
-# saves binary files of monthly mean raw live stim data with display latency
+# split into calib, octo, unique 1-6
+# outputs normalized pupil sizes and lin regression params for all phases as binary files
+# creates a scatter plot comparing luminance to pupil size
 # NOTE: this script uses ImageMagick to easily install ffmpeg onto Windows 10 (https://www.imagemagick.org/script/download.php)
 # NOTE: in command line run with optional tags 
 #       1) '--a debug' to use only a subset of pupil location/size data
@@ -121,7 +123,7 @@ def sanity_check_world_v_rawLive(world_dict, worldFull_or_worldCropped, raw_dict
         plt.suptitle(figTitle, fontsize=12, y=0.98)
         plt.ylabel('Mean Luminance')
         plt.xlabel('Time (sec)')
-        plt.xticks(np.arange(0,len(raw_dict[stim]),1000), np.arange(0,len(raw_dict[stim]),1000)/1000, rotation=50)
+        plt.xticks(np.arange(0,len(raw_dict[stim]),1000), np.arange(0,len(raw_dict[stim]),1000)*timebucket_size/1000, rotation=50)
         plt.plot(world_dict[stim], label=world_label)
         plt.plot(raw_dict[stim], label='raw')
         plt.legend()
@@ -336,53 +338,19 @@ if __name__=='__main__':
     sanity_check_world_v_rawLive(world_all_weighted_mean_luminance_cropped, 'cropped', raw_all_weighted_mean_luminance, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
     ########################################################
     # save full dataset mean world cam video
-    # save as binary files weighted summed frames/luminances and weights, with display latency for raw stim
     ########################################################
     # downsample mean world cam video for 50 fps (one frame every 20 ms)
     sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
-
-
-    fps_rate = int(1000/world_cam_mean_vid_downsample_ms)
-    world_cam_downsample_mult = int(world_cam_mean_vid_downsample_ms/original_bucket_size_in_ms)
-    for stim in weighted_sums_world_all_frames.keys():
-        tbs_to_sample = np.arange(0, len(weighted_sums_world_all_frames[stim]['all frames, weighted sum']), world_cam_downsample_mult)
-        downsampled_mean_frames = []
-        for current_tb in tbs_to_sample:
-            this_mean_frame = weighted_sums_world_all_frames[stim]['all frames, weighted sum'][current_tb]/weighted_sums_world_all_frames[stim]['weights'][current_tb]
-            downsampled_mean_frames.append(this_mean_frame)
-        # reshape into original world cam dimensions
-        downsampled_mean_frames_reshaped = []
-        for frame in downsampled_mean_frames:
-            reshaped_frame = np.reshape(frame,(120,160))
-            downsampled_mean_frames_reshaped.append(reshaped_frame)
-        downsampled_mean_frames_reshaped = np.array(downsampled_mean_frames_reshaped)
-        # save as mp4 video file
-        write_path = os.path.join(raw_v_world_sanity_check_folder, 'Stim%d_MeanWorldCam.mp4'%(stim))
-        end_tbucket = len(downsampled_mean_frames_reshaped)
-        # temporarily switch matplotlib backend in order to write video
-        plt.switch_backend("Agg")
-        # Set up formatting for the movie files
-        Writer = animation.writers['ffmpeg']
-        FF_writer = animation.FFMpegWriter(fps=fps_rate, codec='h264', metadata=dict(artist='Danbee Kim', album='Surprising Minds'))
-        fig = plt.figure()
-        i = 0
-        im = plt.imshow(downsampled_mean_frames_reshaped[i], cmap='gray', animated=True)
-        def updatefig(*args):
-            global i
-            im.set_array(downsampled_mean_frames_reshaped[i])
-            print(i)
-            if (i<end_tbucket-1):
-                i += 1
-            else:
-                i = 0
-            return im,
-        ani = animation.FuncAnimation(fig, updatefig, frames=len(downsampled_mean_frames_reshaped), interval=world_cam_mean_vid_downsample_ms, blit=True)
-        print("Writing average world video frames to {path}...".format(path=write_path))
-        ani.save(write_path, writer=FF_writer)
-        plt.close(fig)
-        print("Finished writing!")
-        # restore default matplotlib backend
-        plt.switch_backend('TkAgg')
+    ########################################################
+    # Calculate weighted mean luminance for each raw live stim timebucket, split/consolidated into phases
+    # save as binary files weighted summed frames/luminances and weights, with display latency for raw stim
+    ########################################################
+    # split into phases
+    weighted_sums_raw_calib = {'weighted timebuckets':[], 'weights':[]}
+    weighted_sums_raw_uniques = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
+    weighted_sums_raw_octo = {'weighted timebuckets':[], 'weights':[]}
+    for stim in weighted_sums_raw_timebuckets.keys()
+    
 
 
 
@@ -405,45 +373,6 @@ if __name__=='__main__':
     # Save monthly mean world cam videos for each stim type 
     # THIS SECTION UNDER CONSTRUCTION!!
     ######################################################################################################
-    # fill in gaps between keyframes
-    allStim_weighted_mean_world_allFrames = {key:{} for key in stim_vids}
-    for stim in all_weighted_world_keyFrames.keys():
-        ordered_keyframes = sorted(all_weighted_world_keyFrames[stim].keys())
-        this_stim_all_weighted_frames = []
-        this_stim_all_weights = []
-        for i, keyframe in enumerate(ordered_keyframes):
-            if i==0 and keyframe==0:
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
-            elif i==0 and keyframe!=0:
-                for frame in range(keyframe-1):
-                    this_stim_all_weighted_frames.append(np.nan)
-                    this_stim_all_weights.append(np.nan)
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
-            else:
-                prev_keyframe = ordered_keyframes[i-1]
-                if keyframe - prev_keyframe > 1:
-                    for frame in range(prev_keyframe, keyframe-1):
-                        this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][prev_keyframe]['weighted frames'])
-                        this_stim_all_weights.append(all_weighted_world_keyFrames[stim][prev_keyframe]['weights'])
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
-        full_length_this_stim = np.min(supersampled_length_all_stims[stim])
-        if ordered_keyframes[-1] < full_length_this_stim:
-            for frame in range(ordered_keyframes[-1], full_length_this_stim):
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][ordered_keyframes[-1]]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][ordered_keyframes[-1]]['weights'])
-        this_stim_weighted_timebuckets = []
-        this_stim_weights = []
-        for timebucket in this_stim_all_weighted_frames:
-            this_tb_weighted_frame = np.sum(np.array(timebucket), axis=0)
-            this_stim_weighted_timebuckets.append(this_tb_weighted_frame)
-        for timebucket in this_stim_all_weights:
-            this_tb_weights = np.sum(np.array(timebucket), axis=0)
-            this_stim_weights.append(this_tb_weights)
-        allStim_weighted_mean_world_allFrames[stim]['weighted timebuckets'] = this_stim_weighted_timebuckets
-        allStim_weighted_mean_world_allFrames[stim]['weights'] = this_stim_weights
     # split into phases
     all_weighted_world_frames_calib = {'weighted timebuckets':[], 'weights':[]}
     all_weighted_world_frames_uniques = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
