@@ -35,7 +35,7 @@ current_working_directory = os.getcwd()
 ###################################
 # grab today's date
 now = datetime.datetime.now()
-logging.basicConfig(filename="psa02_DisplayLatency_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
+logging.basicConfig(filename="psa02_DisplayLatency_SanityChecks" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG)
 ###################################
 # FUNCTIONS
 ###################################
@@ -313,6 +313,7 @@ if __name__=='__main__':
     ########################################################
     # calculate display latency
     # this should be when the mean luminance in world cam drops more than 400,000
+    # save as binary file output
     ########################################################
     all_true_start_tb = {key:None for key in stim_vids}
     for stim in world_all_weighted_mean_luminance.keys():
@@ -324,6 +325,7 @@ if __name__=='__main__':
                 true_calib_start = [tb, mean_lum]
                 break
         all_true_start_tb[stim] = true_calib_start[0]
+    
     ########################################################
     # sanity check: plot mean world cam (cropped to "real start") + full raw live for each stimulus to visually check display latency
     # save plots
@@ -369,8 +371,6 @@ if __name__=='__main__':
     mean_raw_live_octo = calculate_weighted_mean_lum(all_weighted_raw_octo, all_weights_raw_octo)
 
     #####################################################################################################
-    # WORLD CAM SANITY CHECK: calculate mean frame luminance from world cams and compare to raw live stim
-    # Save monthly mean world cam videos for each stim type 
     # THIS SECTION UNDER CONSTRUCTION!!
     ######################################################################################################
     # split into phases
@@ -461,78 +461,7 @@ def split_into_stim_phases(full_stim_array):
     all_weights_raw_octo.append(np.array(this_file_weights_octo))
 
 
-
-
-
-
-
-        
-    # calculate weighted mean frame 
-    all_stims_summed_weighted_frames_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weighted timebuckets']), axis=0)
-    all_stims_summed_weights_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weights']), axis=0)
-    weighted_mean_world_frames_calib = []
-    for tb, weight in enumerate(all_stims_summed_weights_world_calib):
-        this_tb_weighted_mean_frame = all_stims_summed_weighted_frames_world_calib[tb]/weight
-        weighted_mean_world_frames_calib.append(this_tb_weighted_mean_frame)
-    
-    
-    # downsample framerate to 30fps
-    downsampled_mean_world = []
-    for i in range(0,len(weighted_mean_world_frames_calib), downsample_multiplier):
-        if (i+downsample_multiplier-1) > len(weighted_mean_world_frames_calib):
-            this_chunk_mean = np.nanmean(weighted_mean_world_frames_calib[i:len(weighted_mean_world_frames_calib)], axis=0)
-        else:
-            this_chunk_mean = np.nanmean(weighted_mean_world_frames_calib[i:i+downsample_multiplier-1], axis=0)
-        downsampled_mean_world.append(this_chunk_mean)
-
-
-
-
-
-
-    
-    
-    
-
-
-
-
-    weighted_mean_world_frames_uniques
-    weighted_mean_world_frames_octo
-    
     # convert into a single lum value per frame
-
-
-
-def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket, write_path):
-    # temporarily switch matplotlib backend in order to write video
-    plt.switch_backend("Agg")
-    # convert dictionary of avg world vid frames into a list of arrays
-    tbucket_frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
-    for tbucket in sorted_tbuckets:
-        tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
-    # Set up formatting for the movie files
-    Writer = animation.writers['ffmpeg']
-    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
-    fig = plt.figure()
-    i = start_tbucket
-    im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
-    def updatefig(*args):
-        global i
-        if (i<end_tbucket):
-            i += 1
-        else:
-            i=0
-        im.set_array(tbucket_frames[i])
-        return im,
-    ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
-    print("Writing average world video frames to {path}...".format(path=write_path))
-    ani.save(write_path, writer=FF_writer)
-    plt.close(fig)
-    print("Finished writing!")
-    # restore default matplotlib backend
-    plt.switch_backend('TkAgg')
 
 
 ############################################################################
