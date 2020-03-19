@@ -1,5 +1,6 @@
 ### --------------------------------------------------------------------------- ###
-# loads binary files of monthly mean raw live stim data with display latency
+# loads binary files of monthly mean raw live stim data 
+# load binary file of display latencies
 # split into calib, octo, unique 1-6
 # outputs normalized pupil sizes and lin regression params for all phases as binary files
 # creates a scatter plot comparing luminance to pupil size
@@ -53,6 +54,8 @@ def load_data(location='laptop'):
         plots_folder = r"C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots"
     # monthly mean raw live and world cam luminances
     monthly_mean_lums_folders = fnmatch.filter(sorted(os.listdir(root_folder)), 'MeanStimuli_*')
+    # display latencies
+    display_latencies_folder = os.path.join(root_folder, 'displayLatency')
     # plots output folder
     pupilSize_folder = os.path.join(plots_folder, "pupilSizeAnalysis")
     Rco_scatter_folder = os.path.join(pupilSize_folder, 'rightContours', 'scatter')
@@ -581,7 +584,7 @@ if __name__=='__main__':
     ###################################
     # SOURCE DATA AND OUTPUT FILE LOCATIONS 
     ###################################
-    root_folder, plots_folder, monthly_mean_lums_folders, output_folders = load_data(args.loc)
+    root_folder, plots_folder, monthly_mean_lums_folders, display_latencies_folder, output_folders = load_data(args.loc)
     pupilSize_folder = output_folders[0]
     Rco_scatter_folder = output_folders[1]
     Rci_scatter_folder = output_folders[2]
@@ -660,9 +663,8 @@ if __name__=='__main__':
         uniques_end[stim_type]['raw'] = u_end_raw
         octo_start[stim_type]['raw'] = o_start_raw
         octo_end[stim_type]['raw'] = o_end_raw
-
     ###############################################################
-    # Load mean monthly raw live stim and world cam luminance files
+    # Load mean monthly raw live stim
     # split into Do Not Move, Pulsing Dots, Unique, and Octo phases
     # calculate weighted mean of each phase
     ###############################################################
@@ -723,22 +725,6 @@ if __name__=='__main__':
             all_weights_raw_unique[stim_type].append(np.array(this_file_weights_unique))
             all_weighted_raw_octo.append(np.array(this_file_weighted_octo))
             all_weights_raw_octo.append(np.array(this_file_weights_octo))
-        # world cam - extract for SANITY CHECK
-        for world_cam in world_cam_files:
-            stim_type = stim_name_to_float[os.path.basename(world_cam).split('_')[1]]
-            vid_count = float(os.path.basename(world_cam).split('_')[-1][:-8])
-            world_cam_frames = np.load(world_cam)
-            for key_frame in world_cam_frames:
-                timebucket = key_frame[0]
-                weight = key_frame[1]
-                mean_frame = key_frame[2]
-                this_tb_weighted_frame = weight*mean_frame
-                if timebucket in all_weighted_world_keyFrames[stim_type].keys():
-                    all_weighted_world_keyFrames[stim_type][timebucket]['weighted frames'].append(this_tb_weighted_frame)
-                    all_weighted_world_keyFrames[stim_type][timebucket]['weights'].append(weight)
-                else:
-                    all_weighted_world_keyFrames[stim_type][timebucket] = {'weighted frames':[this_tb_weighted_frame], 'weights':[weight]}
-
     # mean raw live luminance arrays
     mean_raw_live_doNotMove = calculate_weighted_mean_lum(all_weighted_raw_doNotMove, all_weights_raw_doNotMove)
     mean_raw_live_pulsingDots = calculate_weighted_mean_lum(all_weighted_raw_pulsingDots, all_weights_raw_pulsingDots)
@@ -747,241 +733,6 @@ if __name__=='__main__':
     for stim in all_weighted_raw_unique:
         mean_raw_live_uniques[stim] = calculate_weighted_mean_lum(all_weighted_raw_unique[stim], all_weights_raw_unique[stim])
     mean_raw_live_octo = calculate_weighted_mean_lum(all_weighted_raw_octo, all_weights_raw_octo)
-
-    #####################################################################################################
-    # WORLD CAM SANITY CHECK: calculate mean frame luminance from world cams and compare to raw live stim
-    # Save monthly mean world cam videos for each stim type 
-    # THIS SECTION UNDER CONSTRUCTION!!
-    ######################################################################################################
-    # fill in gaps between keyframes
-    allStim_weighted_mean_world_allFrames = {key:{} for key in stim_vids}
-    for stim in all_weighted_world_keyFrames.keys():
-        ordered_keyframes = sorted(all_weighted_world_keyFrames[stim].keys())
-        this_stim_all_weighted_frames = []
-        this_stim_all_weights = []
-        for i, keyframe in enumerate(ordered_keyframes):
-            if i==0 and keyframe==0:
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
-            elif i==0 and keyframe!=0:
-                for frame in range(keyframe-1):
-                    this_stim_all_weighted_frames.append(np.nan)
-                    this_stim_all_weights.append(np.nan)
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
-            else:
-                prev_keyframe = ordered_keyframes[i-1]
-                if keyframe - prev_keyframe > 1:
-                    for frame in range(prev_keyframe, keyframe-1):
-                        this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][prev_keyframe]['weighted frames'])
-                        this_stim_all_weights.append(all_weighted_world_keyFrames[stim][prev_keyframe]['weights'])
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][keyframe]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][keyframe]['weights'])
-        full_length_this_stim = np.min(supersampled_length_all_stims[stim])
-        if ordered_keyframes[-1] < full_length_this_stim:
-            for frame in range(ordered_keyframes[-1], full_length_this_stim):
-                this_stim_all_weighted_frames.append(all_weighted_world_keyFrames[stim][ordered_keyframes[-1]]['weighted frames'])
-                this_stim_all_weights.append(all_weighted_world_keyFrames[stim][ordered_keyframes[-1]]['weights'])
-        this_stim_weighted_timebuckets = []
-        this_stim_weights = []
-        for timebucket in this_stim_all_weighted_frames:
-            this_tb_weighted_frame = np.sum(np.array(timebucket), axis=0)
-            this_stim_weighted_timebuckets.append(this_tb_weighted_frame)
-        for timebucket in this_stim_all_weights:
-            this_tb_weights = np.sum(np.array(timebucket), axis=0)
-            this_stim_weights.append(this_tb_weights)
-        allStim_weighted_mean_world_allFrames[stim]['weighted timebuckets'] = this_stim_weighted_timebuckets
-        allStim_weighted_mean_world_allFrames[stim]['weights'] = this_stim_weights
-    # split into phases
-    all_weighted_world_frames_calib = {'weighted timebuckets':[], 'weights':[]}
-    all_weighted_world_frames_uniques = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
-    all_weighted_world_frames_octo = {'weighted timebuckets':[], 'weights':[]}
-    for stim in allStim_weighted_mean_world_allFrames.keys():
-        this_stim_weighted_doNotMove = []
-        this_stim_weights_doNotMove = []
-        this_stim_weighted_pulsingDots = []
-        this_stim_weights_pulsingDots = []
-        this_stim_weighted_unique = []
-        this_stim_weights_unique = []
-        this_stim_weighted_octo = []
-        this_stim_weights_octo = []
-        for tb, weighted_frame in enumerate(allStim_weighted_mean_world_allFrames[stim]['weighted timebuckets']):
-            this_tb_weight = allStim_weighted_mean_world_allFrames[stim]['weights'][tb]
-            if do_not_move_start[stim_type]['world'] < tb < do_not_move_end[stim_type]['world']:
-                this_stim_weighted_doNotMove.append(weighted_frame)
-                this_stim_weights_doNotMove.append(this_tb_weight)
-            elif pulsing_dots_start[stim_type]['world'] < tb < pulsing_dots_end[stim_type]['world']:
-                this_stim_weighted_pulsingDots.append(weighted_frame)
-                this_stim_weights_pulsingDots.append(this_tb_weight)
-            elif uniques_start[stim_type]['world'] < timebucket < uniques_end[stim_type]['world']:
-                this_stim_weighted_unique.append(weighted_frame)
-                this_stim_weights_unique.append(this_tb_weight)
-            elif octo_start[stim_type]['world'] < tb < octo_end[stim_type]['world']:
-                this_stim_weighted_octo.append(weighted_frame)
-                this_stim_weights_octo.append(this_tb_weight)
-        this_stim_weighted_calib = np.concatenate((this_stim_weighted_doNotMove, this_stim_weighted_pulsingDots))
-        this_stim_weights_calib = np.concatenate((this_stim_weights_doNotMove, this_stim_weights_pulsingDots))
-        all_weighted_world_frames_calib['weighted timebuckets'].append(this_stim_weighted_calib)
-        all_weighted_world_frames_calib['weights'].append(this_stim_weights_calib)
-        all_weighted_world_frames_uniques[stim]['weighted timebuckets'].append(this_stim_weighted_unique)
-        all_weighted_world_frames_uniques[stim]['weights'].append(this_stim_weights_unique)
-        all_weighted_world_frames_octo['weighted timebuckets'].append(this_stim_weighted_octo)
-        all_weighted_world_frames_octo['weights'].append(this_stim_weights_octo)
-
-
-
-all_weighted_raw_calib = {'weighted timebuckets':[], 'weights':[]}
-all_weighted_raw_unique = {key:{'weighted timebuckets':[], 'weights':[]} for key in stim_vids}
-all_weighted_raw_octo = {'weighted timebuckets':[], 'weights':[]}
-
-# raw live - extract and split into phases
-for raw_live_stim in raw_live_stim_files:
-    stim_type = stim_name_to_float[os.path.basename(raw_live_stim).split('_')[1]]
-    vid_count = float(os.path.basename(raw_live_stim).split('_')[-1][:-8])
-    raw_live_array = np.load(raw_live_stim)
-    supersampled_length_all_stims[stim_type].append(len(raw_live_array))
-
-
-def split_into_stim_phases(full_stim_array):
-
-    this_weighted_doNotMove = []
-    this_weights_doNotMove = []
-    this_weighted_pulsingDots = []
-    this_weights_pulsingDots = []
-    this_weighted_unique = []
-    this_weights_unique = []
-    this_weighted_octo = []
-    this_weights_octo = []
-    for row in raw_live_array:
-        timebucket = row[0]
-        weight = row[1]
-        mean_lum = row[2]
-        this_tb_weighted_lum = weight*mean_lum
-        if do_not_move_start[stim_type]['raw'] < timebucket < do_not_move_end[stim_type]['raw']:
-            this_file_weighted_doNotMove.append(this_tb_weighted_lum)
-            this_file_weights_doNotMove.append(weight)
-            continue
-        elif pulsing_dots_start[stim_type]['raw'] < timebucket < pulsing_dots_end[stim_type]['raw']:
-            this_file_weighted_pulsingDots.append(this_tb_weighted_lum)
-            this_file_weights_pulsingDots.append(weight)
-        elif uniques_start[stim_type]['raw'] < timebucket < uniques_end[stim_type]['raw']:
-            this_file_weighted_unique.append(this_tb_weighted_lum)
-            this_file_weights_unique.append(weight)
-        elif octo_start[stim_type]['raw'] < timebucket < octo_end[stim_type]['raw']:
-            this_file_weighted_octo.append(this_tb_weighted_lum)
-            this_file_weights_octo.append(weight)
-    all_weighted_raw_doNotMove.append(np.array(this_file_weighted_doNotMove))
-    all_weights_raw_doNotMove.append(np.array(this_file_weights_doNotMove))
-    all_weighted_raw_pulsingDots.append(np.array(this_file_weighted_pulsingDots))
-    all_weights_raw_pulsingDots.append(np.array(this_file_weights_pulsingDots))
-    all_weighted_raw_unique[stim_type].append(np.array(this_file_weighted_unique))
-    all_weights_raw_unique[stim_type].append(np.array(this_file_weights_unique))
-    all_weighted_raw_octo.append(np.array(this_file_weighted_octo))
-    all_weights_raw_octo.append(np.array(this_file_weights_octo))
-
-
-
-
-
-
-
-        
-    # calculate weighted mean frame 
-    all_stims_summed_weighted_frames_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weighted timebuckets']), axis=0)
-    all_stims_summed_weights_world_calib = np.sum(np.array(all_weighted_world_frames_calib['weights']), axis=0)
-    weighted_mean_world_frames_calib = []
-    for tb, weight in enumerate(all_stims_summed_weights_world_calib):
-        this_tb_weighted_mean_frame = all_stims_summed_weighted_frames_world_calib[tb]/weight
-        weighted_mean_world_frames_calib.append(this_tb_weighted_mean_frame)
-    
-    
-    # downsample framerate to 30fps
-    downsampled_mean_world = []
-    for i in range(0,len(weighted_mean_world_frames_calib), downsample_multiplier):
-        if (i+downsample_multiplier-1) > len(weighted_mean_world_frames_calib):
-            this_chunk_mean = np.nanmean(weighted_mean_world_frames_calib[i:len(weighted_mean_world_frames_calib)], axis=0)
-        else:
-            this_chunk_mean = np.nanmean(weighted_mean_world_frames_calib[i:i+downsample_multiplier-1], axis=0)
-        downsampled_mean_world.append(this_chunk_mean)
-
-
-
-
-
-
-    # reshape into original world cam dimensions
-    weighted_mean_world_frames_calib_reshaped = []
-    for frame in downsampled_mean_world:
-        reshaped_frame = np.reshape(frame,(120,160))
-        weighted_mean_world_frames_calib_reshaped.append(reshaped_frame)
-    
-    # make mean world cam movie for this phase and save as .mp4 file
-    write_path = 'test.mp4'
-    end_tbucket = len(weighted_mean_world_frames_calib_reshaped)
-    # temporarily switch matplotlib backend in order to write video
-    plt.switch_backend("Agg")
-    # Set up formatting for the movie files
-    Writer = animation.writers['ffmpeg']
-    FF_writer = animation.FFMpegWriter(fps=25, codec='h264', metadata=dict(artist='Danbee Kim'))
-    fig = plt.figure()
-    i = 0
-    im = plt.imshow(weighted_mean_world_frames_calib_reshaped[i], cmap='gray', animated=True)
-    def updatefig(*args):
-        global i
-        if (i<end_tbucket):
-            i += 1
-        else:
-            i=0
-        im.set_array(weighted_mean_world_frames_calib_reshaped[i])
-        return im,
-    ani = animation.FuncAnimation(fig, updatefig, frames=len(weighted_mean_world_frames_calib_reshaped), interval=50, blit=True)
-    print("Writing average world video frames to {path}...".format(path=write_path))
-    ani.save(write_path, writer=FF_writer)
-    plt.close(fig)
-    print("Finished writing!")
-    # restore default matplotlib backend
-    plt.switch_backend('TkAgg')
-
-
-
-
-    weighted_mean_world_frames_uniques
-    weighted_mean_world_frames_octo
-    
-    # convert into a single lum value per frame
-
-
-
-def write_avg_world_vid(avg_world_vid_tbucketed_dict, start_tbucket, end_tbucket, write_path):
-    # temporarily switch matplotlib backend in order to write video
-    plt.switch_backend("Agg")
-    # convert dictionary of avg world vid frames into a list of arrays
-    tbucket_frames = []
-    sorted_tbuckets = sorted([x for x in avg_world_vid_tbucketed_dict.keys() if type(x) is int])
-    for tbucket in sorted_tbuckets:
-        tbucket_frames.append(avg_world_vid_tbucketed_dict[tbucket])
-    # Set up formatting for the movie files
-    Writer = animation.writers['ffmpeg']
-    FF_writer = animation.FFMpegWriter(fps=30, codec='h264', metadata=dict(artist='Danbee Kim'))
-    fig = plt.figure()
-    i = start_tbucket
-    im = plt.imshow(tbucket_frames[i], cmap='gray', animated=True)
-    def updatefig(*args):
-        global i
-        if (i<end_tbucket):
-            i += 1
-        else:
-            i=0
-        im.set_array(tbucket_frames[i])
-        return im,
-    ani = animation.FuncAnimation(fig, updatefig, frames=len(tbucket_frames), interval=50, blit=True)
-    print("Writing average world video frames to {path}...".format(path=write_path))
-    ani.save(write_path, writer=FF_writer)
-    plt.close(fig)
-    print("Finished writing!")
-    # restore default matplotlib backend
-    plt.switch_backend('TkAgg')
-
 
 ############################################################################
 # Downsample raw live stim data to match pupil data (4ms to 40ms resolution)
