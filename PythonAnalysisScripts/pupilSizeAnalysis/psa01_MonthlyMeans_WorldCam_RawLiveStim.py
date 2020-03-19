@@ -370,7 +370,7 @@ if __name__=='__main__':
     logging.info('MAIN SURPRISING MINDS SOURCE DATASET: %s \n INTERMEDIATE PUPIL SIZE AND LOCATION FILES: %s' % (data_drive, analysed_drive))
     print('MAIN SURPRISING MINDS SOURCE DATASET: %s \n INTERMEDIATE PUPIL SIZE AND LOCATION FILES: %s' % (data_drive, analysed_drive))
     ############################################################################################
-    ### ONLY RUN WHEN COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
+    ### CHECK WHETHER COMPLETELY RESTARTING WORLD VID PROCESSING (DELETES 'world' FOLDERS!!!)... 
     ############################################################################################
     if args.a == 'check_string_for_empty':
         logging.info('Continuing world cam extraction and raw live stim creation from last session...')
