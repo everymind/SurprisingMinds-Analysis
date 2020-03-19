@@ -193,7 +193,6 @@ if __name__=='__main__':
     ###################################
     # downsample = collect data from every 40ms or other multiples of 20
     downsampled_bucket_size_ms = 40
-    world_cam_mean_vid_downsample_ms = 20
     original_bucket_size_in_ms = 4
     max_length_of_stim_vid = 60000 # milliseconds
     no_of_time_buckets = max_length_of_stim_vid/original_bucket_size_in_ms
@@ -336,16 +335,16 @@ if __name__=='__main__':
     sanity_check_world_v_rawLive(world_all_weighted_mean_luminance_cropped, 'cropped', raw_all_weighted_mean_luminance, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
     ########################################################
     # save full dataset mean world cam video
-    # downsample mean world cam video for 50 fps (one frame every 20 ms)
+    # downsample mean world cam video for 25 fps (one frame every 40 ms)
     ########################################################
     if args.a == 'no_vid_output':
-        logging.info('No mean world cam video output saved.')
-        print('No mean world cam video output saved.')
-    elif args.a == 'with_vid':
+        logging.info('No mean world cam video output saved. To save mean world cam video, run with optional input --a vid_output.')
+        print('No mean world cam video output saved. To save mean world cam video, run with optional input --a vid_output.')
+    elif args.a == 'vid_output':
         logging.info('Saving sanity check videos of mean luminance for world cam...')
         print('Saving sanity check videos of mean luminance for world cam...')
-        sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, mean_world_cam_vids_folder)
+        sanity_check_mean_world_vid(weighted_sums_world_all_frames, downsampled_bucket_size_ms, original_bucket_size_in_ms, mean_world_cam_vids_folder)
     else:
-        logging.warning('%s is not a valid optional input to this script! \nRunning script without generating mean world cam video output...' % (args.a))
-        print('%s is not a valid optional input to this script! \nRunning script without generating mean world cam video output...' % (args.a))
+        logging.warning('%s is not a valid optional input to this script! \n Completing script without generating mean world cam video output...' % (args.a))
+        print('%s is not a valid optional input to this script! \n Completing script without generating mean world cam video output...' % (args.a))
 # FIN
