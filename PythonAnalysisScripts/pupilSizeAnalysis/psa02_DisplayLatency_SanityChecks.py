@@ -186,8 +186,8 @@ if __name__=='__main__':
     display_latency_folder = output_folders[0]
     mean_world_cam_vids_folder = output_folders[1]
     raw_v_world_sanity_check_folder = output_folders[2]
-    logging.info('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
-    print('ROOT FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
+    logging.info('\n MAIN DATA FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
+    print('MAIN DATA FOLDER: %s \n PLOTS FOLDER: %s \n MONTHLY MEAN RAW LIVE AND WORLD CAM STIMULI DATA FOLDER: %s' % (root_folder, plots_folder, monthly_mean_lums_folders))
     ###################################
     # TIMING/SAMPLING VARIABLES FOR DATA EXTRACTION
     ###################################
@@ -235,13 +235,11 @@ if __name__=='__main__':
             extract_stim_data(raw_live_array, 'raw', all_weighted_rawLive_timebuckets[stim_type])
     ########################################################
     # Calculate full dataset mean world cam for each stimulus
-    # Calculate full dataset raw live for each stimulus
     ########################################################
+    logging.info('Calculating full dataset mean world camera for each unique stimulus...')
+    print('Calculating full dataset mean world camera for each unique stimulus...')
     weighted_sums_world_keyFrames = calculate_weighted_sums(all_weighted_world_keyFrames, 'world')
-    weighted_sums_raw_timebuckets = calculate_weighted_sums(all_weighted_rawLive_timebuckets, 'raw')
-    ########################################################
     # Fill in gaps between keyframes in world cam
-    ########################################################
     weighted_sums_world_all_frames = {key:{} for key in stim_vids}
     for stim in weighted_sums_world_keyFrames.keys():
         ordered_keyframes = sorted(weighted_sums_world_keyFrames[stim].keys())
@@ -271,9 +269,7 @@ if __name__=='__main__':
                 this_stim_all_weighted_frames.append(weighted_sums_world_keyFrames[stim][ordered_keyframes[-1]]['keyframe, weighted sum'])
                 this_stim_all_weights.append(weighted_sums_world_keyFrames[stim][ordered_keyframes[-1]]['summed weight'])
         weighted_sums_world_all_frames[stim] = {'all frames, weighted sum':this_stim_all_weighted_frames, 'weights':this_stim_all_weights}
-    ########################################################
     # Calculate weighted mean frame and weighted mean luminance for each world cam timebucket
-    ########################################################
     world_all_weighted_mean_frames = {key:None for key in stim_vids}
     world_all_weighted_mean_luminance = {key:None for key in stim_vids}
     for stim in weighted_sums_world_all_frames.keys():
@@ -287,8 +283,12 @@ if __name__=='__main__':
         world_all_weighted_mean_frames[stim] = np.array(this_stim_weighted_mean_frames)
         world_all_weighted_mean_luminance[stim] = np.array(this_stim_weighted_mean_lum)
     ########################################################
-    # Calculate weighted mean luminance for each raw live stim timebucket
+    # Calculate full dataset raw live for each stimulus
     ########################################################
+    logging.info('Calculating full dataset raw live vid for each unique stimulus...')
+    print('Calculating full dataset raw live vid for each unique stimulus...')
+    weighted_sums_raw_timebuckets = calculate_weighted_sums(all_weighted_rawLive_timebuckets, 'raw')
+    # Calculate weighted mean luminance for each raw live stim timebucket
     raw_all_weighted_mean_luminance = {key:None for key in stim_vids}
     for stim in weighted_sums_raw_timebuckets.keys():
         this_stim_weighted_mean_lum = []
@@ -297,11 +297,12 @@ if __name__=='__main__':
             this_stim_weighted_mean_lum.append(this_tb_weighted_mean_lum)
         raw_all_weighted_mean_luminance[stim] = np.array(this_stim_weighted_mean_lum)
     ########################################################
-    # calculate display latency
+    # Calculate display latency
     # this should be when the mean luminance in world cam drops more than 400,000
     # save as binary file output
     ########################################################
     all_true_start_tb = []
+    all_true_start_tb_dict = {key:None for key in stim_vids}
     for stim in world_all_weighted_mean_luminance.keys():
         true_calib_start = None
         for tb, mean_lum in enumerate(world_all_weighted_mean_luminance[stim]):
@@ -311,7 +312,12 @@ if __name__=='__main__':
                 true_calib_start = [tb, mean_lum]
                 break
         all_true_start_tb.append([stim, true_calib_start[0]])
+        all_true_start_tb_dict[stim] = true_calib_start[0]
+        logging.info('Display latency for stim %d: %d'%(stim, true_calib_start[0]))
+        print('Display latency for stim %d: %d'%(stim, true_calib_start[0]))
     all_true_start_tb_array = np.array(all_true_start_tb)
+    logging.info('Writing display latencies to binary file...')
+    print('Writing display latencies to binary file...')
     display_latency_output = display_latency_folder + os.sep + 'displayLatencies.npy'
     np.save(display_latency_output, all_true_start_tb_array)
     ########################################################
@@ -320,16 +326,20 @@ if __name__=='__main__':
     ########################################################
     # CROP LUMINANCE ARRAYS BASED ON all_true_start_tb
     world_all_weighted_mean_luminance_cropped = {key:None for key in stim_vids}
-    for stim in all_true_start_tb.keys():
-        true_start = all_true_start_tb[stim]
+    for stim in all_true_start_tb_dict.keys():
+        true_start = all_true_start_tb_dict[stim]
         cropped_lum_array = world_all_weighted_mean_luminance[stim][true_start:]
         world_all_weighted_mean_luminance_cropped[stim] = cropped_lum_array
     # plot sanity check
+    logging.info('Saving sanity check plots of mean luminance for world cam versus raw live stim...')
+    print('Saving sanity check plots of mean luminance for world cam versus raw live stim...')
     sanity_check_world_v_rawLive(world_all_weighted_mean_luminance_cropped, 'cropped', raw_all_weighted_mean_luminance, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
     ########################################################
     # save full dataset mean world cam video
-    ########################################################
     # downsample mean world cam video for 50 fps (one frame every 20 ms)
+    ########################################################
+    logging.info('Saving sanity check videos of mean luminance for world cam...')
+    print('Saving sanity check videos of mean luminance for world cam...')
     sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, mean_world_cam_vids_folder)
 
 # FIN
