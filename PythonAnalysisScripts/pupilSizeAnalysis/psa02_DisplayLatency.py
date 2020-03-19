@@ -128,6 +128,50 @@ def sanity_check_world_v_rawLive(world_dict, worldFull_or_worldCropped, raw_dict
         plt.savefig(figPath)
         plt.close()
 
+def sanity_check_mean_world_vid(full_world_cam_dict, world_downsample_ms, original_sample_rate_ms, save_folder):
+    fps_rate = int(1000/world_downsample_ms)
+    world_cam_downsample_mult = int(world_downsample_ms/original_sample_rate_ms)
+    for stim in full_world_cam_dict.keys():
+        tbs_to_sample = np.arange(0, len(full_world_cam_dict[stim]['all frames, weighted sum']), world_cam_downsample_mult)
+        downsampled_mean_frames = []
+        for current_tb in tbs_to_sample:
+            this_mean_frame = full_world_cam_dict[stim]['all frames, weighted sum'][current_tb]/full_world_cam_dict[stim]['weights'][current_tb]
+            downsampled_mean_frames.append(this_mean_frame)
+        # reshape into original world cam dimensions
+        downsampled_mean_frames_reshaped = []
+        for frame in downsampled_mean_frames:
+            reshaped_frame = np.reshape(frame,(120,160))
+            downsampled_mean_frames_reshaped.append(reshaped_frame)
+        downsampled_mean_frames_reshaped = np.array(downsampled_mean_frames_reshaped)
+        # save as mp4 video file
+        write_path = os.path.join(save_folder, 'Stim%d_MeanWorldCam.mp4'%(stim))
+        end_tbucket = len(downsampled_mean_frames_reshaped)
+        # temporarily switch matplotlib backend in order to write video
+        plt.switch_backend("Agg")
+        # Set up formatting for the movie files
+        Writer = animation.writers['ffmpeg']
+        FF_writer = animation.FFMpegWriter(fps=fps_rate, codec='h264', metadata=dict(artist='Danbee Kim', album='Surprising Minds'))
+        print('Drawing frames...')
+        fig = plt.figure()
+        i = 0
+        im = plt.imshow(downsampled_mean_frames_reshaped[i], cmap='gray', animated=True)
+        def updatefig(*args):
+            global i
+            if (i<end_tbucket-1):
+                i += 1
+            else:
+                i = 0
+            im.set_array(downsampled_mean_frames_reshaped[i])
+            return im,
+        ani = animation.FuncAnimation(fig, updatefig, frames=len(downsampled_mean_frames_reshaped), interval=world_downsample_ms, blit=True)
+        print("Writing average world video frames to {path}...".format(path=write_path))
+        ani.save(write_path, writer=FF_writer)
+        plt.close(fig)
+        print("Finished writing!")
+        # restore default matplotlib backend
+        plt.switch_backend('TkAgg')
+
+
 
 def downsample_mean_raw_live_stims(mean_RL_array, downsample_mult):
     downsampled_mean_RL = []
@@ -295,9 +339,13 @@ if __name__=='__main__':
     # save as binary files weighted summed frames/luminances and weights, with display latency for raw stim
     ########################################################
     # downsample mean world cam video for 50 fps (one frame every 20 ms)
+    sanity_check_mean_world_vid(weighted_sums_world_all_frames, world_cam_mean_vid_downsample_ms, original_bucket_size_in_ms, raw_v_world_sanity_check_folder)
+
+
     fps_rate = int(1000/world_cam_mean_vid_downsample_ms)
+    world_cam_downsample_mult = int(world_cam_mean_vid_downsample_ms/original_bucket_size_in_ms)
     for stim in weighted_sums_world_all_frames.keys():
-        tbs_to_sample = np.arange(0, len(weighted_sums_world_all_frames[stim]['all frames, weighted sum']), world_cam_mean_vid_downsample_ms)
+        tbs_to_sample = np.arange(0, len(weighted_sums_world_all_frames[stim]['all frames, weighted sum']), world_cam_downsample_mult)
         downsampled_mean_frames = []
         for current_tb in tbs_to_sample:
             this_mean_frame = weighted_sums_world_all_frames[stim]['all frames, weighted sum'][current_tb]/weighted_sums_world_all_frames[stim]['weights'][current_tb]
@@ -321,11 +369,12 @@ if __name__=='__main__':
         im = plt.imshow(downsampled_mean_frames_reshaped[i], cmap='gray', animated=True)
         def updatefig(*args):
             global i
+            im.set_array(downsampled_mean_frames_reshaped[i])
+            print(i)
             if (i<end_tbucket-1):
                 i += 1
             else:
                 i = 0
-            im.set_array(downsampled_mean_frames_reshaped[i])
             return im,
         ani = animation.FuncAnimation(fig, updatefig, frames=len(downsampled_mean_frames_reshaped), interval=world_cam_mean_vid_downsample_ms, blit=True)
         print("Writing average world video frames to {path}...".format(path=write_path))
