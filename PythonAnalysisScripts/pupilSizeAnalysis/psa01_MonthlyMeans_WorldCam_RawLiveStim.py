@@ -43,7 +43,7 @@ logging.basicConfig(filename="psa01_MonthlyMeans_WorldCam_RawLiveStim_" + now.st
 # 1) MAIN SURPRISING MINDS SOURCE DATASET (LEFT/RIGHT EYE CAMERA VIDEOS, WORLD CAMERA VIDEO, AND ACCOMPANYING TIMESTAMPS FOR EACH PARTICIPANT)
 # AND
 # 2) INTERMEDIATE PUPIL SIZE AND LOCATION FILES (WITH ACCOMPANYING WORLD CAM ALIGNMENT IMAGES)
-### Current default usess a debugging source dataset
+### Current default uses a debugging source dataset
 ##########################################################
 def load_data(location='laptop'):
     if location == 'laptop':

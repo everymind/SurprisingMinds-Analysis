@@ -6,7 +6,8 @@
 # NOTE: this script uses ImageMagick to easily install ffmpeg onto Windows 10 (https://www.imagemagick.org/script/download.php)
 # NOTE: in command line run with optional tags 
 #       1) '--a debug' to use only a subset of pupil location/size data
-#       2) '--loc *' to run with various root data locations (see first function below)
+#       2) '--a vid_output' to generate sanity check mean world cam videos
+#       3) '--loc *' to run with various root data locations (see first function below)
 ### --------------------------------------------------------------------------- ###
 import logging
 import pdb
@@ -43,7 +44,7 @@ logging.basicConfig(filename="psa02_DisplayLatency_SanityChecks" + now.strftime(
 # 1) root_folder (parent folder with all intermediate data)
 # AND
 # 2) plots_folder (parent folder for all plots output from analysis scripts)
-### Current default usess a debugging source dataset
+### Current default uses a debugging source dataset
 ##########################################################
 def load_data(location='laptop'):
     if location == 'laptop':
