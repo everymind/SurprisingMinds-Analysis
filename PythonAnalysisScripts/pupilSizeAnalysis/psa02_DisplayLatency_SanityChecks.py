@@ -7,7 +7,8 @@
 # NOTE: in command line run with optional tags 
 #       1) '--a debug' to use only a subset of pupil location/size data
 #       2) '--a vid_output' to generate sanity check mean world cam videos
-#       3) '--loc *' to run with various root data locations (see first function below)
+#       3) '--a MOI' to find moments of interest in the mean world cam videos
+#       4) '--loc *' to run with various root data locations (see first function below)
 ### --------------------------------------------------------------------------- ###
 import logging
 import pdb
@@ -25,6 +26,7 @@ import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from scipy import stats
 import argparse
+from IPython import embed
 ###################################
 # SET CURRENT WORKING DIRECTORY
 ###################################
@@ -282,6 +284,36 @@ if __name__=='__main__':
             this_stim_weighted_mean_lum.append(this_tb_weighted_mean_luminance)
         world_all_weighted_mean_frames[stim] = np.array(this_stim_weighted_mean_frames)
         world_all_weighted_mean_luminance[stim] = np.array(this_stim_weighted_mean_lum)
+    ########################################################
+    # Find timebuckets marking start and end of each phase
+    # UNDER CONSTRUCTION
+    ########################################################
+    if args.a == 'MOI':
+        reshaped_world_all_weighted_mean_frames = {key:None for key in stim_vids}
+        for stim in world_all_weighted_mean_frames.keys():
+            reshaped_frames = []
+            for i, frame in enumerate(world_all_weighted_mean_frames[stim]):
+                reshaped_frame = np.reshape(frame,(120,160))
+                reshaped_frames.append(reshaped_frame)
+                # figure path and title
+                figPath = os.path.join(mean_world_cam_vids_folder, 'Stim%d_meanWorldCamSanityCheck_tb%06d_4msResolution.png'%(stim, i))
+                figTitle = 'Stim%d: mean world cam sanity check \n timebucket: %06d'%(stim, i)
+                plt.figure(figsize=(9, 9), dpi=200)
+                plt.suptitle(figTitle, fontsize=12, y=0.98)
+                plt.imshow(reshaped_frame)
+                plt.savefig(figPath)
+                plt.close()
+                
+            reshaped_world_all_weighted_mean_frames[stim] = np.array(reshaped_frames)
+        stim_to_check = input('Which unique stimulus would you like to check for moments of interest?')
+        print('Checking %s'%(stim_to_check))
+        go_to_timebucket = input('Jump to timebucket:')
+        embed()
+
+def display_mean_world_vid_frame(world_vid_frames_dict, stim_num, timebucket):
+    plt.imshow(world_vid_frames_dict[stim_num][timebucket])
+    plt.show()
+
     ########################################################
     # Calculate full dataset raw live for each stimulus
     ########################################################
