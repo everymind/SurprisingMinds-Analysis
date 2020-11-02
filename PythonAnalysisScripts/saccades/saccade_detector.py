@@ -319,6 +319,7 @@ for s in range(6):
     plt.close()
 
 ### END OF RASTER PLOTS ###
+### BEGIN PCA?? ###
 
 # SVD (singular value decomposition, aka PCA)
 u, s, vh = np.linalg.svd(all_peak_windows, full_matrices=False)
