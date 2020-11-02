@@ -15,10 +15,10 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 current_working_directory = os.getcwd()
 
 # Specify relevant data/output folders - laptop
-data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
+data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
 plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
 # Specify relevant data/output folders - office
-#data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv'
+#data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
 #plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
 
 # Find daily folders
@@ -308,6 +308,8 @@ for s in range(6):
 
                 # Report
                 print(count)
+                print("--")
+                print("--")
                 count = count + 1
     # save and display
     #plt.subplots_adjust(hspace=0.5)
@@ -315,6 +317,8 @@ for s in range(6):
     plt.show(block=False)
     plt.pause(1)
     plt.close()
+
+### END OF RASTER PLOTS ###
 
 # SVD (singular value decomposition, aka PCA)
 u, s, vh = np.linalg.svd(all_peak_windows, full_matrices=False)
