@@ -442,33 +442,35 @@ def drawFitScoresVsDelay_byPhase(linRegress_allPhases_list, num_delays, phases_s
         plt.close()
 
 def worldCam_MOIs_all_stim():
-    # Moments of interest for each stimulus type
+    # Moments of interest for each stimulus type, counted in 4ms timebuckets
+    # For each start moment: [first timebucket when current phase appears and may be overlapping with previous phase, first timebucket when previous phase is entirely gone]
+    # For each end moment: [last timebucket when current phase is showing with no overlap from next phase, last timebucket when current phase is showing and may be overlapping with next phase]
     all_avg_world_moments = {}
     # Stimulus 24.0
-    all_avg_world_moments[24.0] = {'calibration start': {0:['2017-10','2018-05']},
-    'do not move your head': {3:['2017-10','2018-05']},
-    'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
-    'lower right dot appears': {170:['2017-10','2018-05']},
-    'lower left dot appears': {238:['2017-10','2018-05']},
-    'upper right dot appears': {306:['2017-10','2018-05']},
-    'center dot appears': {374:['2017-10','2018-05']},
-    'calibration end': {441:['2017-10','2017-11','2018-03']},
-    'unique start': {442:['2017-10','2018-03','2018-05'],443:['2017-11']},
-    'cat appears': {463:['2017-10','2018-01','2018-05'], 464:['2017-11']},
-    'cat front paws visible': {473:['2017-10','2018-01','2018-05'], 474:['2017-11']},
-    'cat lands on toy': {513:['2017-10'], 514:['2018-05']},
+    all_avg_world_moments[24.0] = {'please center eyes': [0,0],
+    'do not move your head': [35,51],
+    'upper left dot appears': [1027,1047],
+    'lower right dot appears': [1727,1727],
+    'lower left dot appears': [2391,2391],
+    'upper right dot appears': [3071,3071],
+    'center dot appears': [3751,3751],
+    'calibration end': [],
+    'unique start': [4431,4431],
+    'cat appears': [4615,4615],
+    'front paws fully visible': [4720,4720],
+    'front paws first contact with toy': {513:['2017-10'], 514:['2018-05']},
     'cat back paws bounce': {549:['2017-10'],547:['2018-05']},
-    'unique end': {596:['2017-10','2017-11'],598:['2018-03']},
-    'octo start': {595:['2017-10','2018-03'],596:['2017-11']},
+    'unique end': [5922,5962],
+    'octo start': [5923,5963],
     'fish turns': {645:['2017-10','2018-05']},
     'octopus fully decamouflaged': {766:['2018-05'], 767:['2017-10']},
     'camera zooms in on octopus': {860:['2017-10','2018-05']},
     'octopus inks': {882:['2017-10'],883:['2017-11','2018-03']},
     'camera clears ink cloud': {916:['2017-10'],920:['2018-05']},
-    'octo end': {987:['2017-10'],989:['2017-11'],990:['2018-03']}}
+    'octo end': [10803,10803]}
     # Stimulus 25.0
-    all_avg_world_moments[25.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
-    'do not move your head': {3:['2017-10','2018-05']},
+    all_avg_world_moments[25.0] = {'please center eyes': [0,0],
+    'do not move your head': [35,51],
     'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
     'lower right dot appears': {170:['2017-10','2018-05']},
     'lower left dot appears': {239:['2017-10'],238:['2018-05']},
@@ -492,7 +494,7 @@ def worldCam_MOIs_all_stim():
     'camera clears ink cloud': {919:['2017-10'],923:['2018-05']},
     'octo end': {989:['2017-10'],993:['2017-11'],994:['2018-03']}}
     # Stimulus 26.0
-    all_avg_world_moments[26.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+    all_avg_world_moments[26.0] = {'please center eyes': {0:['2017-10','2017-11','2018-03']},
     'do not move your head': {2:['2018-05'],3:['2017-10']},
     'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
     'lower right dot appears': {170:['2017-10','2018-05']},
@@ -514,7 +516,7 @@ def worldCam_MOIs_all_stim():
     'camera clears ink cloud': {983:['2017-10'],987:['2018-05']},
     'octo end': {1054:['2017-10'],1059:['2017-11','2018-03']}}
     # Stimulus 27.0
-    all_avg_world_moments[27.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+    all_avg_world_moments[27.0] = {'please center eyes': {0:['2017-10','2017-11','2018-03']},
     'do not move your head': {3:['2017-10','2018-05']},
     'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
     'lower right dot appears': {170:['2017-10','2018-05']},
@@ -534,7 +536,7 @@ def worldCam_MOIs_all_stim():
     'camera clears ink cloud': {926:['2017-10'],929:['2018-05']},
     'octo end': {996:['2017-10'],1000:['2017-11','2018-03']}}
     # Stimulus 28.0
-    all_avg_world_moments[28.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+    all_avg_world_moments[28.0] = {'please center eyes': {0:['2017-10','2017-11','2018-03']},
     'do not move your head': {2:['2018-05'],3:['2017-10']},
     'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
     'lower right dot appears': {170:['2017-10','2018-05']},
@@ -556,7 +558,7 @@ def worldCam_MOIs_all_stim():
     'camera clears ink cloud': {982:['2017-10'],986:['2018-05']},
     'octo end': {1054:['2017-10'],1056:['2017-11'],1059:['2018-03']}}
     # Stimulus 29.0
-    all_avg_world_moments[29.0] = {'calibration start': {0:['2017-10','2017-11','2018-03']},
+    all_avg_world_moments[29.0] = {'please center eyes': {0:['2017-10','2017-11','2018-03']},
     'do not move your head': {3:['2017-10','2018-05']},
     'upper left dot appears': {102:['2017-10','2017-11','2018-03']},
     'lower right dot appears': {170:['2017-10','2018-05']},
@@ -676,6 +678,7 @@ if __name__=='__main__':
     # Load mean monthly raw live stim
     # split into Do Not Move, Pulsing Dots, Unique, and Octo phases
     # calculate weighted mean of each phase
+    # save as binary files
     ###############################################################
     # raw live stim
     all_weighted_raw_doNotMove = []
@@ -686,14 +689,11 @@ if __name__=='__main__':
     all_weights_raw_unique = {key:[] for key in stim_vids}
     all_weighted_raw_octo = []
     all_weights_raw_octo = []
-    # world cam
-    all_weighted_world_keyFrames = {key:{} for key in stim_vids}
     # collect length of each stimulus type in 4ms resolution
     supersampled_length_all_stims = {key:[] for key in stim_vids}
-    # extract raw live stim and world cam data
+    # extract raw live stim
     for monthly_mean_folder in monthly_mean_lums_folders:
         raw_live_stim_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanRawLiveStim_*.npy')
-        world_cam_files = glob.glob(root_folder + os.sep + monthly_mean_folder + os.sep + '*_meanWorldCam_*.npy')
         # raw live - extract and split into phases
         for raw_live_stim in raw_live_stim_files:
             stim_type = stim_name_to_float[os.path.basename(raw_live_stim).split('_')[1]]

@@ -33,7 +33,7 @@ current_working_directory = os.getcwd()
 ###################################
 # grab today's date
 now = datetime.datetime.now()
-logging.basicConfig(filename="psa01_MonthlyMeans_WorldCam_RawLiveStim_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
+logging.basicConfig(filename="psa01_MonthlyMeans_WorldCam_RawLiveStim_" + now.strftime("%Y-%m-%d_%H-%M-%S") + ".log", filemode='w', level=logging.INFO, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s', datefmt='%m-%d %H:%M')
 ###################################
 # FUNCTIONS
 ###################################
@@ -401,7 +401,6 @@ if __name__=='__main__':
         stim_lums = np.genfromtxt(rSL_file, delimiter=',')
         thisPhase_lenFrames = len(stim_lums)
         rawStimLum_dict[stim_phase] = {'Number of Frames': thisPhase_lenFrames, 'Luminance per Frame': stim_lums}
-
     ###################################
     # EXTRACT WORLD CAM VID TIMING AND LUMINANCE
     # SAVE RAW LIVE VIDEOS FROM EACH TRIAL AS BINARY FILE
@@ -419,7 +418,6 @@ if __name__=='__main__':
         subdirs = os.listdir(os.path.join(analysed_drive, folder, 'Analysis'))
         if 'world' in subdirs:
             already_extracted_daily.append(folder)
-
     # figure out which days are the last day of data collection for each month of data collection
     last_day_each_month = []
     current_year_month_day = None
@@ -443,8 +441,7 @@ if __name__=='__main__':
         else:
             last_day_each_month.append(current_year_month_day)
             current_year_month_day = None
-
-    logging.debug('Last day of each month: %s' % (last_day_each_month))
+    logging.info('Last day of each month: %s' % (last_day_each_month))
     # DAYS THAT CANNOT BE UNZIPPED 
     invalid_zipped = []
     # DAYS WITH NO WORLD VIDS (no valid trials)
@@ -513,17 +510,17 @@ if __name__=='__main__':
             print('Saving monthly weighted mean of rawLive for %s...'%(item_year_month))
             save_monthly_weighted_meanStim(thisMonth_rawLiveStim, 'meanRawLiveStim')
             # update list of already extracted months
-            logging.debug("Updating list of extracted months...")
+            logging.INFO("Updating list of extracted months...")
             analysed_folders = sorted(os.listdir(analysed_drive))
             monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
             extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
             # delete daily mean intermediate files
             for day_extracted in this_month_extracted:
                 daily_mean_folder = os.path.join(analysed_drive, day_extracted, 'Analysis', 'world')
-                logging.debug("Deleting daily mean worldCam and rawStim video files for %s..." % (day_extracted.split('_')[1]))
+                logging.INFO("Deleting daily mean worldCam and rawStim video files for %s..." % (day_extracted.split('_')[1]))
                 shutil.rmtree(daily_mean_folder)
-                logging.debug("Delete successful!")
-                logging.debug("Making empty 'world' folder for %s..." % (day_extracted.split('_')[1]))
+                logging.INFO("Delete successful!")
+                logging.INFO("Making empty 'world' folder for %s..." % (day_extracted.split('_')[1]))
                 os.makedirs(daily_mean_folder)
             logging.info("Finished averaging world video frames for %s!" % (item_year_month))
             print("Finished averaging world video frames for %s!" % (item_year_month))
@@ -601,7 +598,7 @@ if __name__=='__main__':
                             world_timestamps = np.genfromtxt(world_csv_path, dtype=np.str, delimiter=' ') # row = timestamp, not frame
                             ### EXTRACT FRAMES FROM WORLD VIDS AND PUT INTO TIME BUCKETS ###
                             # create a "raw live stimulus video" array by combining framerate info from world cam with luminance values from raw vids
-                            logging.debug("Extracting world vid frames and creating raw live stim vid for %s..." % os.path.basename(world_video_path))
+                            logging.INFO("Extracting world vid frames and creating raw live stim vid for %s..." % os.path.basename(world_video_path))
                             # save raw live stim vid as binary files and return world cam frames as a sanity check
                             worldCam_vidWidth, worldCam_vidHeight, worldCam_supersampledFrames, rawLiveVid_supersampledFrames = supersampled_worldCam_rawLiveVid(world_video_path, world_timestamps, rawStimLum_dict, world_folder, bucket_size)
                             #
@@ -644,9 +641,9 @@ if __name__=='__main__':
                 logging.warning("No world vids averaged for %s" % (this_day_date))
                 no_valid_trials.append(item)
                 # delete temporary file with unzipped data contents
-                logging.debug("Deleting temp folder of unzipped data...")
+                logging.INFO("Deleting temp folder of unzipped data...")
                 shutil.rmtree(day_folder)
-                logging.debug("Delete successful!")
+                logging.INFO("Delete successful!")
                 continue
             if all(x == this_day_world_vids_height[0] for x in this_day_world_vids_height):
                 if all(x == this_day_world_vids_width[0] for x in this_day_world_vids_width):
@@ -679,9 +676,9 @@ if __name__=='__main__':
             ###################################################
             # delete temporary file with unzipped data contents
             ###################################################
-            logging.debug("Deleting temp folder of unzipped data...")
+            logging.INFO("Deleting temp folder of unzipped data...")
             shutil.rmtree(day_folder)
-            logging.debug("Delete successful!")
+            logging.INFO("Delete successful!")
         else:
             logging.warning("Could not unzip data folder for day %s" % (this_day_date))
             invalid_zipped.append(this_day_date)
@@ -742,17 +739,17 @@ if __name__=='__main__':
             print('Saving monthly weighted mean of rawLive for %s...'%(item_year_month))
             save_monthly_weighted_meanStim(thisMonth_rawLiveStim, 'meanRawLiveStim')
             # update list of already extracted months
-            logging.debug("Updating list of extracted months...")
+            logging.INFO("Updating list of extracted months...")
             analysed_folders = sorted(os.listdir(analysed_drive))
             monthly_extracted_data = fnmatch.filter(analysed_folders, 'MeanStimuli_*')
             extracted_months = [item.split('_')[1] for item in monthly_extracted_data]
             # delete daily mean intermediate files
             for day_extracted in this_month_extracted:
                 daily_mean_folder = os.path.join(analysed_drive, day_extracted, 'Analysis', 'world')
-                logging.debug("Deleting daily mean worldCam and rawStim video files for %s..." % (day_extracted.split('_')[1]))
+                logging.INFO("Deleting daily mean worldCam and rawStim video files for %s..." % (day_extracted.split('_')[1]))
                 shutil.rmtree(daily_mean_folder)
-                logging.debug("Delete successful!")
-                logging.debug("Making empty 'world' folder for %s..." % (day_extracted.split('_')[1]))
+                logging.INFO("Delete successful!")
+                logging.INFO("Making empty 'world' folder for %s..." % (day_extracted.split('_')[1]))
                 os.makedirs(daily_mean_folder)
             logging.info("Finished averaging world video frames for %s!" % (item_year_month))
             print("Finished averaging world video frames for %s!" % (item_year_month))

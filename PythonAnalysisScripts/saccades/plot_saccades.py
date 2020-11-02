@@ -13,19 +13,19 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 current_working_directory = os.getcwd()
 
 # Specify relevant data/output folders - laptop
-#data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\speeds'
-#plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
-#folder_name = 'SurprisingMinds*'
+data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows\speeds'
+plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+folder_name = 'SurprisingMinds*'
 # Specify relevant data/output folders - office (windows)
 #data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\pythonWithAdam-csv\speeds'
 #plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
 #folder_name = 'SurprisingMinds*'
 # Specify relevant data/output folders - office (linux)
-data_folder = r'/home/kampff/Data/Surprising/saccades'
-plots_folder = r'/home/kampff/Data/Surprising/figures'
-folder_name = 'surprisingminds*'
+#data_folder = r'/home/kampff/Data/Surprising/saccades'
+#plots_folder = r'/home/kampff/Data/Surprising/figures'
+#folder_name = 'surprisingminds*'
 
-# Create a folder for figures (f it does not exist)
+# Create a folder for figures (if it does not exist)
 if not os.path.exists(plots_folder):
     os.makedirs(plots_folder)
 

@@ -13,11 +13,11 @@ todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
 current_working_directory = os.getcwd()
 
 # Specify relevant data/output folders - laptop
-#data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
-#folder_name = 'SurprisingMinds*'
-# Specify relevant data/output folders - office (windows)
-data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
+data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
 folder_name = 'SurprisingMinds*'
+# Specify relevant data/output folders - office (windows)
+#data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
+#folder_name = 'SurprisingMinds*'
 # Specify relevant data/output folders - office (linux)
 #data_folder = r'/home/kampff/Data/Surprising'
 #folder_name = 'surprisingminds*'
