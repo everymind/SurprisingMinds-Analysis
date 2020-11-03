@@ -72,20 +72,16 @@ unique_trials = {0:0, 1:0, 2:0, 3:0, 4:0, 5:0}
 for s in range(6):
     count = 0
     for i, speed_file in enumerate(speed_files):
-
         # Get stimulus number
         trial_name = os.path.basename(speed_file)
         fields = trial_name.split(sep='_')
         eye = fields[1]
         stimulus = int(fields[0][-1])
-
         # Check if current stimulus number
         if(stimulus == s):
-
             # Load speed_file
             speed = np.fromfile(speed_file, dtype=np.float32)
             if len(speed) < trial_len_cutoff:
-
                 # Find "peaks" greater than some threshold?
                 low_threshold = 0.5
                 high_threshold = 1.5
@@ -103,22 +99,17 @@ for s in range(6):
                         if(sp < low_threshold):
                             peaking = False       
                             peak_stop_times.append(i)
-
                 # Convert to arrays
                 peak_start_times = np.array(peak_start_times)
                 peak_stop_times = np.array(peak_stop_times)
-
                 # Throw out the first peak
                 peak_start_times = peak_start_times[1:]
                 peak_stop_times = peak_stop_times[1:]
-
                 # Throw out last peak if incomplete
                 if len(peak_start_times) > len(peak_stop_times):
                     peak_start_times = peak_start_times[:-1]
-
                 # Find peak durations
                 peak_durations = peak_stop_times - peak_start_times
-
                 # Find peak speed and indices
                 peak_speeds = []
                 peak_indices = []
@@ -127,21 +118,17 @@ for s in range(6):
                     peak_index = np.argmax(speed[start:stop])
                     peak_speeds.append(peak_speed)
                     peak_indices.append(start + peak_index)
-
                 # Convert to arrays
                 peak_speeds = np.array(peak_speeds)
                 peak_indices = np.array(peak_indices)
-
                 # Measure inter-peak_interval
                 peak_intervals = np.diff(peak_indices, prepend=[0])
-
                 # Filter for good saccades
                 good_peaks = (peak_intervals > 25) * (peak_durations < 30) * (peak_durations > 4) * (peak_speeds < 100)
                 peak_speeds = peak_speeds[good_peaks]
                 peak_indices = peak_indices[good_peaks]
                 peak_durations = peak_durations[good_peaks]
                 peak_intervals = peak_intervals[good_peaks]
-
                 # Extract windows around peak maxima
                 # for peak_index in peak_indices:
                 #     left_border = np.int(peak_index - np.round(window_size/2))
@@ -178,7 +165,6 @@ for s in range(6):
                 calib_peaks_indices = np.array(calib_peaks_indices)
                 octo_peaks_indices = np.array(octo_peaks_indices)
                 unique_peaks_indices = np.array(unique_peaks_indices)
-                
                 # Store
                 # calibration
                 calib_path = calib_folder + os.sep + 'stim%d_%s_calib-peaks_%d.npz' % (stimulus, eye, calib_trials)
@@ -192,7 +178,6 @@ for s in range(6):
                 unique_path = unique_folders[stimulus] + os.sep + 'stim%d_%s_unique-peaks_%d.npz' % (stimulus, eye, unique_trials[stimulus])
                 np.savez(unique_path, speeds=unique_peaks_speeds, indices=unique_peaks_indices)
                 unique_trials[stimulus] = unique_trials[stimulus] + 1
-
                 # report progress
                 print('Calib trial count: {c}'.format(c=calib_trials))
                 print('Octo trial count: {o}'.format(o=octo_trials))
