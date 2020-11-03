@@ -5,10 +5,6 @@ import matplotlib.pyplot as plt
 import datetime
 import os.path
 
-# TO DO:
-# Save each trials "peaks" as a spereate file (like is done with speeds)
-# funcitons?
-
 # grab today's date
 now = datetime.datetime.now()
 todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
@@ -17,6 +13,7 @@ current_working_directory = os.getcwd()
 # Specify relevant data/output folders - laptop
 data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
 plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+intermediate_data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\intermediates'
 # Specify relevant data/output folders - office
 #data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
 #plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
@@ -38,7 +35,7 @@ for df_C, daily_folder_count in enumerate(daily_folders):
 print('Number of files: {n}'.format(n=num_files))
 
 # Create an empty folder for speed data [CAUTION, DELETES ALL PREVIOUS SPEED FILES]
-speed_data_folder = data_folder + os.sep + 'speeds'
+speed_data_folder = intermediate_data_folder + os.sep + 'speeds'
 if not os.path.exists(speed_data_folder):
     #print("Creating plots folder.")
     os.makedirs(speed_data_folder)
@@ -127,7 +124,7 @@ for df, daily_folder in enumerate(daily_folders):
         speed = np.float32(speed)
 
         # Store
-        output_path = speed_data_folder + os.sep + 'stim%d_%s_speed_%d.data' % (stimulus, eye, trial_count)
+        output_path = speed_data_folder + os.sep + 'stim%d_%s_peak_%d.data' % (stimulus, eye, trial_count)
         speed.tofile(output_path)
         trial_count = trial_count + 1
 
@@ -156,14 +153,33 @@ for df, daily_folder in enumerate(daily_folders):
 # Load speed files and SEPARATE INTO CALIB, OCTO, AND UNIQUE STIM
 # save intermediate files that are calib, octo, and unique
 ##################################################################
+import os
+import glob
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+import os.path
+
+# grab today's date
+now = datetime.datetime.now()
+todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+current_working_directory = os.getcwd()
+
+# Specify relevant data/output folders - laptop
+data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\intermediates'
+plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+# Specify relevant data/output folders - office
+#data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
+#plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+
 # make separate folder for each sequence
 # [CAUTION, DELETES ALL PREVIOUS SPEED FILES]
-calib_folder = data_folder + os.sep + 'calib_speeds'
-octo_folder = data_folder + os.sep + 'octo_speeds'
+calib_folder = data_folder + os.sep + 'calib_peaks'
+octo_folder = data_folder + os.sep + 'octo_peaks'
 sequences = [calib_folder, octo_folder]
 unique_folders = {}
 for stim in range(6):
-    this_stim_folder = data_folder + os.sep + 'stim' + '%02d'%stim + '_speeds'
+    this_stim_folder = data_folder + os.sep + 'stim' + str(stim) + '_peaks'
     sequences.append(this_stim_folder)
     unique_folders[stim] = this_stim_folder
 for seq_folder in sequences:
@@ -172,21 +188,23 @@ for seq_folder in sequences:
         os.makedirs(seq_folder)
     if os.path.exists(seq_folder):
         # make sure it's empty
-        filelist = glob.glob(os.path.join(seq_folder, "*.data"))
+        filelist = glob.glob(os.path.join(seq_folder, "*.npz"))
         for f in filelist:
             os.remove(f)
 
+# load speed files
+speed_data_folder = data_folder + os.sep + 'speeds'
 trial_len_cutoff = 20000
 speed_files = glob.glob(speed_data_folder + os.sep + '*.data')
 num_files = len(speed_files)
-peak_raster = np.zeros((num_files, trial_len_cutoff))
+#peak_raster = np.zeros((num_files, trial_len_cutoff))
 #speed_raster = np.zeros((num_files, trial_len_cutoff))
 
-window_size = 50
-all_peak_windows = np.zeros((0,window_size))
-all_peak_speeds = np.zeros(0)
-all_peak_durations = np.zeros(0)
-all_peak_intervals = np.zeros(0)
+#window_size = 50
+#all_peak_windows = np.zeros((0,window_size))
+#all_peak_speeds = np.zeros(0)
+#all_peak_durations = np.zeros(0)
+#all_peak_intervals = np.zeros(0)
 
 # set time points for sequences (resolution: 4ms timebuckets)
 calib_start = 0
@@ -275,53 +293,88 @@ for s in range(6):
                 peak_intervals = peak_intervals[good_peaks]
 
                 # Extract windows around peak maxima
-                for peak_index in peak_indices:
-                    left_border = np.int(peak_index - np.round(window_size/2))
-                    right_border = np.int(left_border + window_size)
+                # for peak_index in peak_indices:
+                #     left_border = np.int(peak_index - np.round(window_size/2))
+                #     right_border = np.int(left_border + window_size)
 
-                    # Check that window fits
-                    if left_border < 0:
-                        continue
-                    if right_border > len(speed):
-                        continue
+                #     # Check that window fits
+                #     if left_border < 0:
+                #         continue
+                #     if right_border > len(speed):
+                #         continue
                 
                 # categorise peaks according to the sequence they happened within
-                calib_peaks = []
-                octo_peaks = []
-                unique_peaks = []
+                # peak speeds
+                calib_peaks_speeds = []
+                octo_peaks_speeds = []
+                unique_peaks_speeds = []
+                for peak in peak_speeds:
+                    if peak<=calib_end:
+                        calib_peaks_speeds.append(peak)
+                    if unique_start<peak<=unique_ends[stimulus]:
+                        unique_peaks_speeds.append(peak)
+                    if unique_ends[stimulus]<peak<(unique_ends[stimulus]+octo_len):
+                        octo_peaks_speeds.append(peak)
+                calib_peaks_speeds = np.array(calib_peaks_speeds)
+                octo_peaks_speeds = np.array(octo_peaks_speeds)
+                unique_peaks_speeds = np.array(unique_peaks_speeds)
+                # peak indices
+                calib_peaks_indices = []
+                octo_peaks_indices = []
+                unique_peaks_indices = []
                 for peak in peak_indices:
                     if peak<=calib_end:
-                        calib_peaks.append(peak)
+                        calib_peaks_indices.append(peak)
                     if unique_start<peak<=unique_ends[stimulus]:
-                        unique_peaks.append(peak)
+                        unique_peaks_indices.append(peak)
                     if unique_ends[stimulus]<peak<(unique_ends[stimulus]+octo_len):
-                        octo_peaks.append(peak)
-                calib_peaks = np.array(calib_peaks)
-                octo_peaks = np.array(octo_peaks)
-                unique_peaks = np.array(unique_peaks)
+                        octo_peaks_indices.append(peak)
+                calib_peaks_indices = np.array(calib_peaks_indices)
+                octo_peaks_indices = np.array(octo_peaks_indices)
+                unique_peaks_indices = np.array(unique_peaks_indices)
                 
                 # Store
                 # calibration
-                calib_path = calib_folder + os.sep + 'stim%d_%s_calib-speed_%d.data' % (stimulus, eye, calib_trials)
-                calib_peaks.tofile(calib_path)
+                calib_path = calib_folder + os.sep + 'stim%d_%s_calib-peaks_%d.npz' % (stimulus, eye, calib_trials)
+                np.savez(calib_path, speeds=calib_peaks_speeds, indices=calib_peaks_indices)
                 calib_trials = calib_trials + 1
                 # octo
-                octo_path = octo_folder + os.sep + 'stim%d_%s_octo-speed_%d.data' % (stimulus, eye, octo_trials)
-                octo_peaks.tofile(octo_path)
+                octo_path = octo_folder + os.sep + 'stim%d_%s_octo-peaks_%d.npz' % (stimulus, eye, octo_trials)
+                np.savez(octo_path, speeds=octo_peaks_speeds, indices=octo_peaks_indices)
                 octo_trials = octo_trials + 1
                 # unique
-                unique_path = unique_folders[stimulus] + os.sep + 'stim%d_%s_unique-speed_%d.data' % (stimulus, eye, unique_trials[stimulus])
-                unique_peaks.tofile(unique_path)
+                unique_path = unique_folders[stimulus] + os.sep + 'stim%d_%s_unique-peaks_%d.npz' % (stimulus, eye, unique_trials[stimulus])
+                np.savez(unique_path, speeds=unique_peaks_speeds, indices=unique_peaks_indices)
                 unique_trials[stimulus] = unique_trials[stimulus] + 1
 
                 # report progress
                 print('Calib trial count: {c}'.format(c=calib_trials))
-                print('Octo trial count: {o}'.format(c=octo_trials))
+                print('Octo trial count: {o}'.format(o=octo_trials))
                 print('Unique stim {s} count: {u}'.format(s=stimulus, u=unique_trials[stimulus]))
+                print('---')
+                print('---')
 
 ##########################################
 ### PLOT SACCADE RASTER for each sequence
 ##########################################
+import os
+import glob
+import numpy as np
+import matplotlib.pyplot as plt
+import datetime
+import os.path
+
+# grab today's date
+now = datetime.datetime.now()
+todays_datetime = datetime.datetime.today().strftime('%Y%m%d-%H%M%S')
+current_working_directory = os.getcwd()
+
+# Specify relevant data/output folders - laptop
+data_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\intermediates'
+plots_folder = r'C:\Users\taunsquared\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
+# Specify relevant data/output folders - office
+#data_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\dataPythonWorkflows'
+#plots_folder = r'C:\Users\Kampff_Lab\Dropbox\SurprisingMinds\analysis\plots\saccade_detector'
 
 # set boundaries for categories of saccade
 big_upper = 75
@@ -333,52 +386,81 @@ lil_lower = 1
 
 fsize = 200 #dpi
 
-                # Make some peak categories
-                big_speeds = (peak_speeds < big_upper) * (peak_speeds > big_lower)
-                med_speeds = (peak_speeds < med_upper) * (peak_speeds > med_lower)
-                lil_speeds = (peak_speeds < lil_upper) * (peak_speeds > lil_lower)
+# collect peak files for each sequence
+seq_peak_files = {}
+seq_peak_files['calib'] = glob.glob(data_folder + os.sep + '*calib_peaks' + os.sep + '*.npz')
+seq_peak_files['octo'] = glob.glob(data_folder + os.sep + '*octo_peaks' + os.sep + '*.npz')
+for stim in range(6):
+    this_unique_peak_files = glob.glob(data_folder + os.sep + 'stim' + str(stim) + '_peaks' + os.sep + '*.npz')
+    seq_peak_files[str(stim)] = this_unique_peak_files
 
-                # Plot a saccade raster
-                num_peaks = np.sum(big_speeds)
-                row_value = count*np.ones(num_peaks)
-                plt.subplot(3,1,1)
-                plt.ylabel('Individual Trials', fontsize=9)
-                plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
-                plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.05)
+# plot rasters of saccades during each sequence
+for seq in seq_peak_files.keys():
+    peak_files = seq_peak_files[seq]
+    seq_trial_count = len(peak_files)
+    # set figure save path and title
+    figure_name = 'DetectedSaccades_' + seq + '_' + todays_datetime + '.png'
+    figure_path = os.path.join(plots_folder, figure_name)
+    figure_title = 'Detected Saccades during sequence {s}, categorized by speed, N={n}'.format(s=seq, n=seq_trial_count)
+    plt.figure(figsize=(14, 14), dpi=fsize)
+    plt.suptitle(figure_title, fontsize=12, y=0.98)
+    count = 0
+    for i, peak_file in enumerate(peak_files):
+            # Get stimulus number
+            trial_name = os.path.basename(peak_file)
+            fields = trial_name.split(sep='_')
+            eye = fields[1]
+            stimulus = int(fields[0][-1])
+            seq = fields[2].split('-')[0]
+            # Load peak_file
+            peaks = np.load(peak_file)
+            peak_speeds = peaks['speeds']
+            peak_indices = peaks['indices']
+            # Make some peak categories
+            big_speeds = (peak_speeds < big_upper) * (peak_speeds > big_lower)
+            med_speeds = (peak_speeds < med_upper) * (peak_speeds > med_lower)
+            lil_speeds = (peak_speeds < lil_upper) * (peak_speeds > lil_lower)
+            # Plot a saccade raster
+            num_peaks = np.sum(big_speeds)
+            row_value = count*np.ones(num_peaks)
+            plt.subplot(3,1,1)
+            plt.ylabel('Individual Trials', fontsize=9)
+            plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
+            plt.plot(peaks[big_speeds], row_value, 'r.', alpha=0.05)
 
-                num_peaks = np.sum(med_speeds)
-                row_value = count*np.ones(num_peaks)
-                plt.subplot(3,1,2)
-                plt.ylabel('Individual Trials', fontsize=9)
-                plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
-                plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.05)
+            num_peaks = np.sum(med_speeds)
+            row_value = count*np.ones(num_peaks)
+            plt.subplot(3,1,2)
+            plt.ylabel('Individual Trials', fontsize=9)
+            plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
+            plt.plot(peaks[med_speeds], row_value, 'b.', alpha=0.05)
 
-                num_peaks = np.sum(lil_speeds)
-                row_value = count*np.ones(num_peaks)
-                plt.subplot(3,1,3)
-                plt.ylabel('Individual Trials', fontsize=9)
-                plt.title('Small Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=lil_lower, u=lil_upper), fontsize=10, color='grey', style='italic')
-                plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=0.1)
+            num_peaks = np.sum(lil_speeds)
+            row_value = count*np.ones(num_peaks)
+            plt.subplot(3,1,3)
+            plt.ylabel('Individual Trials', fontsize=9)
+            plt.title('Small Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=lil_lower, u=lil_upper), fontsize=10, color='grey', style='italic')
+            plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=0.1)
 
-                # Add to all "peak" arrays
-                all_peak_speeds = np.hstack((all_peak_speeds, peak_speeds))
-                all_peak_durations = np.hstack((all_peak_durations, peak_durations))
-                all_peak_intervals = np.hstack((all_peak_intervals, peak_intervals))
+            # Add to all "peak" arrays
+            #all_peak_speeds = np.hstack((all_peak_speeds, peak_speeds))
+            #all_peak_durations = np.hstack((all_peak_durations, peak_durations))
+            #all_peak_intervals = np.hstack((all_peak_intervals, peak_intervals))
 
-                # Store peaks in peak raster
-                peak_raster[count, peak_intervals] = 1
+            # Store peaks in peak raster
+            #peak_raster[count, peak_intervals] = 1
 
-                # Report
-                print(count)
-                print("--")
-                print("--")
-                count = count + 1
-    # save and display
-    #plt.subplots_adjust(hspace=0.5)
-    plt.savefig(figure_path)
-    plt.show(block=False)
-    plt.pause(1)
-    plt.close()
+            # Report
+            print(count)
+            print("--")
+            print("--")
+            count = count + 1
+        # save and display
+        #plt.subplots_adjust(hspace=0.5)
+        plt.savefig(figure_path)
+        plt.show(block=False)
+        plt.pause(1)
+        plt.close()
 
 
 
@@ -477,7 +559,7 @@ for s in range(6):
                         continue
 
                     peak_window = speed[left_border:right_border]
-                    all_peak_windows = np.vstack((all_peak_windows, peak_window))
+                    #all_peak_windows = np.vstack((all_peak_windows, peak_window))
 
                 # Make some peak categories
                 big_speeds = (peak_speeds < big_upper) * (peak_speeds > big_lower)
