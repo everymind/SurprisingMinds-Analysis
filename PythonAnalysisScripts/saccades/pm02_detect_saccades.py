@@ -158,27 +158,23 @@ for s in range(6):
                 calib_peaks_speeds = []
                 octo_peaks_speeds = []
                 unique_peaks_speeds = []
-                for peak in peak_speeds:
-                    if peak<=calib_end:
-                        calib_peaks_speeds.append(peak)
-                    if unique_start<peak<=unique_ends[stimulus]:
-                        unique_peaks_speeds.append(peak)
-                    if unique_ends[stimulus]<peak<(unique_ends[stimulus]+octo_len):
-                        octo_peaks_speeds.append(peak)
-                calib_peaks_speeds = np.array(calib_peaks_speeds)
-                octo_peaks_speeds = np.array(octo_peaks_speeds)
-                unique_peaks_speeds = np.array(unique_peaks_speeds)
                 # peak indices
                 calib_peaks_indices = []
                 octo_peaks_indices = []
                 unique_peaks_indices = []
-                for peak in peak_indices:
+                for i, peak in enumerate(peak_indices):
                     if peak<=calib_end:
                         calib_peaks_indices.append(peak)
+                        calib_peaks_speeds.append(peak_speeds[i])
                     if unique_start<peak<=unique_ends[stimulus]:
                         unique_peaks_indices.append(peak)
+                        unique_peaks_speeds.append(peak_speeds[i])
                     if unique_ends[stimulus]<peak<(unique_ends[stimulus]+octo_len):
                         octo_peaks_indices.append(peak)
+                        octo_peaks_speeds.append(peak_speeds[i])
+                calib_peaks_speeds = np.array(calib_peaks_speeds)
+                octo_peaks_speeds = np.array(octo_peaks_speeds)
+                unique_peaks_speeds = np.array(unique_peaks_speeds)
                 calib_peaks_indices = np.array(calib_peaks_indices)
                 octo_peaks_indices = np.array(octo_peaks_indices)
                 unique_peaks_indices = np.array(unique_peaks_indices)
