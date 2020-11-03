@@ -203,3 +203,6 @@ for s in range(6):
                 print('Unique stim {s} count: {u}'.format(s=stimulus, u=unique_trials[stimulus]))
                 print('---')
                 print('---')
+
+
+# FIN
