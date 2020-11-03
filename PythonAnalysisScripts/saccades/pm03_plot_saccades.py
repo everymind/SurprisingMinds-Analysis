@@ -95,6 +95,7 @@ for seq_type in seq_peak_files.keys():
         #peak_raster[count, peak_intervals] = 1
 
         # Report
+        print(seq_type)
         print(count)
         print("--")
         print("--")
