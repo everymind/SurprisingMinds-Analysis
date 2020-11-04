@@ -44,6 +44,15 @@ def plot_sequence(seq_type):
     figure_title = 'Detected Saccades during sequence {s}, categorized by speed, N={n}'.format(s=seq_type, n=seq_trial_count)
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(figure_title, fontsize=12, y=0.98)
+    if seq_type == 'calib':
+        alpha_plotting = 0.085
+        x_max = 4431
+    elif seq_type == 'octo':
+        alpha_plotting = 0.085
+        x_max = 3980
+    else:
+        alpha_plotting = 0.3
+        x_max = 2759
     count = 0
     start_time = time.time_ns()
     for i, peak_file in enumerate(peak_files):
@@ -68,21 +77,28 @@ def plot_sequence(seq_type):
         plt.subplot(3,1,1)
         plt.ylabel('Individual Trials', fontsize=9)
         plt.title('Big Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=big_lower, u=big_upper), fontsize=10, color='grey', style='italic')
-        plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=0.05)
+        plot_xticks = np.arange(0, x_max, step=250)
+        plt.xticks(plot_xticks, ['%.1f'%(x/250) for x in plot_xticks])
+        plt.plot(peak_indices[big_speeds], row_value, 'r.', alpha=alpha_plotting)
         ## medium saccades
         num_peaks = np.sum(med_speeds)
         row_value = count*np.ones(num_peaks)
         plt.subplot(3,1,2)
         plt.ylabel('Individual Trials', fontsize=9)
         plt.title('Medium Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=med_lower, u=med_upper), fontsize=10, color='grey', style='italic')
-        plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=0.05)
+        plot_xticks = np.arange(0, x_max, step=250)
+        plt.xticks(plot_xticks, ['%.1f'%(x/250) for x in plot_xticks])
+        plt.plot(peak_indices[med_speeds], row_value, 'b.', alpha=alpha_plotting)
         ## little saccades
         num_peaks = np.sum(lil_speeds)
         row_value = count*np.ones(num_peaks)
         plt.subplot(3,1,3)
         plt.ylabel('Individual Trials', fontsize=9)
+        plt.xlabel('Time (seconds) since beginning of this sequence', fontsize=9)
         plt.title('Small Saccades (pupil movements between {l} and {u} pixels per frame)'.format(l=lil_lower, u=lil_upper), fontsize=10, color='grey', style='italic')
-        plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=0.1)
+        plot_xticks = np.arange(0, x_max, step=250)
+        plt.xticks(plot_xticks, ['%.1f'%(x/250) for x in plot_xticks])
+        plt.plot(peak_indices[lil_speeds], row_value, 'k.', alpha=alpha_plotting)
         # Report
         end_time = time.time_ns()
         elapsed_time = (end_time - start_time)/1000000000
