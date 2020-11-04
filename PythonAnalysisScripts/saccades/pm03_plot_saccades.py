@@ -25,6 +25,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import os.path
+import argparse
+import logging
 import time
 from joblib import Parallel, delayed
 
@@ -141,12 +143,12 @@ if __name__=='__main__':
         WARNING: This script overwrites saccade ("peaks") data outputted from previous runs of this script. TO SAVE OLD SACCADE DATA, RENAME THE FOLDER CONTAINING OLD SACCADE DATA.
         Resolution = 4ms per "timebucket", as that was the sampling rate used to generate the csv files of pupil tracking data. ''')
     parser.add_argument("--a", nargs='?', default="check_string_for_empty")
-    parser.add_argument("--big_upper", nargs=1, type=int, default=75, help="Upper bound for saccade speeds categorized as "big" saccades (current default = 75)")
-    parser.add_argument("--big_lower", nargs=1, type=int, default=45, help="Lower bound for saccade speeds categorized as "big" saccades (current default = 45)")
-    parser.add_argument("--med_upper", nargs=1, type=int, default=25, help="Upper bound for saccade speeds categorized as "medium" saccades (current default = 25)")
-    parser.add_argument("--med_lower", nargs=1, type=int, default=15, help="Lower bound for saccade speeds categorized as "medium" saccades (current default = 15)")
-    parser.add_argument("--lil_upper", nargs=1, type=int, default=15, help="Upper bound for saccade speeds categorized as "little" saccades (current default = 15)")
-    parser.add_argument("--lil_lower", nargs=1, type=int, default=1, help="Lower bound for saccade speeds categorized as "little" saccades (current default = 1)")
+    parser.add_argument("--big_upper", nargs=1, type=int, default=75, help="Upper bound for saccade speeds categorized as 'big' saccades (current default = 75)")
+    parser.add_argument("--big_lower", nargs=1, type=int, default=45, help="Lower bound for saccade speeds categorized as 'big' saccades (current default = 45)")
+    parser.add_argument("--med_upper", nargs=1, type=int, default=25, help="Upper bound for saccade speeds categorized as 'medium' saccades (current default = 25)")
+    parser.add_argument("--med_lower", nargs=1, type=int, default=15, help="Lower bound for saccade speeds categorized as 'medium' saccades (current default = 15)")
+    parser.add_argument("--lil_upper", nargs=1, type=int, default=15, help="Upper bound for saccade speeds categorized as 'little' saccades (current default = 15)")
+    parser.add_argument("--lil_lower", nargs=1, type=int, default=1, help="Lower bound for saccade speeds categorized as 'little' saccades (current default = 1)")
     args = parser.parse_args()
     ###################################
     # SCRIPT LOGGER
