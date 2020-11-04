@@ -108,8 +108,8 @@ def plot_sequence(seq_type):
         logging.info('Elapsed time: {e}'.format(e=elapsed_time))
         logging.info('Rate: {r}'.format(r=count/elapsed_time))
         print('Sequence type: {s}, Trial count: {c}'.format(s=seq_type, c=count))
-        print('Elapsed time: {e}'.format(e=elapsed_time))
-        print('Rate: {r}'.format(r=count/elapsed_time))
+        # print('Elapsed time: {e}'.format(e=elapsed_time))
+        # print('Rate: {r}'.format(r=count/elapsed_time))
         print("--")
         print("--")
         count = count + 1
