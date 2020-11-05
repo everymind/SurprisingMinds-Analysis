@@ -47,10 +47,10 @@ def plot_sequence(seq_type):
     plt.figure(figsize=(14, 14), dpi=fsize)
     plt.suptitle(figure_title, fontsize=12, y=0.98)
     if seq_type == 'calib':
-        alpha_plotting = 0.085
+        alpha_plotting = 0.07
         x_max = 4431
     elif seq_type == 'octo':
-        alpha_plotting = 0.085
+        alpha_plotting = 0.07
         x_max = 3980
     else:
         alpha_plotting = 0.3
